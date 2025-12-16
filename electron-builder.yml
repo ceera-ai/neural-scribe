@@ -1,0 +1,49 @@
+appId: com.elevenlabs.transcription
+productName: ElevenLabs Transcription
+directories:
+  buildResources: resources
+  output: release
+files:
+  - out/**/*
+  - "!node_modules/**/*"
+extraResources:
+  - from: resources/
+    to: resources/
+    filter:
+      - "**/*"
+mac:
+  category: public.app-category.productivity
+  icon: resources/icon.icns
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: resources/entitlements.mac.plist
+  entitlementsInherit: resources/entitlements.mac.plist
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+win:
+  target:
+    - nsis
+    - portable
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Utility
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true

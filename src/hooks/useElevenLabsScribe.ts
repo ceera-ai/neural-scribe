@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Scribe, RealtimeEvents } from '@elevenlabs/client';
-import { getScribeToken } from '../utils/getScribeToken';
+import type { TranscriptionRecord } from '../types/electron';
 
 interface TranscriptSegment {
   text: string;
@@ -21,7 +21,14 @@ interface UseElevenLabsScribeReturn {
   setEditedTranscript: (text: string | null) => void;
 }
 
-export const useElevenLabsScribe = (apiKey: string): UseElevenLabsScribeReturn => {
+interface UseElevenLabsScribeOptions {
+  selectedMicrophoneId?: string | null;
+  onRecordingStopped?: (transcript: string) => void;
+}
+
+export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): UseElevenLabsScribeReturn => {
+  const { selectedMicrophoneId, onRecordingStopped } = options;
+
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>([]);
@@ -30,12 +37,25 @@ export const useElevenLabsScribe = (apiKey: string): UseElevenLabsScribeReturn =
   const [editedTranscript, setEditedTranscript] = useState<string | null>(null);
 
   const connectionRef = useRef<any>(null);
+  const transcriptSegmentsRef = useRef<TranscriptSegment[]>([]);
+
+  // Keep ref in sync with state for use in callbacks
+  useEffect(() => {
+    transcriptSegmentsRef.current = transcriptSegments;
+  }, [transcriptSegments]);
+
+  const getFullTranscript = useCallback(() => {
+    return transcriptSegmentsRef.current
+      .map(segment => segment.text)
+      .join(' ')
+      .trim();
+  }, []);
 
   const startRecording = useCallback(async () => {
     try {
       setError(null);
 
-      // Generate session ID only if we don't have one (first start or after page refresh)
+      // Generate session ID only if we don't have one
       if (!sessionId) {
         const newSessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
         setSessionId(newSessionId);
@@ -44,21 +64,29 @@ export const useElevenLabsScribe = (apiKey: string): UseElevenLabsScribeReturn =
         console.log('Reconnecting to existing session:', sessionId);
       }
 
-      // Generate single-use token from API key
-      console.log('Generating single-use token...');
-      const token = await getScribeToken(apiKey);
-      console.log('Token generated successfully');
+      // Get token from main process via IPC
+      console.log('Getting token from main process...');
+      const token = await window.electronAPI.getScribeToken();
+      console.log('Token received successfully');
+
+      // Build microphone config
+      const microphoneConfig: any = {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        channelCount: 1,
+      };
+
+      // Add specific device ID if selected
+      if (selectedMicrophoneId) {
+        microphoneConfig.deviceId = { exact: selectedMicrophoneId };
+      }
 
       // Create connection using the official SDK
       const connection = Scribe.connect({
         token,
         modelId: 'scribe_v2_realtime',
-        microphone: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          channelCount: 1,
-        },
+        microphone: microphoneConfig,
         includeTimestamps: false,
       });
 
@@ -74,6 +102,8 @@ export const useElevenLabsScribe = (apiKey: string): UseElevenLabsScribeReturn =
       connection.on(RealtimeEvents.SESSION_STARTED, () => {
         console.log('Transcription session started');
         setIsRecording(true);
+        // Notify main process
+        window.electronAPI.notifyRecordingState(true);
       });
 
       // Handle partial (interim) transcripts
@@ -88,7 +118,6 @@ export const useElevenLabsScribe = (apiKey: string): UseElevenLabsScribeReturn =
         };
 
         setTranscriptSegments((prev) => {
-          // Replace the last non-final segment with the new partial
           if (prev.length > 0 && !prev[prev.length - 1].isFinal) {
             const updated = [...prev];
             updated[updated.length - 1] = newSegment;
@@ -110,7 +139,6 @@ export const useElevenLabsScribe = (apiKey: string): UseElevenLabsScribeReturn =
         };
 
         setTranscriptSegments((prev) => {
-          // Replace the last segment if it's non-final, otherwise add
           if (prev.length > 0 && !prev[prev.length - 1].isFinal) {
             const updated = [...prev];
             updated[updated.length - 1] = newSegment;
@@ -124,9 +152,10 @@ export const useElevenLabsScribe = (apiKey: string): UseElevenLabsScribeReturn =
       connection.on(RealtimeEvents.AUTH_ERROR, (...args: unknown[]) => {
         const data = args[0] as { error: string };
         console.error('Authentication error:', data.error);
-        setError('Authentication failed. Check your API key.');
+        setError('Authentication failed. Check your API key in settings.');
         setIsConnected(false);
         setIsRecording(false);
+        window.electronAPI.notifyRecordingState(false);
       });
 
       // Handle general errors
@@ -140,6 +169,7 @@ export const useElevenLabsScribe = (apiKey: string): UseElevenLabsScribeReturn =
         console.log('Connection closed');
         setIsConnected(false);
         setIsRecording(false);
+        window.electronAPI.notifyRecordingState(false);
       });
 
     } catch (err) {
@@ -147,12 +177,11 @@ export const useElevenLabsScribe = (apiKey: string): UseElevenLabsScribeReturn =
       setError(err instanceof Error ? err.message : 'Failed to start recording');
       setIsRecording(false);
       setIsConnected(false);
+      window.electronAPI.notifyRecordingState(false);
     }
-  }, [apiKey, sessionId]);
+  }, [sessionId, selectedMicrophoneId]);
 
   const stopRecording = useCallback(() => {
-    // Close the connection to stop microphone streaming
-    // We need to create a new connection when starting again
     if (connectionRef.current) {
       console.log('Stopping recording and closing connection...');
       try {
@@ -162,20 +191,43 @@ export const useElevenLabsScribe = (apiKey: string): UseElevenLabsScribeReturn =
       }
       connectionRef.current = null;
     }
+
+    // Get the full transcript before clearing state
+    const transcript = getFullTranscript();
+
     setIsRecording(false);
     setIsConnected(false);
-    // Note: We keep transcriptSegments and sessionId intact for the session
-  }, []);
+    window.electronAPI.notifyRecordingState(false);
+
+    // Call callback if transcript has content
+    if (transcript && onRecordingStopped) {
+      onRecordingStopped(transcript);
+    }
+  }, [getFullTranscript, onRecordingStopped]);
 
   const clearTranscript = useCallback(() => {
     setTranscriptSegments([]);
     setEditedTranscript(null);
   }, []);
 
-  // Cleanup on unmount (page refresh)
+  // Listen for toggle recording events from main process
+  useEffect(() => {
+    window.electronAPI.onToggleRecording(() => {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    });
+
+    return () => {
+      window.electronAPI.removeAllListeners('toggle-recording');
+    };
+  }, [isRecording, startRecording, stopRecording]);
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      // Only disconnect when component unmounts (page refresh)
       if (connectionRef.current) {
         console.log('Component unmounting - closing session');
         try {
