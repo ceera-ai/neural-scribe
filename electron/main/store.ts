@@ -7,6 +7,15 @@ export interface TranscriptionRecord {
   wordCount: number
 }
 
+export interface WordReplacement {
+  id: string
+  from: string
+  to: string
+  caseSensitive: boolean
+  wholeWord: boolean
+  enabled: boolean
+}
+
 export interface AppSettings {
   apiKey: string
   selectedMicrophoneId: string | null
@@ -18,6 +27,7 @@ export interface AppSettings {
 interface StoreSchema {
   settings: AppSettings
   history: TranscriptionRecord[]
+  replacements: WordReplacement[]
 }
 
 const defaults: StoreSchema = {
@@ -28,7 +38,8 @@ const defaults: StoreSchema = {
     pasteHotkey: 'CommandOrControl+Shift+V',
     recordHotkey: 'CommandOrControl+Shift+R'
   },
-  history: []
+  history: [],
+  replacements: []
 }
 
 export const store = new Store<StoreSchema>({
@@ -79,4 +90,54 @@ export function clearHistory(): void {
 export function getLastTranscription(): TranscriptionRecord | null {
   const history = store.get('history')
   return history.length > 0 ? history[0] : null
+}
+
+// Replacement helpers
+export function getReplacements(): WordReplacement[] {
+  return store.get('replacements') || []
+}
+
+export function addReplacement(replacement: WordReplacement): void {
+  const replacements = store.get('replacements') || []
+  store.set('replacements', [...replacements, replacement])
+}
+
+export function updateReplacement(id: string, updates: Partial<WordReplacement>): void {
+  const replacements = store.get('replacements') || []
+  store.set('replacements', replacements.map(r =>
+    r.id === id ? { ...r, ...updates } : r
+  ))
+}
+
+export function deleteReplacement(id: string): void {
+  const replacements = store.get('replacements') || []
+  store.set('replacements', replacements.filter(r => r.id !== id))
+}
+
+export function applyReplacements(text: string): string {
+  const replacements = store.get('replacements') || []
+  let result = text
+
+  for (const replacement of replacements) {
+    if (!replacement.enabled) continue
+
+    let pattern: RegExp
+    const flags = replacement.caseSensitive ? 'g' : 'gi'
+
+    if (replacement.wholeWord) {
+      // Match whole words only using word boundaries
+      pattern = new RegExp(`\\b${escapeRegex(replacement.from)}\\b`, flags)
+    } else {
+      pattern = new RegExp(escapeRegex(replacement.from), flags)
+    }
+
+    result = result.replace(pattern, replacement.to)
+  }
+
+  return result
+}
+
+// Helper to escape special regex characters
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }

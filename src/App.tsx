@@ -6,6 +6,7 @@ import { MicrophoneSelector } from './components/MicrophoneSelector';
 import { HistoryPanel } from './components/HistoryPanel';
 import { TerminalSelector } from './components/TerminalSelector';
 import { ApiKeySetup } from './components/ApiKeySetup';
+import { ReplacementsModal } from './components/ReplacementsModal';
 import './App.css';
 
 // Check if running in Electron
@@ -16,6 +17,7 @@ function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [showReplacements, setShowReplacements] = useState(false);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
   const { selectedDeviceId } = useMicrophoneDevices();
@@ -34,10 +36,21 @@ function App() {
   }, []);
 
   const handleRecordingStopped = useCallback(async (transcript: string) => {
-    // Auto-save transcription to history
-    if (transcript.trim()) {
-      await saveTranscription(transcript);
+    // Apply word replacements
+    let processedTranscript = transcript;
+    try {
+      processedTranscript = await window.electronAPI.applyReplacements(transcript);
+    } catch (err) {
+      console.error('Failed to apply replacements:', err);
     }
+
+    // Auto-save transcription to history
+    if (processedTranscript.trim()) {
+      await saveTranscription(processedTranscript);
+    }
+
+    // Return the processed transcript to update the UI
+    return processedTranscript;
   }, [saveTranscription]);
 
   const {
@@ -182,7 +195,16 @@ function App() {
             <span>{isRecording ? `Recording ${formatTime(recordingTime)}` : isConnected ? 'Connected' : 'Ready'}</span>
           </div>
         </div>
-        <MicrophoneSelector disabled={isRecording} />
+        <div className="header-right">
+          <MicrophoneSelector disabled={isRecording} />
+          <button
+            className="btn btn-icon settings-btn"
+            onClick={() => setShowReplacements(true)}
+            title="Word Replacements"
+          >
+            ⚙
+          </button>
+        </div>
       </header>
 
       <div className="main-layout">
@@ -300,6 +322,12 @@ function App() {
           </aside>
         )}
       </div>
+
+      {/* Replacements Modal */}
+      <ReplacementsModal
+        isOpen={showReplacements}
+        onClose={() => setShowReplacements(false)}
+      />
     </div>
   );
 }

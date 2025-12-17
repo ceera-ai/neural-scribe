@@ -29,6 +29,15 @@ export interface TerminalWindow {
   displayName: string
 }
 
+export interface WordReplacement {
+  id: string
+  from: string
+  to: string
+  caseSensitive: boolean
+  wholeWord: boolean
+  enabled: boolean
+}
+
 export type RecordingToggleCallback = () => void
 export type TranscriptionPastedCallback = (text: string) => void
 
@@ -70,6 +79,18 @@ const electronAPI = {
     ipcRenderer.invoke('get-terminal-windows'),
   pasteToTerminalWindow: (text: string, bundleId: string, windowName: string): Promise<{ success: boolean; needsPermission: boolean; copied: boolean }> =>
     ipcRenderer.invoke('paste-to-terminal-window', text, bundleId, windowName),
+
+  // Word replacement operations
+  getReplacements: (): Promise<WordReplacement[]> =>
+    ipcRenderer.invoke('get-replacements'),
+  addReplacement: (replacement: WordReplacement): Promise<boolean> =>
+    ipcRenderer.invoke('add-replacement', replacement),
+  updateReplacement: (id: string, updates: Partial<WordReplacement>): Promise<boolean> =>
+    ipcRenderer.invoke('update-replacement', id, updates),
+  deleteReplacement: (id: string): Promise<boolean> =>
+    ipcRenderer.invoke('delete-replacement', id),
+  applyReplacements: (text: string): Promise<string> =>
+    ipcRenderer.invoke('apply-replacements', text),
 
   // Events from main process
   onToggleRecording: (callback: RecordingToggleCallback): void => {

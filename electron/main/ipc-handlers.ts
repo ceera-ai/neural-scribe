@@ -9,8 +9,14 @@ import {
   deleteTranscription,
   clearHistory,
   getLastTranscription,
+  getReplacements,
+  addReplacement,
+  updateReplacement,
+  deleteReplacement,
+  applyReplacements,
   TranscriptionRecord,
-  AppSettings
+  AppSettings,
+  WordReplacement
 } from './store'
 import { getRunningTerminals, getTerminalWindows, pasteToTerminal, pasteToTerminalWindow, SUPPORTED_TERMINALS } from './terminal'
 
@@ -133,5 +139,29 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
 
   ipcMain.handle('paste-to-terminal-window', async (_, text: string, bundleId: string, windowName: string) => {
     return pasteToTerminalWindow(text, bundleId, windowName)
+  })
+
+  // Word replacement operations
+  ipcMain.handle('get-replacements', () => {
+    return getReplacements()
+  })
+
+  ipcMain.handle('add-replacement', (_, replacement: WordReplacement) => {
+    addReplacement(replacement)
+    return true
+  })
+
+  ipcMain.handle('update-replacement', (_, id: string, updates: Partial<WordReplacement>) => {
+    updateReplacement(id, updates)
+    return true
+  })
+
+  ipcMain.handle('delete-replacement', (_, id: string) => {
+    deleteReplacement(id)
+    return true
+  })
+
+  ipcMain.handle('apply-replacements', (_, text: string) => {
+    return applyReplacements(text)
   })
 }

@@ -23,7 +23,7 @@ interface UseElevenLabsScribeReturn {
 
 interface UseElevenLabsScribeOptions {
   selectedMicrophoneId?: string | null;
-  onRecordingStopped?: (transcript: string) => void;
+  onRecordingStopped?: (transcript: string) => Promise<string> | string | void;
 }
 
 export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): UseElevenLabsScribeReturn => {
@@ -181,7 +181,7 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
     }
   }, [sessionId, selectedMicrophoneId]);
 
-  const stopRecording = useCallback(() => {
+  const stopRecording = useCallback(async () => {
     if (connectionRef.current) {
       console.log('Stopping recording and closing connection...');
       try {
@@ -201,7 +201,11 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
 
     // Call callback if transcript has content
     if (transcript && onRecordingStopped) {
-      onRecordingStopped(transcript);
+      const result = await onRecordingStopped(transcript);
+      // If callback returns a modified transcript, update the edited state
+      if (typeof result === 'string' && result !== transcript) {
+        setEditedTranscript(result);
+      }
     }
   }, [getFullTranscript, onRecordingStopped]);
 

@@ -27,6 +27,15 @@ export interface TerminalWindow {
   displayName: string
 }
 
+export interface WordReplacement {
+  id: string
+  from: string
+  to: string
+  caseSensitive: boolean
+  wholeWord: boolean
+  enabled: boolean
+}
+
 export interface ElectronAPI {
   // Token management
   getScribeToken: () => Promise<string>
@@ -55,6 +64,13 @@ export interface ElectronAPI {
   pasteToTerminal: (text: string, bundleId: string) => Promise<{ success: boolean; needsPermission: boolean; copied: boolean }>
   getTerminalWindows: () => Promise<TerminalWindow[]>
   pasteToTerminalWindow: (text: string, bundleId: string, windowName: string) => Promise<{ success: boolean; needsPermission: boolean; copied: boolean }>
+
+  // Word replacement operations
+  getReplacements: () => Promise<WordReplacement[]>
+  addReplacement: (replacement: WordReplacement) => Promise<boolean>
+  updateReplacement: (id: string, updates: Partial<WordReplacement>) => Promise<boolean>
+  deleteReplacement: (id: string) => Promise<boolean>
+  applyReplacements: (text: string) => Promise<string>
 
   // Events from main process
   onToggleRecording: (callback: () => void) => void
