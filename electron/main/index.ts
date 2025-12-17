@@ -13,7 +13,7 @@ export function getMainWindow(): BrowserWindow | null {
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 800,
+    width: 900,
     height: 700,
     minWidth: 600,
     minHeight: 500,
@@ -22,7 +22,7 @@ function createWindow(): void {
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 15, y: 15 },
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false,
       contextIsolation: true,
       nodeIntegration: false
@@ -31,6 +31,10 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
+    // Open dev tools in development
+    if (is.dev) {
+      mainWindow?.webContents.openDevTools()
+    }
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {

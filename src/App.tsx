@@ -7,9 +7,13 @@ import { HistoryPanel } from './components/HistoryPanel';
 import { ApiKeySetup } from './components/ApiKeySetup';
 import './App.css';
 
+// Check if running in Electron
+const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined;
+
 function App() {
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
   const [showHistory, setShowHistory] = useState(true);
+  const [initError, setInitError] = useState<string | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
   const { selectedDeviceId } = useMicrophoneDevices();
@@ -17,7 +21,14 @@ function App() {
 
   // Check if API key is configured on mount
   useEffect(() => {
-    window.electronAPI.hasApiKey().then(setHasApiKey);
+    if (!isElectron) {
+      setInitError('This app requires Electron. The preload script may not have loaded correctly.');
+      return;
+    }
+    window.electronAPI.hasApiKey().then(setHasApiKey).catch(err => {
+      console.error('Failed to check API key:', err);
+      setInitError('Failed to initialize: ' + err.message);
+    });
   }, []);
 
   const handleRecordingStopped = useCallback(async (transcript: string) => {
