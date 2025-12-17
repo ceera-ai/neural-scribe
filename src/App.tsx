@@ -13,7 +13,7 @@ const isElectron = typeof window !== 'undefined' && window.electronAPI !== undef
 
 function App() {
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
-  const [showHistory, setShowHistory] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
@@ -162,10 +162,24 @@ function App() {
           <div className="controls-bar">
             <div className="controls-left">
               {!isRecording ? (
-                <button onClick={handleStartRecording} className="btn btn-record">
-                  <span className="record-icon" />
-                  Start Recording
-                </button>
+                <>
+                  <button onClick={handleStartRecording} className="btn btn-record">
+                    <span className="record-icon" />
+                    {hasTranscript ? 'Continue' : 'Start Recording'}
+                  </button>
+                  {hasTranscript && (
+                    <button
+                      onClick={() => {
+                        clearTranscript();
+                        handleStartRecording();
+                      }}
+                      className="btn btn-new"
+                      title="Clear and start new recording"
+                    >
+                      New
+                    </button>
+                  )}
+                </>
               ) : (
                 <button onClick={handleStopRecording} className="btn btn-stop">
                   <span className="stop-icon" />

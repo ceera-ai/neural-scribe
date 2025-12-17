@@ -1,5 +1,6 @@
 import { exec } from 'child_process'
 import { promisify } from 'util'
+import { clipboard } from 'electron'
 
 const execAsync = promisify(exec)
 
@@ -136,73 +137,74 @@ export async function pasteToTerminalWindow(
   windowName: string
 ): Promise<{ success: boolean; needsPermission: boolean; copied: boolean }> {
   try {
-    // Escape special characters for AppleScript
-    const escapedText = text
-      .replace(/\\/g, '\\\\')
-      .replace(/"/g, '\\"')
-      .replace(/\n/g, '\\n')
-      .replace(/\r/g, '\\r')
-      .replace(/\t/g, '\\t')
-
-    // Escape window name for AppleScript
-    const escapedWindowName = windowName
-      .replace(/\\/g, '\\\\')
-      .replace(/"/g, '\\"')
-
-    // Copy text to clipboard first
-    const copyScript = `set the clipboard to "${escapedText}"`
-    await execAsync(`osascript -e '${copyScript}'`)
-
-    // Small delay to ensure clipboard is set
-    await new Promise(resolve => setTimeout(resolve, 100))
-
     // Get the app name from bundle ID
     const terminal = SUPPORTED_TERMINALS.find(t => t.bundleId === bundleId)
     const appName = terminal?.name || 'Terminal'
 
-    // Try to activate the specific window by name and paste
-    try {
-      const activateScript = `
+    console.log(`[Paste] Attempting to paste to ${appName} window: "${windowName}"`)
+
+    // Escape window name for AppleScript - handle special chars
+    // For shell single-quoted strings, we need to handle single quotes specially
+    const escapedWindowName = windowName
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"')
+      .replace(/'/g, "'\"'\"'")
+
+    // Step 1: Copy to clipboard using Electron's clipboard (handles all characters)
+    clipboard.writeText(text)
+    console.log('[Paste] Text copied to clipboard')
+
+    // Step 2: Activate app and bring window to front
+    const activateScript = `
 tell application "${appName}"
   activate
-  try
-    set targetWindow to first window whose name is "${escapedWindowName}"
-    set index of targetWindow to 1
-  on error
-    -- If exact match fails, try partial match
-    set targetWindow to first window whose name contains "${escapedWindowName}"
-    set index of targetWindow to 1
-  end try
+end tell
+delay 0.2
+tell application "System Events"
+  tell process "${appName}"
+    set frontmost to true
+    try
+      set targetWindow to first window whose name is "${escapedWindowName}"
+      perform action "AXRaise" of targetWindow
+    on error
+      try
+        set targetWindow to first window whose name contains "${escapedWindowName}"
+        perform action "AXRaise" of targetWindow
+      end try
+    end try
+  end tell
 end tell
 delay 0.3
+`
+    try {
+      await execAsync(`osascript -e '${activateScript}'`)
+      console.log('[Paste] Window activated')
+    } catch (activateErr) {
+      console.log('[Paste] Window activation had issues, continuing anyway:', activateErr)
+    }
+
+    // Step 3: Send paste keystroke
+    try {
+      const pasteScript = `
 tell application "System Events"
   keystroke "v" using command down
 end tell
 `
-      await execAsync(`osascript -e '${activateScript}'`)
+      await execAsync(`osascript -e '${pasteScript}'`)
+      console.log('[Paste] Paste keystroke sent successfully')
       return { success: true, needsPermission: false, copied: true }
     } catch (pasteError: any) {
+      console.error('[Paste] Keystroke error:', pasteError.stderr || pasteError.message)
       if (pasteError.stderr?.includes('not allowed to send keystrokes') ||
-          pasteError.stderr?.includes('1002')) {
-        // At least activate the window
-        try {
-          const activateOnly = `
-tell application "${appName}"
-  activate
-  try
-    set targetWindow to first window whose name is "${escapedWindowName}"
-    set index of targetWindow to 1
-  end try
-end tell
-`
-          await execAsync(`osascript -e '${activateOnly}'`)
-        } catch {}
+          pasteError.stderr?.includes('1002') ||
+          pasteError.stderr?.includes('not allowed assistive access')) {
         return { success: false, needsPermission: true, copied: true }
       }
-      throw pasteError
+      // Even if keystroke failed, text is in clipboard
+      return { success: false, needsPermission: true, copied: true }
     }
   } catch (error) {
-    console.error('Failed to paste to terminal window:', error)
+    console.error('[Paste] Failed to paste to terminal window:', error)
     return { success: false, needsPermission: false, copied: false }
   }
 }
