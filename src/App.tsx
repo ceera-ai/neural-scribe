@@ -15,6 +15,7 @@ function App() {
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
   const { selectedDeviceId } = useMicrophoneDevices();
@@ -53,6 +54,27 @@ function App() {
     selectedMicrophoneId: selectedDeviceId,
     onRecordingStopped: handleRecordingStopped,
   });
+
+  // Recording timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isRecording) {
+      setRecordingTime(0);
+      interval = setInterval(() => {
+        setRecordingTime(t => t + 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRecording]);
+
+  // Format seconds to MM:SS
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Auto-scroll to bottom when new transcript appears
   useEffect(() => {
@@ -103,6 +125,13 @@ function App() {
   const [pasteStatus, setPasteStatus] = useState<'idle' | 'success' | 'permission'>('idle');
 
   const handlePasteToTerminal = async (bundleId: string, windowName?: string) => {
+    // Stop recording first if active
+    if (isRecording) {
+      stopRecording();
+      // Small delay to ensure transcript is finalized
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+
     const text = getCurrentTranscript();
     if (text) {
       setPasteStatus('idle');
@@ -150,7 +179,7 @@ function App() {
           <h1>Transcription</h1>
           <div className={`status-indicator ${isRecording ? 'recording' : isConnected ? 'connected' : ''}`}>
             <span className="status-dot" />
-            <span>{isRecording ? 'Recording' : isConnected ? 'Connected' : 'Ready'}</span>
+            <span>{isRecording ? `Recording ${formatTime(recordingTime)}` : isConnected ? 'Connected' : 'Ready'}</span>
           </div>
         </div>
         <MicrophoneSelector disabled={isRecording} />
