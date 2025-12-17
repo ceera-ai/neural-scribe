@@ -183,11 +183,13 @@ delay 0.3
       console.log('[Paste] Window activation had issues, continuing anyway:', activateErr)
     }
 
-    // Step 3: Send paste keystroke
+    // Step 3: Send paste keystroke followed by Enter
     try {
       const pasteScript = `
 tell application "System Events"
   keystroke "v" using command down
+  delay 0.1
+  keystroke return
 end tell
 `
       await execAsync(`osascript -e '${pasteScript}'`)
