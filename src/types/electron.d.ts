@@ -8,8 +8,23 @@ export interface TranscriptionRecord {
 export interface AppSettings {
   apiKey: string
   selectedMicrophoneId: string | null
+  selectedTerminalId: string | null
   pasteHotkey: string
   recordHotkey: string
+}
+
+export interface TerminalApp {
+  name: string
+  bundleId: string
+  displayName: string
+}
+
+export interface TerminalWindow {
+  appName: string
+  bundleId: string
+  windowName: string
+  windowIndex: number
+  displayName: string
 }
 
 export interface ElectronAPI {
@@ -33,6 +48,13 @@ export interface ElectronAPI {
   // Clipboard
   copyToClipboard: (text: string) => Promise<boolean>
   readClipboard: () => Promise<string>
+
+  // Terminal operations
+  getRunningTerminals: () => Promise<TerminalApp[]>
+  getSupportedTerminals: () => Promise<TerminalApp[]>
+  pasteToTerminal: (text: string, bundleId: string) => Promise<{ success: boolean; needsPermission: boolean; copied: boolean }>
+  getTerminalWindows: () => Promise<TerminalWindow[]>
+  pasteToTerminalWindow: (text: string, bundleId: string, windowName: string) => Promise<{ success: boolean; needsPermission: boolean; copied: boolean }>
 
   // Events from main process
   onToggleRecording: (callback: () => void) => void

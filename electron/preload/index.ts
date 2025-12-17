@@ -10,8 +10,23 @@ export interface TranscriptionRecord {
 export interface AppSettings {
   apiKey: string
   selectedMicrophoneId: string | null
+  selectedTerminalId: string | null
   pasteHotkey: string
   recordHotkey: string
+}
+
+export interface TerminalApp {
+  name: string
+  bundleId: string
+  displayName: string
+}
+
+export interface TerminalWindow {
+  appName: string
+  bundleId: string
+  windowName: string
+  windowIndex: number
+  displayName: string
 }
 
 export type RecordingToggleCallback = () => void
@@ -43,6 +58,18 @@ const electronAPI = {
   copyToClipboard: (text: string): Promise<boolean> =>
     ipcRenderer.invoke('copy-to-clipboard', text),
   readClipboard: (): Promise<string> => ipcRenderer.invoke('read-clipboard'),
+
+  // Terminal operations
+  getRunningTerminals: (): Promise<TerminalApp[]> =>
+    ipcRenderer.invoke('get-running-terminals'),
+  getSupportedTerminals: (): Promise<TerminalApp[]> =>
+    ipcRenderer.invoke('get-supported-terminals'),
+  pasteToTerminal: (text: string, bundleId: string): Promise<{ success: boolean; needsPermission: boolean; copied: boolean }> =>
+    ipcRenderer.invoke('paste-to-terminal', text, bundleId),
+  getTerminalWindows: (): Promise<TerminalWindow[]> =>
+    ipcRenderer.invoke('get-terminal-windows'),
+  pasteToTerminalWindow: (text: string, bundleId: string, windowName: string): Promise<{ success: boolean; needsPermission: boolean; copied: boolean }> =>
+    ipcRenderer.invoke('paste-to-terminal-window', text, bundleId, windowName),
 
   // Events from main process
   onToggleRecording: (callback: RecordingToggleCallback): void => {

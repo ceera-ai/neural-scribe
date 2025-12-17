@@ -4,6 +4,7 @@ import { useMicrophoneDevices } from './hooks/useMicrophoneDevices';
 import { useTranscriptionHistory } from './hooks/useTranscriptionHistory';
 import { MicrophoneSelector } from './components/MicrophoneSelector';
 import { HistoryPanel } from './components/HistoryPanel';
+import { TerminalSelector } from './components/TerminalSelector';
 import { ApiKeySetup } from './components/ApiKeySetup';
 import './App.css';
 
@@ -44,7 +45,6 @@ function App() {
     transcriptSegments,
     editedTranscript,
     error,
-    sessionId,
     startRecording,
     stopRecording,
     clearTranscript,
@@ -100,6 +100,24 @@ function App() {
     setEditedTranscript(text);
   };
 
+  const [pasteStatus, setPasteStatus] = useState<'idle' | 'success' | 'permission'>('idle');
+
+  const handlePasteToTerminal = async (bundleId: string, windowName?: string) => {
+    const text = getCurrentTranscript();
+    if (text) {
+      setPasteStatus('idle');
+      const result = windowName
+        ? await window.electronAPI.pasteToTerminalWindow(text, bundleId, windowName)
+        : await window.electronAPI.pasteToTerminal(text, bundleId);
+      if (result.success) {
+        setPasteStatus('success');
+        setTimeout(() => setPasteStatus('idle'), 2000);
+      } else if (result.needsPermission) {
+        setPasteStatus('permission');
+      }
+    }
+  };
+
   // Show loading state while checking for API key
   if (hasApiKey === null) {
     return (
@@ -109,93 +127,132 @@ function App() {
     );
   }
 
+  // Show error state
+  if (initError) {
+    return (
+      <div className="app-error">
+        <p>{initError}</p>
+      </div>
+    );
+  }
+
   // Show API key setup if not configured
   if (!hasApiKey) {
     return <ApiKeySetup onApiKeySet={() => setHasApiKey(true)} />;
   }
 
+  const hasTranscript = transcriptSegments.length > 0 || editedTranscript !== null;
+
   return (
     <div className="app-container">
       <header className="app-header">
-        <div className="header-left">
+        <div className="header-title">
           <h1>Transcription</h1>
-          <div className="status-indicators">
-            <div className={`status-dot ${isConnected ? 'connected' : ''}`} />
-            <span className="status-text">
-              {isRecording ? 'Recording' : isConnected ? 'Connected' : 'Ready'}
-            </span>
+          <div className={`status-indicator ${isRecording ? 'recording' : isConnected ? 'connected' : ''}`}>
+            <span className="status-dot" />
+            <span>{isRecording ? 'Recording' : isConnected ? 'Connected' : 'Ready'}</span>
           </div>
         </div>
-        <div className="header-right">
-          <MicrophoneSelector disabled={isRecording} />
-        </div>
+        <MicrophoneSelector disabled={isRecording} />
       </header>
 
       <div className="main-layout">
         <main className="main-content">
-          <div className="controls">
-            {!isRecording ? (
-              <button onClick={handleStartRecording} className="btn btn-start">
-                Start Recording
-              </button>
-            ) : (
-              <button onClick={handleStopRecording} className="btn btn-stop">
-                Stop Recording
-              </button>
-            )}
-            {transcriptSegments.length > 0 && (
-              <>
-                <button onClick={copyToClipboard} className="btn btn-secondary">
-                  Copy
+          {/* Recording Controls */}
+          <div className="controls-bar">
+            <div className="controls-left">
+              {!isRecording ? (
+                <button onClick={handleStartRecording} className="btn btn-record">
+                  <span className="record-icon" />
+                  Start Recording
                 </button>
-                <button onClick={clearTranscript} className="btn btn-secondary">
-                  Clear
+              ) : (
+                <button onClick={handleStopRecording} className="btn btn-stop">
+                  <span className="stop-icon" />
+                  Stop
                 </button>
-              </>
-            )}
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              className={`btn btn-secondary btn-toggle ${showHistory ? 'active' : ''}`}
-            >
-              History
-            </button>
+              )}
+            </div>
+            <div className="controls-right">
+              {hasTranscript && (
+                <>
+                  <button onClick={copyToClipboard} className="btn btn-icon" title="Copy to clipboard">
+                    Copy
+                  </button>
+                  <button onClick={clearTranscript} className="btn btn-icon" title="Clear transcript">
+                    Clear
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => setShowHistory(!showHistory)}
+                className={`btn btn-icon ${showHistory ? 'active' : ''}`}
+                title="Toggle history"
+              >
+                History
+              </button>
+            </div>
           </div>
 
           {error && (
-            <div className="error-message">
+            <div className="error-banner">
               {error}
             </div>
           )}
 
-          <div className="transcript-container">
-            <div className="transcript-box">
-              {transcriptSegments.length === 0 && editedTranscript === null ? (
-                <div className="placeholder">
-                  <p>Press "Start Recording" to begin transcription</p>
-                  <p className="placeholder-hint">
-                    Tip: Use <kbd>Cmd+Shift+R</kbd> to toggle recording from anywhere
-                  </p>
-                </div>
-              ) : (
-                <textarea
-                  className="transcript-textarea"
-                  value={getCurrentTranscript()}
-                  onChange={handleTranscriptChange}
-                  placeholder="Your transcript will appear here..."
-                />
-              )}
-              <div ref={transcriptEndRef} />
-            </div>
+          {/* Transcript Area */}
+          <div className="transcript-area">
+            {!hasTranscript ? (
+              <div className="transcript-placeholder">
+                <div className="placeholder-icon">🎤</div>
+                <p>Press "Start Recording" to begin</p>
+                <p className="placeholder-hint">
+                  Or use <kbd>Cmd+Shift+R</kbd> from anywhere
+                </p>
+              </div>
+            ) : (
+              <textarea
+                className="transcript-input"
+                value={getCurrentTranscript()}
+                onChange={handleTranscriptChange}
+                placeholder="Your transcript will appear here..."
+              />
+            )}
+            <div ref={transcriptEndRef} />
           </div>
 
-          <div className="hotkey-hints">
+          {/* Terminal Paste Section */}
+          {hasTranscript && (
+            <div className="terminal-section">
+              <TerminalSelector
+                onPaste={handlePasteToTerminal}
+                disabled={!hasTranscript}
+              />
+              {pasteStatus === 'permission' && (
+                <div className="paste-notice">
+                  Copied to clipboard! Press <kbd>Cmd+V</kbd> in the terminal.
+                  <span className="paste-hint">
+                    (Grant Accessibility access in System Preferences for auto-paste)
+                  </span>
+                </div>
+              )}
+              {pasteStatus === 'success' && (
+                <div className="paste-notice paste-success">
+                  Pasted successfully!
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Hotkey Footer */}
+          <div className="hotkey-bar">
             <span><kbd>Cmd+Shift+R</kbd> Toggle recording</span>
-            <span><kbd>Cmd+Shift+V</kbd> Copy last transcription</span>
+            <span><kbd>Cmd+Shift+V</kbd> Copy last to clipboard</span>
           </div>
         </main>
 
         {showHistory && (
-          <aside className="sidebar">
+          <aside className="history-sidebar">
             <HistoryPanel onSelectTranscription={handleSelectFromHistory} />
           </aside>
         )}

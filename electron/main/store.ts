@@ -10,6 +10,7 @@ export interface TranscriptionRecord {
 export interface AppSettings {
   apiKey: string
   selectedMicrophoneId: string | null
+  selectedTerminalId: string | null
   pasteHotkey: string
   recordHotkey: string
 }
@@ -23,6 +24,7 @@ const defaults: StoreSchema = {
   settings: {
     apiKey: '',
     selectedMicrophoneId: null,
+    selectedTerminalId: null,
     pasteHotkey: 'CommandOrControl+Shift+V',
     recordHotkey: 'CommandOrControl+Shift+R'
   },

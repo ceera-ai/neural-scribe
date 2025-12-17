@@ -12,12 +12,13 @@ import {
   TranscriptionRecord,
   AppSettings
 } from './store'
+import { getRunningTerminals, getTerminalWindows, pasteToTerminal, pasteToTerminalWindow, SUPPORTED_TERMINALS } from './terminal'
 
 let onRecordingStateChange: ((isRecording: boolean) => void) | null = null
 
 async function fetchScribeToken(apiKey: string): Promise<string> {
   const response = await fetch(
-    'https://api.elevenlabs.io/v1/scribe/get-single-use-token',
+    'https://api.elevenlabs.io/v1/single-use-token/realtime_scribe',
     {
       method: 'POST',
       headers: {
@@ -110,5 +111,27 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     if (onRecordingStateChange) {
       onRecordingStateChange(isRecording)
     }
+  })
+
+  // Terminal operations
+  ipcMain.handle('get-running-terminals', async () => {
+    return getRunningTerminals()
+  })
+
+  ipcMain.handle('get-supported-terminals', () => {
+    return SUPPORTED_TERMINALS
+  })
+
+  ipcMain.handle('paste-to-terminal', async (_, text: string, bundleId: string) => {
+    return pasteToTerminal(text, bundleId)
+  })
+
+  // Terminal window operations
+  ipcMain.handle('get-terminal-windows', async () => {
+    return getTerminalWindows()
+  })
+
+  ipcMain.handle('paste-to-terminal-window', async (_, text: string, bundleId: string, windowName: string) => {
+    return pasteToTerminalWindow(text, bundleId, windowName)
   })
 }

@@ -49,12 +49,9 @@ function createWindow(): void {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
-  // Don't close window on macOS, just hide it
-  mainWindow.on('close', (event) => {
-    if (process.platform === 'darwin') {
-      event.preventDefault()
-      mainWindow?.hide()
-    }
+  // Actually quit when window is closed
+  mainWindow.on('closed', () => {
+    mainWindow = null
   })
 }
 
@@ -93,9 +90,7 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+  app.quit()
 })
 
 app.on('will-quit', () => {
