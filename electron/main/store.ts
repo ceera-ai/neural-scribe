@@ -50,6 +50,8 @@ export interface AppSettings {
   promptFormattingEnabled: boolean
   promptFormattingInstructions: string // Custom instructions (empty = use default)
   promptFormattingModel: 'sonnet' | 'opus' | 'haiku'
+  // History settings
+  historyLimit: number // 0 = no limit, otherwise max items to keep
 }
 
 interface StoreSchema {
@@ -90,7 +92,8 @@ const defaults: StoreSchema = {
     voiceCommandsEnabled: true,
     promptFormattingEnabled: true,
     promptFormattingInstructions: '', // Empty = use default instructions
-    promptFormattingModel: 'sonnet'
+    promptFormattingModel: 'sonnet',
+    historyLimit: 500 // Default to 500 items, 0 = no limit
   },
   history: [],
   replacements: [],
@@ -121,10 +124,12 @@ export function setApiKey(apiKey: string): void {
 }
 
 // History helpers
-const MAX_HISTORY_ITEMS = 100
-
 export function getHistory(): TranscriptionRecord[] {
   return store.get('history')
+}
+
+export function getHistoryLimit(): number {
+  return store.get('settings.historyLimit') ?? 500
 }
 
 export function saveTranscription(record: TranscriptionRecord): void {
@@ -138,7 +143,10 @@ export function saveTranscription(record: TranscriptionRecord): void {
     updated[existingIndex] = record
   } else {
     // Add new record at the beginning
-    updated = [record, ...history].slice(0, MAX_HISTORY_ITEMS)
+    const limit = getHistoryLimit()
+    const newHistory = [record, ...history]
+    // Apply limit only if it's greater than 0 (0 = no limit)
+    updated = limit > 0 ? newHistory.slice(0, limit) : newHistory
   }
   store.set('history', updated)
 }

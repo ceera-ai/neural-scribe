@@ -53,6 +53,10 @@ export function SettingsModal({
   const [editingShortcut, setEditingShortcut] = useState<'record' | 'paste' | null>(null);
   const [shortcutError, setShortcutError] = useState<string | null>(null);
 
+  // History Settings
+  const [historyLimit, setHistoryLimit] = useState<number>(500);
+  const [customHistoryLimit, setCustomHistoryLimit] = useState<string>('');
+
   // Load settings on open
   useEffect(() => {
     if (isOpen) {
@@ -89,6 +93,7 @@ export function SettingsModal({
       setReplacementsEnabled(settings.replacementsEnabled ?? true);
       setRecordHotkey(settings.recordHotkey || 'CommandOrControl+Shift+R');
       setPasteHotkey(settings.pasteHotkey || 'CommandOrControl+Shift+V');
+      setHistoryLimit(settings.historyLimit ?? 500);
       setTriggers(triggersData);
       setFormattingEnabled(formattingSettings.enabled);
       setFormattingModel(formattingSettings.model);
@@ -136,6 +141,19 @@ export function SettingsModal({
   const handleReplacementsEnabledChange = async (enabled: boolean) => {
     setReplacementsEnabled(enabled);
     await window.electronAPI.setSettings({ replacementsEnabled: enabled });
+  };
+
+  const handleHistoryLimitChange = async (limit: number) => {
+    setHistoryLimit(limit);
+    setCustomHistoryLimit('');
+    await window.electronAPI.setSettings({ historyLimit: limit });
+  };
+
+  const handleCustomHistoryLimitSubmit = async () => {
+    const value = parseInt(customHistoryLimit, 10);
+    if (!isNaN(value) && value >= 0) {
+      await handleHistoryLimitChange(value);
+    }
   };
 
   const handleVoiceCommandsChange = async (enabled: boolean) => {
@@ -387,6 +405,54 @@ export function SettingsModal({
                   <span>Manage Replacements</span>
                   <span className="action-arrow">→</span>
                 </button>
+              </div>
+
+              {/* History Limit */}
+              <div className="cyber-setting-group">
+                <div className="setting-header">
+                  <div className="setting-icon">📚</div>
+                  <div className="setting-info">
+                    <h3>History Limit</h3>
+                    <p>Maximum transcriptions to keep</p>
+                  </div>
+                </div>
+
+                <div className="history-limit-options">
+                  {[100, 250, 500, 1000, 0].map(limit => (
+                    <button
+                      key={limit}
+                      className={`history-limit-btn ${historyLimit === limit ? 'active' : ''}`}
+                      onClick={() => handleHistoryLimitChange(limit)}
+                    >
+                      {limit === 0 ? 'No Limit' : limit}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="custom-limit-row">
+                  <input
+                    type="number"
+                    className="cyber-input cyber-input-sm"
+                    placeholder="Custom..."
+                    value={customHistoryLimit}
+                    onChange={(e) => setCustomHistoryLimit(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCustomHistoryLimitSubmit();
+                    }}
+                    min="0"
+                  />
+                  <button
+                    className="cyber-btn-sm cyber-btn-primary"
+                    onClick={handleCustomHistoryLimitSubmit}
+                    disabled={!customHistoryLimit.trim()}
+                  >
+                    Set
+                  </button>
+                </div>
+
+                {![100, 250, 500, 1000, 0].includes(historyLimit) && (
+                  <p className="current-limit-hint">Current: {historyLimit} items</p>
+                )}
               </div>
 
               {/* About */}

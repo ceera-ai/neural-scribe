@@ -32,6 +32,7 @@ export interface AppSettings {
   promptFormattingEnabled: boolean
   promptFormattingInstructions: string
   promptFormattingModel: 'sonnet' | 'opus' | 'haiku'
+  historyLimit: number // 0 = no limit, otherwise max items to keep
 }
 
 export interface PromptFormattingSettings {
