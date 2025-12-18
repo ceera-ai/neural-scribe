@@ -33,6 +33,7 @@ interface UseElevenLabsScribeOptions {
   onRecordingStopped?: (transcript: string, duration: number) => Promise<string> | string | void;
   onVoiceCommand?: (command: 'send' | 'clear' | 'cancel', transcript: string) => void;
   voiceCommandsEnabled?: boolean;
+  onSaveTranscript?: (transcript: string) => Promise<void> | void;
 }
 
 // Helper to detect and extract voice commands from text
@@ -73,7 +74,7 @@ function detectVoiceCommand(text: string, voiceCommands: VoiceCommands): { comma
 }
 
 export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): UseElevenLabsScribeReturn => {
-  const { selectedMicrophoneId, onRecordingStopped, onVoiceCommand, voiceCommandsEnabled = true } = options;
+  const { selectedMicrophoneId, onRecordingStopped, onVoiceCommand, voiceCommandsEnabled = true, onSaveTranscript } = options;
 
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -436,12 +437,16 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
 
   // Listen for toggle recording events from main process
   useEffect(() => {
-    window.electronAPI.onToggleRecording(() => {
+    window.electronAPI.onToggleRecording(async () => {
       if (isRecording) {
         stopRecording();
       } else {
-        // Clear existing transcript when starting via hotkey
+        // Save existing transcript to history before starting new recording
         if (transcriptSegments.length > 0 || editedTranscript !== null) {
+          const currentText = editedTranscript ?? transcriptSegments.map(s => s.text).join(' ').trim();
+          if (currentText && onSaveTranscript) {
+            await onSaveTranscript(currentText);
+          }
           setTranscriptSegments([]);
           setEditedTranscript(null);
         }
@@ -452,7 +457,7 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
     return () => {
       window.electronAPI.removeAllListeners('toggle-recording');
     };
-  }, [isRecording, startRecording, stopRecording, transcriptSegments.length, editedTranscript]);
+  }, [isRecording, startRecording, stopRecording, transcriptSegments, editedTranscript, onSaveTranscript]);
 
   // Cleanup on unmount
   useEffect(() => {

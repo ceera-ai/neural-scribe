@@ -93,6 +93,24 @@ function App() {
     }
   }, []);
 
+  // Handle saving transcript when starting new recording via hotkey
+  const handleSaveTranscript = useCallback(async (transcript: string) => {
+    if (transcript.trim()) {
+      // Apply word replacements before saving
+      let processedText = transcript;
+      try {
+        const settings = await window.electronAPI.getSettings();
+        if (settings.replacementsEnabled) {
+          processedText = await window.electronAPI.applyReplacements(transcript);
+        }
+      } catch (err) {
+        console.error('Failed to apply replacements:', err);
+      }
+      // Save to history with 0 duration (since we don't track it for hotkey-triggered saves)
+      await saveTranscription(processedText, 0);
+    }
+  }, [saveTranscription]);
+
   const {
     isConnected,
     isRecording,
@@ -108,6 +126,7 @@ function App() {
     onRecordingStopped: handleRecordingStopped,
     onVoiceCommand: handleVoiceCommand,
     voiceCommandsEnabled,
+    onSaveTranscript: handleSaveTranscript,
   });
 
   // Handle pending paste after recording stops (triggered by "send it" voice command)
