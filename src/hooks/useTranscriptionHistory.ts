@@ -142,9 +142,18 @@ export const useTranscriptionHistory = (): UseTranscriptionHistoryReturn => {
     await loadHistory();
   }, [loadHistory]);
 
-  // Load history on mount
+  // Load history on mount and listen for changes
   useEffect(() => {
     loadHistory();
+
+    // Listen for history changes from main process
+    window.electronAPI.onHistoryChanged(() => {
+      loadHistory();
+    });
+
+    return () => {
+      window.electronAPI.removeAllListeners('history-changed');
+    };
   }, [loadHistory]);
 
   return {

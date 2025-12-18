@@ -187,6 +187,9 @@ const electronAPI = {
   onPasteLastTranscription: (callback: () => void): void => {
     ipcRenderer.on('paste-last-transcription', () => callback())
   },
+  onHistoryChanged: (callback: () => void): void => {
+    ipcRenderer.on('history-changed', () => callback())
+  },
 
   // Remove listeners
   removeAllListeners: (channel: string): void => {

@@ -104,16 +104,28 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
 
   ipcMain.handle('save-transcription', (_, record: TranscriptionRecord) => {
     saveTranscription(record)
+    // Notify all renderer windows that history changed
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('history-changed')
+    })
     return true
   })
 
   ipcMain.handle('delete-transcription', (_, id: string) => {
     deleteTranscription(id)
+    // Notify all renderer windows that history changed
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('history-changed')
+    })
     return true
   })
 
   ipcMain.handle('clear-history', () => {
     clearHistory()
+    // Notify all renderer windows that history changed
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('history-changed')
+    })
     return true
   })
 

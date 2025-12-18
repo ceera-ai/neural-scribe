@@ -144,6 +144,7 @@ export interface ElectronAPI {
   onToggleRecording: (callback: () => void) => void
   onTranscriptionPasted: (callback: (text: string) => void) => void
   onPasteLastTranscription: (callback: () => void) => void
+  onHistoryChanged: (callback: () => void) => void
 
   // Remove listeners
   removeAllListeners: (channel: string) => void
