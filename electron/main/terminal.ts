@@ -189,12 +189,12 @@ delay 0.3
       console.log('[Paste] Window activation had issues, continuing anyway:', activateErr)
     }
 
-    // Step 3: Send paste keystroke followed by Enter
+    // Step 3: Send paste keystroke followed by Enter (with longer delay for large pastes)
     try {
       const pasteScript = `
 tell application "System Events"
   keystroke "v" using command down
-  delay 0.1
+  delay 0.5
   keystroke return
 end tell
 `
@@ -324,12 +324,12 @@ delay 0.3
       console.log('[Paste] Terminal activation had issues, continuing anyway:', activateErr)
     }
 
-    // Step 4: Send paste keystroke followed by Enter
+    // Step 4: Send paste keystroke followed by Enter (with longer delay for large pastes)
     try {
       const pasteScript = `
 tell application "System Events"
   keystroke "v" using command down
-  delay 0.1
+  delay 0.5
   keystroke return
 end tell
 `
