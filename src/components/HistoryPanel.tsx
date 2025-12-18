@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useTranscriptionHistory } from '../hooks/useTranscriptionHistory';
-import type { TranscriptionRecord } from '../types/electron';
+import { HistoryDetailModal } from './HistoryDetailModal';
+import { ReformatDialog } from './ReformatDialog';
+import type { TranscriptionRecord, FormattedVersion } from '../types/electron';
 import './HistoryPanel.css';
 
 interface HistoryPanelProps {
@@ -66,11 +68,18 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
     history,
     deleteTranscription,
     copyTranscription,
-    clearHistory
+    clearHistory,
+    updateTranscription,
   } = useTranscriptionHistory();
 
   // Track which records are showing original vs formatted
   const [showingOriginal, setShowingOriginal] = useState<Set<string>>(new Set());
+
+  // Track selected record for detail modal
+  const [selectedRecord, setSelectedRecord] = useState<TranscriptionRecord | null>(null);
+
+  // Track record being reformatted
+  const [reformatRecord, setReformatRecord] = useState<TranscriptionRecord | null>(null);
 
   // Group history by date
   const groupedHistory = useMemo((): DayGroup[] => {
@@ -123,8 +132,13 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
   };
 
   const handleSelect = (record: TranscriptionRecord) => {
+    // Open detail modal instead of directly loading to editor
+    setSelectedRecord(record);
+  };
+
+  const handleLoadToEditor = (text: string) => {
     if (onSelectTranscription) {
-      onSelectTranscription(getDisplayText(record));
+      onSelectTranscription(text);
     }
   };
 
@@ -132,10 +146,87 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
     await deleteTranscription(record.id);
   };
 
+  const handleDeleteFromModal = async () => {
+    if (selectedRecord) {
+      await deleteTranscription(selectedRecord.id);
+      setSelectedRecord(null);
+    }
+  };
+
+  const handleCopyText = async (text: string) => {
+    await copyTranscription(text);
+  };
+
   const handleClearAll = async () => {
     if (window.confirm('Are you sure you want to clear all history?')) {
       await clearHistory();
     }
+  };
+
+  // Handle opening reformat dialog
+  const handleStartReformat = (record: TranscriptionRecord) => {
+    setSelectedRecord(null); // Close detail modal
+    setReformatRecord(record);
+  };
+
+  // Handle the actual reformatting
+  const handleDoReformat = async (sourceVersionId: string, customInstructions?: string) => {
+    if (!reformatRecord) return;
+
+    // Get the source text based on the selected version
+    let sourceText: string;
+    if (sourceVersionId === 'original') {
+      sourceText = reformatRecord.originalText || reformatRecord.text;
+    } else if (sourceVersionId === 'formatted-legacy') {
+      sourceText = reformatRecord.formattedText || reformatRecord.text;
+    } else {
+      const version = reformatRecord.formattedVersions?.find(v => v.id === sourceVersionId);
+      sourceText = version?.text || reformatRecord.text;
+    }
+
+    // Call the reformat API
+    const result = await window.electronAPI.reformatText(sourceText, customInstructions);
+
+    if (!result.success) {
+      throw new Error(result.error || 'Formatting failed');
+    }
+
+    // Create new formatted version
+    const newVersion: FormattedVersion = {
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+      text: result.formatted,
+      timestamp: Date.now(),
+      sourceVersion: sourceVersionId,
+      customInstructions: customInstructions,
+    };
+
+    // Update the record with the new version
+    const updatedRecord: TranscriptionRecord = {
+      ...reformatRecord,
+      text: result.formatted, // Update primary text to latest formatted
+      formattedVersions: [
+        ...(reformatRecord.formattedVersions || []),
+        newVersion,
+      ],
+      wasFormatted: true,
+    };
+
+    // If this is the first formatted version and we have legacy formattedText,
+    // migrate it to formattedVersions
+    if (!reformatRecord.formattedVersions && reformatRecord.formattedText) {
+      updatedRecord.formattedVersions = [
+        {
+          id: 'formatted-legacy',
+          text: reformatRecord.formattedText,
+          timestamp: reformatRecord.timestamp,
+          sourceVersion: 'original',
+        },
+        newVersion,
+      ];
+    }
+
+    await updateTranscription(updatedRecord);
+    setReformatRecord(null);
   };
 
   if (history.length === 0) {
@@ -180,11 +271,15 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
                     <div
                       className="history-content"
                       onClick={() => handleSelect(record)}
-                      title="Click to load into editor"
+                      title="Click to view details"
                     >
-                      <div className="history-preview">
-                        {truncateText(getDisplayText(record), 100)}
-                      </div>
+                      {record.title ? (
+                        <div className="history-title">{record.title}</div>
+                      ) : (
+                        <div className="history-preview">
+                          {truncateText(getDisplayText(record), 100)}
+                        </div>
+                      )}
                       <div className="history-meta">
                         <span className="history-time">{formatTime(record.timestamp)}</span>
                         <span className="history-words">{record.wordCount} words</span>
@@ -230,6 +325,27 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
           </div>
         ))}
       </div>
+
+      {selectedRecord && (
+        <HistoryDetailModal
+          record={selectedRecord}
+          isOpen={true}
+          onClose={() => setSelectedRecord(null)}
+          onLoadToEditor={handleLoadToEditor}
+          onCopy={handleCopyText}
+          onDelete={handleDeleteFromModal}
+          onReformat={handleStartReformat}
+        />
+      )}
+
+      {reformatRecord && (
+        <ReformatDialog
+          record={reformatRecord}
+          isOpen={true}
+          onClose={() => setReformatRecord(null)}
+          onReformat={handleDoReformat}
+        />
+      )}
     </div>
   );
 }

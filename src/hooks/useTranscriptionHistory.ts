@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { TranscriptionRecord } from '../types/electron';
+import type { TranscriptionRecord, FormattedVersion } from '../types/electron';
 
 interface SaveTranscriptionOptions {
   originalText?: string;
   formattedText?: string;
+  title?: string;
   duration?: number;
 }
 
@@ -11,6 +12,7 @@ interface UseTranscriptionHistoryReturn {
   history: TranscriptionRecord[];
   saveTranscription: (text: string, duration?: number) => Promise<void>;
   saveTranscriptionWithFormatting: (options: SaveTranscriptionOptions) => Promise<void>;
+  updateTranscription: (record: TranscriptionRecord) => Promise<void>;
   deleteTranscription: (id: string) => Promise<void>;
   clearHistory: () => Promise<void>;
   copyTranscription: (text: string) => Promise<void>;
@@ -50,21 +52,35 @@ export const useTranscriptionHistory = (): UseTranscriptionHistoryReturn => {
   }, []);
 
   const saveTranscriptionWithFormatting = useCallback(async (options: SaveTranscriptionOptions) => {
-    const { originalText, formattedText, duration = 0 } = options;
+    const { originalText, formattedText, title, duration = 0 } = options;
 
     // Need at least one text
     if (!originalText?.trim() && !formattedText?.trim()) return;
 
     const primaryText = formattedText?.trim() || originalText?.trim() || '';
     const wasFormatted = !!(formattedText && originalText && formattedText !== originalText);
+    const timestamp = Date.now();
+
+    // Create formattedVersions array if formatting was applied
+    let formattedVersions: FormattedVersion[] | undefined;
+    if (wasFormatted && formattedText) {
+      formattedVersions = [{
+        id: `${timestamp}-${Math.random().toString(36).substring(2, 11)}`,
+        text: formattedText.trim(),
+        timestamp,
+        sourceVersion: 'original',
+      }];
+    }
 
     const record: TranscriptionRecord = {
-      id: `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+      id: `${timestamp}-${Math.random().toString(36).substring(2, 11)}`,
       text: primaryText,
       originalText: originalText?.trim(),
-      formattedText: wasFormatted ? formattedText?.trim() : undefined,
+      formattedText: wasFormatted ? formattedText?.trim() : undefined, // Keep for backward compatibility
+      formattedVersions,
       wasFormatted,
-      timestamp: Date.now(),
+      title: title?.trim() || undefined,
+      timestamp,
       wordCount: primaryText.split(/\s+/).length,
       duration,
     };
@@ -74,6 +90,15 @@ export const useTranscriptionHistory = (): UseTranscriptionHistoryReturn => {
       setHistory(prev => [record, ...prev]);
     } catch (err) {
       console.error('Failed to save transcription:', err);
+    }
+  }, []);
+
+  const updateTranscription = useCallback(async (record: TranscriptionRecord) => {
+    try {
+      await window.electronAPI.saveTranscription(record);
+      setHistory(prev => prev.map(r => r.id === record.id ? record : r));
+    } catch (err) {
+      console.error('Failed to update transcription:', err);
     }
   }, []);
 
@@ -126,6 +151,7 @@ export const useTranscriptionHistory = (): UseTranscriptionHistoryReturn => {
     history,
     saveTranscription,
     saveTranscriptionWithFormatting,
+    updateTranscription,
     deleteTranscription,
     clearHistory,
     copyTranscription,

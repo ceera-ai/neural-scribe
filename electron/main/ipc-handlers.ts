@@ -31,6 +31,7 @@ import {
 } from './store'
 import {
   formatPrompt,
+  generateTitle,
   isClaudeCliAvailable,
   getClaudeCliVersion,
   DEFAULT_FORMATTING_INSTRUCTIONS
@@ -262,5 +263,18 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     const available = await isClaudeCliAvailable()
     const version = available ? await getClaudeCliVersion() : null
     return { available, version }
+  })
+
+  ipcMain.handle('generate-title', async (_, text: string) => {
+    return generateTitle(text)
+  })
+
+  // Reformat text with optional custom instructions (for reformat dialog)
+  ipcMain.handle('reformat-text', async (_, text: string, customInstructions?: string) => {
+    const settings = getPromptFormattingSettings()
+    // Use custom instructions if provided, otherwise use default settings
+    const instructions = customInstructions || settings.instructions || undefined
+    const result = await formatPrompt(text, instructions, settings.model)
+    return result
   })
 }

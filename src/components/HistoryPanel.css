@@ -109,6 +109,14 @@
   word-break: break-word;
 }
 
+.history-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #e8e8e8;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
 .history-meta {
   display: flex;
   gap: 12px;

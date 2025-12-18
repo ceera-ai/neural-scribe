@@ -28,6 +28,7 @@ function App() {
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const transcriptInputRef = useRef<HTMLTextAreaElement>(null);
   const pendingPasteRef = useRef<string | null>(null);
+  const isPastingRef = useRef<boolean>(false); // Lock to prevent multiple simultaneous pastes
 
   const { selectedDeviceId } = useMicrophoneDevices();
   const { saveTranscription, saveTranscriptionWithFormatting } = useTranscriptionHistory();
@@ -133,6 +134,7 @@ function App() {
   useEffect(() => {
     if (!isRecording && pendingPasteRef.current) {
       const textToPaste = pendingPasteRef.current;
+      const duration = recordingTime; // Capture duration before it resets
       pendingPasteRef.current = null;
 
       // Execute paste to terminal with formatting
@@ -140,10 +142,10 @@ function App() {
         try {
           // Apply replacements first
           const processedText = await window.electronAPI.applyReplacements(textToPaste);
-          console.log('[App] Voice command paste:', processedText);
+          console.log('[App] Voice command paste:', processedText, 'duration:', duration);
 
-          // Use the formatAndPaste helper
-          await formatAndPaste(processedText);
+          // Use the formatAndPaste helper with duration
+          await formatAndPaste(processedText, true, duration);
         } catch (err) {
           console.error('[App] Voice command paste error:', err);
           setPasteStatus('error');
@@ -151,7 +153,8 @@ function App() {
         }
       })();
     }
-  }, [isRecording, formattingEnabled]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRecording]); // Only trigger when isRecording changes
 
   // Recording timer
   useEffect(() => {
@@ -221,10 +224,20 @@ function App() {
   };
 
   // Helper function to format and paste text
-  const formatAndPaste = async (text: string, shouldSaveToHistory: boolean = true): Promise<void> => {
+  const formatAndPaste = async (text: string, shouldSaveToHistory: boolean = true, duration: number = 0): Promise<void> => {
+    // Prevent multiple simultaneous paste operations
+    if (isPastingRef.current) {
+      console.log('[App] Paste already in progress, skipping...');
+      return;
+    }
+
+    isPastingRef.current = true;
+    console.log('[App] Starting paste operation...');
+
     try {
       let textToPaste = text;
       let formattedText: string | undefined;
+      let title: string | undefined;
       const originalText = text;
 
       // Format with Claude if enabled
@@ -242,16 +255,32 @@ function App() {
         }
       }
 
-      // Paste to terminal
+      // Paste to terminal first (don't wait for title)
       const result = await window.electronAPI.pasteToLastActiveTerminal(textToPaste);
       console.log('[App] Paste result:', result);
 
-      // Save to history with both versions (after successful paste attempt)
+      // Save to history with both versions and title (after successful paste attempt)
       if (shouldSaveToHistory && (result.success || result.copied)) {
+        // Generate title from the formatted text (or original if no formatting)
+        const textForTitle = formattedText || originalText;
+        if (textForTitle) {
+          try {
+            console.log('[App] Generating title...');
+            const titleResult = await window.electronAPI.generateTitle(textForTitle);
+            if (titleResult.success && titleResult.title) {
+              title = titleResult.title;
+              console.log('[App] Generated title:', title);
+            }
+          } catch (err) {
+            console.warn('[App] Title generation failed:', err);
+          }
+        }
+
         await saveTranscriptionWithFormatting({
           originalText,
           formattedText,
-          duration: 0, // Duration is already tracked from recording
+          title,
+          duration,
         });
       }
 
@@ -270,6 +299,9 @@ function App() {
       console.error('[App] Format/paste error:', err);
       setPasteStatus('error');
       setTimeout(() => setPasteStatus('idle'), 3000);
+    } finally {
+      isPastingRef.current = false;
+      console.log('[App] Paste operation completed');
     }
   };
 
@@ -308,6 +340,12 @@ function App() {
   };
 
   const handlePasteToTerminal = async () => {
+    // Clear any pending voice command paste to prevent duplicate
+    pendingPasteRef.current = null;
+
+    // Capture the recording time before stopping
+    const currentDuration = recordingTime;
+
     // Stop recording first if active
     if (isRecording) {
       stopRecording();
@@ -318,7 +356,7 @@ function App() {
     const text = getCurrentTranscript();
     if (text) {
       console.log('[App] Attempting to paste to terminal...');
-      await formatAndPaste(text);
+      await formatAndPaste(text, true, currentDuration);
     }
   };
 
@@ -516,7 +554,18 @@ function App() {
             </div>
             <div className="hotkey-right">
               <button
-                className={`voice-cmd-toggle ${voiceCommandsEnabled ? 'active' : ''}`}
+                className={`footer-toggle ${formattingEnabled ? 'active' : ''}`}
+                onClick={async () => {
+                  const newValue = !formattingEnabled;
+                  setFormattingEnabled(newValue);
+                  await window.electronAPI.setPromptFormattingEnabled(newValue);
+                }}
+                title={formattingEnabled ? 'AI formatting enabled - click to disable' : 'AI formatting disabled - click to enable'}
+              >
+                ✨ {formattingEnabled ? 'Format ON' : 'Format OFF'}
+              </button>
+              <button
+                className={`footer-toggle ${voiceCommandsEnabled ? 'active' : ''}`}
                 onClick={() => setVoiceCommandsEnabled(!voiceCommandsEnabled)}
                 title={voiceCommandsEnabled ? 'Voice commands enabled' : 'Voice commands disabled'}
               >
