@@ -18,9 +18,9 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
   useEffect(() => {
     if (isOpen) {
       loadReplacements();
-      if (initialFromText) {
-        setNewFrom(initialFromText);
-      }
+      // Set or clear the "from" field based on initialFromText
+      setNewFrom(initialFromText || '');
+      setNewTo('');
     }
   }, [isOpen, initialFromText]);
 

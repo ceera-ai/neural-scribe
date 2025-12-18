@@ -20,7 +20,10 @@ function App() {
   const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true);
   const [lastVoiceCommand, setLastVoiceCommand] = useState<string | null>(null);
   const [pasteStatus, setPasteStatus] = useState<'idle' | 'success' | 'permission' | 'no-terminal' | 'error'>('idle');
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; text: string } | null>(null);
+  const [replacementInitialText, setReplacementInitialText] = useState<string | undefined>(undefined);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
+  const transcriptInputRef = useRef<HTMLTextAreaElement>(null);
   const pendingPasteRef = useRef<string | null>(null);
 
   const { selectedDeviceId } = useMicrophoneDevices();
@@ -194,6 +197,40 @@ function App() {
     setEditedTranscript(text);
   };
 
+  // Handle right-click on transcript textarea
+  const handleTranscriptContextMenu = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    const textarea = e.currentTarget;
+    const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
+
+    // Only show context menu if there's selected text
+    if (selectedText) {
+      e.preventDefault();
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        text: selectedText,
+      });
+    }
+  };
+
+  // Close context menu when clicking elsewhere
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    if (contextMenu) {
+      document.addEventListener('click', handleClick);
+      return () => document.removeEventListener('click', handleClick);
+    }
+  }, [contextMenu]);
+
+  // Handle adding selected text to replacements
+  const handleAddToReplacements = () => {
+    if (contextMenu?.text) {
+      setReplacementInitialText(contextMenu.text);
+      setShowReplacements(true);
+      setContextMenu(null);
+    }
+  };
+
   const handlePasteToTerminal = async () => {
     // Stop recording first if active
     if (isRecording) {
@@ -346,9 +383,11 @@ function App() {
               </div>
             ) : (
               <textarea
+                ref={transcriptInputRef}
                 className="transcript-input"
                 value={getCurrentTranscript()}
                 onChange={handleTranscriptChange}
+                onContextMenu={handleTranscriptContextMenu}
                 placeholder="Your transcript will appear here..."
               />
             )}
@@ -426,10 +465,30 @@ function App() {
         )}
       </div>
 
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          className="context-menu"
+          style={{
+            position: 'fixed',
+            top: contextMenu.y,
+            left: contextMenu.x,
+          }}
+        >
+          <button onClick={handleAddToReplacements} className="context-menu-item">
+            Add "{contextMenu.text.length > 20 ? contextMenu.text.slice(0, 20) + '...' : contextMenu.text}" to replacements
+          </button>
+        </div>
+      )}
+
       {/* Replacements Modal */}
       <ReplacementsModal
         isOpen={showReplacements}
-        onClose={() => setShowReplacements(false)}
+        onClose={() => {
+          setShowReplacements(false);
+          setReplacementInitialText(undefined);
+        }}
+        initialFromText={replacementInitialText}
       />
     </div>
   );
