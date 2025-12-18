@@ -440,6 +440,11 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
       if (isRecording) {
         stopRecording();
       } else {
+        // Clear existing transcript when starting via hotkey
+        if (transcriptSegments.length > 0 || editedTranscript !== null) {
+          setTranscriptSegments([]);
+          setEditedTranscript(null);
+        }
         startRecording();
       }
     });
@@ -447,7 +452,7 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
     return () => {
       window.electronAPI.removeAllListeners('toggle-recording');
     };
-  }, [isRecording, startRecording, stopRecording]);
+  }, [isRecording, startRecording, stopRecording, transcriptSegments.length, editedTranscript]);
 
   // Cleanup on unmount
   useEffect(() => {
