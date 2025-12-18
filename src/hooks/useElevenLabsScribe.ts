@@ -23,7 +23,7 @@ interface UseElevenLabsScribeReturn {
 
 interface UseElevenLabsScribeOptions {
   selectedMicrophoneId?: string | null;
-  onRecordingStopped?: (transcript: string) => Promise<string> | string | void;
+  onRecordingStopped?: (transcript: string, duration: number) => Promise<string> | string | void;
 }
 
 export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): UseElevenLabsScribeReturn => {
@@ -38,6 +38,7 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
 
   const connectionRef = useRef<any>(null);
   const transcriptSegmentsRef = useRef<TranscriptSegment[]>([]);
+  const recordingStartTimeRef = useRef<number>(0);
 
   // Keep ref in sync with state for use in callbacks
   useEffect(() => {
@@ -102,6 +103,7 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
       connection.on(RealtimeEvents.SESSION_STARTED, () => {
         console.log('Transcription session started');
         setIsRecording(true);
+        recordingStartTimeRef.current = Date.now();
         // Notify main process
         window.electronAPI.notifyRecordingState(true);
       });
@@ -195,13 +197,18 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
     // Get the full transcript before clearing state
     const transcript = getFullTranscript();
 
+    // Calculate recording duration in seconds
+    const duration = recordingStartTimeRef.current > 0
+      ? Math.floor((Date.now() - recordingStartTimeRef.current) / 1000)
+      : 0;
+
     setIsRecording(false);
     setIsConnected(false);
     window.electronAPI.notifyRecordingState(false);
 
     // Call callback if transcript has content
     if (transcript && onRecordingStopped) {
-      const result = await onRecordingStopped(transcript);
+      const result = await onRecordingStopped(transcript, duration);
       // If callback returns a modified transcript, update the edited state
       if (typeof result === 'string' && result !== transcript) {
         setEditedTranscript(result);

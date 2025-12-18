@@ -38,8 +38,11 @@ async function isAppRunning(appName: string): Promise<boolean> {
     const { stdout } = await execAsync(
       `osascript -e 'tell application "System Events" to (name of processes) contains "${appName}"'`
     )
-    return stdout.trim() === 'true'
-  } catch {
+    const isRunning = stdout.trim() === 'true'
+    console.log(`[Terminal] Checking if ${appName} is running: ${isRunning}`)
+    return isRunning
+  } catch (err) {
+    console.error(`[Terminal] Error checking if ${appName} is running:`, err)
     return false
   }
 }
@@ -50,6 +53,8 @@ async function isAppRunning(appName: string): Promise<boolean> {
 export async function getRunningTerminals(): Promise<TerminalApp[]> {
   const running: TerminalApp[] = []
 
+  console.log('[Terminal] Checking for running terminals...')
+
   // Check each supported terminal individually
   for (const terminal of SUPPORTED_TERMINALS) {
     const isRunning = await isAppRunning(terminal.name)
@@ -58,6 +63,7 @@ export async function getRunningTerminals(): Promise<TerminalApp[]> {
     }
   }
 
+  console.log(`[Terminal] Found ${running.length} running terminals:`, running.map(t => t.name))
   return running
 }
 
@@ -275,5 +281,72 @@ export async function getFrontmostApp(): Promise<string | null> {
   } catch (error) {
     console.error('Failed to get frontmost app:', error)
     return null
+  }
+}
+
+/**
+ * Paste text to the last active terminal (simpler workflow)
+ * Returns: { success: boolean, needsPermission: boolean, copied: boolean, targetApp: string }
+ */
+export async function pasteToLastActiveTerminal(
+  text: string
+): Promise<{ success: boolean; needsPermission: boolean; copied: boolean; targetApp: string | null }> {
+  try {
+    // Step 1: Copy to clipboard using Electron's clipboard
+    clipboard.writeText(text)
+    console.log('[Paste] Text copied to clipboard')
+
+    // Step 2: Find the last active terminal by checking running terminals
+    const runningTerminals = await getRunningTerminals()
+
+    if (runningTerminals.length === 0) {
+      console.log('[Paste] No terminal apps running')
+      return { success: false, needsPermission: false, copied: true, targetApp: null }
+    }
+
+    // Use the first running terminal (or we could track the last used one)
+    const targetTerminal = runningTerminals[0]
+    const appName = targetTerminal.name
+
+    console.log(`[Paste] Pasting to ${appName}`)
+
+    // Step 3: Activate the terminal and paste
+    const activateScript = `
+tell application "${appName}"
+  activate
+end tell
+delay 0.3
+`
+    try {
+      await execAsync(`osascript -e '${activateScript}'`)
+      console.log('[Paste] Terminal activated')
+    } catch (activateErr) {
+      console.log('[Paste] Terminal activation had issues, continuing anyway:', activateErr)
+    }
+
+    // Step 4: Send paste keystroke followed by Enter
+    try {
+      const pasteScript = `
+tell application "System Events"
+  keystroke "v" using command down
+  delay 0.1
+  keystroke return
+end tell
+`
+      await execAsync(`osascript -e '${pasteScript}'`)
+      console.log('[Paste] Paste keystroke sent successfully')
+      return { success: true, needsPermission: false, copied: true, targetApp: appName }
+    } catch (pasteError: any) {
+      console.error('[Paste] Keystroke error:', pasteError.stderr || pasteError.message)
+      if (pasteError.stderr?.includes('not allowed to send keystrokes') ||
+          pasteError.stderr?.includes('1002') ||
+          pasteError.stderr?.includes('not allowed assistive access')) {
+        return { success: false, needsPermission: true, copied: true, targetApp: appName }
+      }
+      return { success: false, needsPermission: true, copied: true, targetApp: appName }
+    }
+  } catch (error) {
+    console.error('[Paste] Failed to paste to terminal:', error)
+    return { success: false, needsPermission: false, copied: false, targetApp: null }
   }
 }

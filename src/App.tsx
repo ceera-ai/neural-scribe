@@ -4,7 +4,6 @@ import { useMicrophoneDevices } from './hooks/useMicrophoneDevices';
 import { useTranscriptionHistory } from './hooks/useTranscriptionHistory';
 import { MicrophoneSelector } from './components/MicrophoneSelector';
 import { HistoryPanel } from './components/HistoryPanel';
-import { TerminalSelector } from './components/TerminalSelector';
 import { ApiKeySetup } from './components/ApiKeySetup';
 import { ReplacementsModal } from './components/ReplacementsModal';
 import './App.css';
@@ -35,7 +34,7 @@ function App() {
     });
   }, []);
 
-  const handleRecordingStopped = useCallback(async (transcript: string) => {
+  const handleRecordingStopped = useCallback(async (transcript: string, duration: number) => {
     // Apply word replacements
     let processedTranscript = transcript;
     try {
@@ -44,9 +43,9 @@ function App() {
       console.error('Failed to apply replacements:', err);
     }
 
-    // Auto-save transcription to history
+    // Auto-save transcription to history with duration
     if (processedTranscript.trim()) {
-      await saveTranscription(processedTranscript);
+      await saveTranscription(processedTranscript, duration);
     }
 
     // Return the processed transcript to update the UI
@@ -135,9 +134,9 @@ function App() {
     setEditedTranscript(text);
   };
 
-  const [pasteStatus, setPasteStatus] = useState<'idle' | 'success' | 'permission'>('idle');
+  const [pasteStatus, setPasteStatus] = useState<'idle' | 'success' | 'permission' | 'no-terminal' | 'error'>('idle');
 
-  const handlePasteToTerminal = async (bundleId: string, windowName?: string) => {
+  const handlePasteToTerminal = async () => {
     // Stop recording first if active
     if (isRecording) {
       stopRecording();
@@ -148,14 +147,26 @@ function App() {
     const text = getCurrentTranscript();
     if (text) {
       setPasteStatus('idle');
-      const result = windowName
-        ? await window.electronAPI.pasteToTerminalWindow(text, bundleId, windowName)
-        : await window.electronAPI.pasteToTerminal(text, bundleId);
-      if (result.success) {
-        setPasteStatus('success');
-        setTimeout(() => setPasteStatus('idle'), 2000);
-      } else if (result.needsPermission) {
-        setPasteStatus('permission');
+      console.log('[App] Attempting to paste to terminal...');
+      try {
+        const result = await window.electronAPI.pasteToLastActiveTerminal(text);
+        console.log('[App] Paste result:', result);
+        if (result.success) {
+          setPasteStatus('success');
+          setTimeout(() => setPasteStatus('idle'), 2000);
+        } else if (!result.targetApp) {
+          setPasteStatus('no-terminal');
+          setTimeout(() => setPasteStatus('idle'), 3000);
+        } else if (result.needsPermission) {
+          setPasteStatus('permission');
+        } else {
+          // Unknown error - show permission message since text is in clipboard
+          setPasteStatus('permission');
+        }
+      } catch (err) {
+        console.error('[App] Paste error:', err);
+        setPasteStatus('error');
+        setTimeout(() => setPasteStatus('idle'), 3000);
       }
     }
   };
@@ -289,10 +300,13 @@ function App() {
           {/* Terminal Paste Section */}
           {hasTranscript && (
             <div className="terminal-section">
-              <TerminalSelector
-                onPaste={handlePasteToTerminal}
+              <button
+                onClick={handlePasteToTerminal}
+                className="btn btn-paste"
                 disabled={!hasTranscript}
-              />
+              >
+                Paste to Terminal
+              </button>
               {pasteStatus === 'permission' && (
                 <div className="paste-notice">
                   Copied to clipboard! Press <kbd>Cmd+V</kbd> in the terminal.
@@ -304,6 +318,16 @@ function App() {
               {pasteStatus === 'success' && (
                 <div className="paste-notice paste-success">
                   Pasted successfully!
+                </div>
+              )}
+              {pasteStatus === 'no-terminal' && (
+                <div className="paste-notice paste-error">
+                  No terminal app running. Open Terminal, VS Code, or Cursor first.
+                </div>
+              )}
+              {pasteStatus === 'error' && (
+                <div className="paste-notice paste-error">
+                  Failed to paste. Text copied to clipboard - press Cmd+V manually.
                 </div>
               )}
             </div>

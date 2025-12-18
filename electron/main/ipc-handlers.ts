@@ -18,7 +18,7 @@ import {
   AppSettings,
   WordReplacement
 } from './store'
-import { getRunningTerminals, getTerminalWindows, pasteToTerminal, pasteToTerminalWindow, SUPPORTED_TERMINALS } from './terminal'
+import { getRunningTerminals, getTerminalWindows, pasteToTerminal, pasteToTerminalWindow, pasteToLastActiveTerminal, SUPPORTED_TERMINALS } from './terminal'
 
 let onRecordingStateChange: ((isRecording: boolean) => void) | null = null
 
@@ -139,6 +139,10 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
 
   ipcMain.handle('paste-to-terminal-window', async (_, text: string, bundleId: string, windowName: string) => {
     return pasteToTerminalWindow(text, bundleId, windowName)
+  })
+
+  ipcMain.handle('paste-to-last-active-terminal', async (_, text: string) => {
+    return pasteToLastActiveTerminal(text)
   })
 
   // Word replacement operations

@@ -3,7 +3,7 @@ import type { TranscriptionRecord } from '../types/electron';
 
 interface UseTranscriptionHistoryReturn {
   history: TranscriptionRecord[];
-  saveTranscription: (text: string) => Promise<void>;
+  saveTranscription: (text: string, duration?: number) => Promise<void>;
   deleteTranscription: (id: string) => Promise<void>;
   clearHistory: () => Promise<void>;
   copyTranscription: (text: string) => Promise<void>;
@@ -23,7 +23,7 @@ export const useTranscriptionHistory = (): UseTranscriptionHistoryReturn => {
     }
   }, []);
 
-  const saveTranscription = useCallback(async (text: string) => {
+  const saveTranscription = useCallback(async (text: string, duration: number = 0) => {
     if (!text.trim()) return;
 
     const record: TranscriptionRecord = {
@@ -31,6 +31,7 @@ export const useTranscriptionHistory = (): UseTranscriptionHistoryReturn => {
       text: text.trim(),
       timestamp: Date.now(),
       wordCount: text.trim().split(/\s+/).length,
+      duration,
     };
 
     try {

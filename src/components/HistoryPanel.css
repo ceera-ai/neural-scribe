@@ -43,22 +43,56 @@
   padding: 8px;
 }
 
+/* Date Group Styles */
+.history-day-group {
+  margin-bottom: 16px;
+}
+
+.history-day-group:last-child {
+  margin-bottom: 0;
+}
+
+.history-day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: #252525;
+  border-radius: 6px;
+  border-left: 3px solid #4a9eff;
+}
+
+.history-day-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+.history-day-summary {
+  font-size: 11px;
+  color: #808080;
+}
+
+.history-day-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 8px;
+}
+
+/* Individual Item Styles */
 .history-item {
   display: flex;
   gap: 8px;
   padding: 10px 12px;
   background: #222;
   border-radius: 6px;
-  margin-bottom: 6px;
   transition: background 0.15s;
 }
 
 .history-item:hover {
   background: #2a2a2a;
-}
-
-.history-item:last-child {
-  margin-bottom: 0;
 }
 
 .history-content {
@@ -88,6 +122,10 @@
 
 .history-words {
   color: #606060;
+}
+
+.history-duration {
+  color: #4a9eff;
 }
 
 .history-actions {

@@ -3,6 +3,7 @@ export interface TranscriptionRecord {
   text: string
   timestamp: number
   wordCount: number
+  duration: number // Recording duration in seconds
 }
 
 export interface AppSettings {
@@ -64,6 +65,7 @@ export interface ElectronAPI {
   pasteToTerminal: (text: string, bundleId: string) => Promise<{ success: boolean; needsPermission: boolean; copied: boolean }>
   getTerminalWindows: () => Promise<TerminalWindow[]>
   pasteToTerminalWindow: (text: string, bundleId: string, windowName: string) => Promise<{ success: boolean; needsPermission: boolean; copied: boolean }>
+  pasteToLastActiveTerminal: (text: string) => Promise<{ success: boolean; needsPermission: boolean; copied: boolean; targetApp: string | null }>
 
   // Word replacement operations
   getReplacements: () => Promise<WordReplacement[]>

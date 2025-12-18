@@ -5,6 +5,7 @@ export interface TranscriptionRecord {
   text: string
   timestamp: number
   wordCount: number
+  duration: number // Recording duration in seconds
 }
 
 export interface AppSettings {
@@ -79,6 +80,8 @@ const electronAPI = {
     ipcRenderer.invoke('get-terminal-windows'),
   pasteToTerminalWindow: (text: string, bundleId: string, windowName: string): Promise<{ success: boolean; needsPermission: boolean; copied: boolean }> =>
     ipcRenderer.invoke('paste-to-terminal-window', text, bundleId, windowName),
+  pasteToLastActiveTerminal: (text: string): Promise<{ success: boolean; needsPermission: boolean; copied: boolean; targetApp: string | null }> =>
+    ipcRenderer.invoke('paste-to-last-active-terminal', text),
 
   // Word replacement operations
   getReplacements: (): Promise<WordReplacement[]> =>
