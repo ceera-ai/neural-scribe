@@ -33,6 +33,10 @@ export interface AppSettings {
   recordHotkey: string
   replacementsEnabled: boolean
   voiceCommandsEnabled: boolean
+  // Prompt formatting settings
+  promptFormattingEnabled: boolean
+  promptFormattingInstructions: string // Custom instructions (empty = use default)
+  promptFormattingModel: 'sonnet' | 'opus' | 'haiku'
 }
 
 interface StoreSchema {
@@ -70,7 +74,10 @@ const defaults: StoreSchema = {
     pasteHotkey: 'CommandOrControl+Shift+V',
     recordHotkey: 'CommandOrControl+Shift+R',
     replacementsEnabled: true,
-    voiceCommandsEnabled: true
+    voiceCommandsEnabled: true,
+    promptFormattingEnabled: true,
+    promptFormattingInstructions: '', // Empty = use default instructions
+    promptFormattingModel: 'sonnet'
   },
   history: [],
   replacements: [],
@@ -217,4 +224,30 @@ export function getEnabledVoiceCommands(): { send: string[], clear: string[], ca
     clear: triggers.filter(t => t.command === 'clear' && t.enabled).map(t => t.phrase),
     cancel: triggers.filter(t => t.command === 'cancel' && t.enabled).map(t => t.phrase),
   }
+}
+
+// Prompt formatting helpers
+export function getPromptFormattingSettings(): {
+  enabled: boolean
+  instructions: string
+  model: 'sonnet' | 'opus' | 'haiku'
+} {
+  const settings = getSettings()
+  return {
+    enabled: settings.promptFormattingEnabled ?? true,
+    instructions: settings.promptFormattingInstructions ?? '',
+    model: settings.promptFormattingModel ?? 'sonnet'
+  }
+}
+
+export function setPromptFormattingEnabled(enabled: boolean): void {
+  setSettings({ promptFormattingEnabled: enabled })
+}
+
+export function setPromptFormattingInstructions(instructions: string): void {
+  setSettings({ promptFormattingInstructions: instructions })
+}
+
+export function setPromptFormattingModel(model: 'sonnet' | 'opus' | 'haiku'): void {
+  setSettings({ promptFormattingModel: model })
 }

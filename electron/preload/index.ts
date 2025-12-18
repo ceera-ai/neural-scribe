@@ -16,6 +16,27 @@ export interface AppSettings {
   recordHotkey: string
   replacementsEnabled: boolean
   voiceCommandsEnabled: boolean
+  promptFormattingEnabled: boolean
+  promptFormattingInstructions: string
+  promptFormattingModel: 'sonnet' | 'opus' | 'haiku'
+}
+
+export interface PromptFormattingSettings {
+  enabled: boolean
+  instructions: string
+  model: 'sonnet' | 'opus' | 'haiku'
+}
+
+export interface FormatResult {
+  success: boolean
+  formatted: string
+  error?: string
+  skipped?: boolean
+}
+
+export interface ClaudeCliStatus {
+  available: boolean
+  version: string | null
 }
 
 export interface VoiceCommandTrigger {
@@ -122,6 +143,22 @@ const electronAPI = {
   // Hotkey operations
   updateHotkey: (type: 'paste' | 'record', newHotkey: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('update-hotkey', type, newHotkey),
+
+  // Prompt formatting operations
+  formatPrompt: (text: string): Promise<{ success: boolean; formatted: string; error?: string; skipped?: boolean }> =>
+    ipcRenderer.invoke('format-prompt', text),
+  getPromptFormattingSettings: (): Promise<{ enabled: boolean; instructions: string; model: 'sonnet' | 'opus' | 'haiku' }> =>
+    ipcRenderer.invoke('get-prompt-formatting-settings'),
+  setPromptFormattingEnabled: (enabled: boolean): Promise<boolean> =>
+    ipcRenderer.invoke('set-prompt-formatting-enabled', enabled),
+  setPromptFormattingInstructions: (instructions: string): Promise<boolean> =>
+    ipcRenderer.invoke('set-prompt-formatting-instructions', instructions),
+  setPromptFormattingModel: (model: 'sonnet' | 'opus' | 'haiku'): Promise<boolean> =>
+    ipcRenderer.invoke('set-prompt-formatting-model', model),
+  getDefaultFormattingInstructions: (): Promise<string> =>
+    ipcRenderer.invoke('get-default-formatting-instructions'),
+  checkClaudeCli: (): Promise<{ available: boolean; version: string | null }> =>
+    ipcRenderer.invoke('check-claude-cli'),
 
   // Events from main process
   onToggleRecording: (callback: RecordingToggleCallback): void => {

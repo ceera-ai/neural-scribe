@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { VoiceCommandTrigger, AppSettings } from '../types/electron';
+import type { VoiceCommandTrigger, AppSettings, PromptFormattingSettings } from '../types/electron';
 import './SettingsModal.css';
 
 interface SettingsModalProps {
@@ -40,11 +40,20 @@ export function SettingsModal({
   const [editingShortcut, setEditingShortcut] = useState<'record' | 'paste' | null>(null);
   const [shortcutError, setShortcutError] = useState<string | null>(null);
 
+  // Prompt formatting
+  const [formattingEnabled, setFormattingEnabled] = useState(true);
+  const [formattingModel, setFormattingModel] = useState<'sonnet' | 'opus' | 'haiku'>('sonnet');
+  const [formattingInstructions, setFormattingInstructions] = useState('');
+  const [defaultInstructions, setDefaultInstructions] = useState('');
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [claudeCliStatus, setClaudeCliStatus] = useState<{ available: boolean; version: string | null } | null>(null);
+
   // Load settings on open
   useEffect(() => {
     if (isOpen) {
       loadSettings();
       loadTriggers();
+      loadFormattingSettings();
       setIsEditing(false);
       setNewApiKey('');
       setError(null);
@@ -54,6 +63,7 @@ export function SettingsModal({
       setNewTriggerPhrase('');
       setEditingShortcut(null);
       setShortcutError(null);
+      setShowInstructions(false);
     }
   }, [isOpen]);
 
@@ -77,6 +87,23 @@ export function SettingsModal({
       setTriggers(data);
     } catch (err) {
       console.error('Failed to load voice command triggers:', err);
+    }
+  };
+
+  const loadFormattingSettings = async () => {
+    try {
+      const [settings, defaultInstr, cliStatus] = await Promise.all([
+        window.electronAPI.getPromptFormattingSettings(),
+        window.electronAPI.getDefaultFormattingInstructions(),
+        window.electronAPI.checkClaudeCli()
+      ]);
+      setFormattingEnabled(settings.enabled);
+      setFormattingModel(settings.model);
+      setFormattingInstructions(settings.instructions);
+      setDefaultInstructions(defaultInstr);
+      setClaudeCliStatus(cliStatus);
+    } catch (err) {
+      console.error('Failed to load formatting settings:', err);
     }
   };
 
@@ -127,6 +154,26 @@ export function SettingsModal({
   const handleVoiceCommandsEnabledChange = async (enabled: boolean) => {
     onVoiceCommandsEnabledChange(enabled);
     await window.electronAPI.setSettings({ voiceCommandsEnabled: enabled });
+  };
+
+  const handleFormattingEnabledChange = async (enabled: boolean) => {
+    setFormattingEnabled(enabled);
+    await window.electronAPI.setPromptFormattingEnabled(enabled);
+  };
+
+  const handleFormattingModelChange = async (model: 'sonnet' | 'opus' | 'haiku') => {
+    setFormattingModel(model);
+    await window.electronAPI.setPromptFormattingModel(model);
+  };
+
+  const handleFormattingInstructionsChange = async (instructions: string) => {
+    setFormattingInstructions(instructions);
+    await window.electronAPI.setPromptFormattingInstructions(instructions);
+  };
+
+  const handleResetInstructions = async () => {
+    setFormattingInstructions('');
+    await window.electronAPI.setPromptFormattingInstructions('');
   };
 
   const handleTriggerToggle = async (id: string, enabled: boolean) => {
@@ -469,6 +516,90 @@ export function SettingsModal({
                   );
                 })}
               </div>
+            )}
+          </div>
+
+          {/* Prompt Formatting Section */}
+          <div className="settings-section">
+            <div className="settings-section-header">
+              <div>
+                <h3>Prompt Formatting</h3>
+                <p className="settings-description">
+                  Use Claude to format your transcription into a clear, professional prompt before pasting.
+                </p>
+              </div>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={formattingEnabled}
+                  onChange={(e) => handleFormattingEnabledChange(e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+            </div>
+
+            {claudeCliStatus && !claudeCliStatus.available && (
+              <div className="settings-error">
+                Claude CLI not found. Please install Claude Code to use this feature.
+              </div>
+            )}
+
+            {formattingEnabled && claudeCliStatus?.available && (
+              <>
+                <div className="formatting-model-selector">
+                  <label className="formatting-option-label">Model</label>
+                  <div className="model-buttons">
+                    {(['haiku', 'sonnet', 'opus'] as const).map(model => (
+                      <button
+                        key={model}
+                        className={`model-btn ${formattingModel === model ? 'active' : ''}`}
+                        onClick={() => handleFormattingModelChange(model)}
+                      >
+                        {model.charAt(0).toUpperCase() + model.slice(1)}
+                        {model === 'haiku' && <span className="model-badge">Fast</span>}
+                        {model === 'sonnet' && <span className="model-badge">Balanced</span>}
+                        {model === 'opus' && <span className="model-badge">Best</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="formatting-instructions-section">
+                  <button
+                    className="btn-settings-action"
+                    onClick={() => setShowInstructions(!showInstructions)}
+                  >
+                    <span className="btn-icon-left">📝</span>
+                    {showInstructions ? 'Hide Instructions' : 'View/Edit Instructions'}
+                    <span className="btn-arrow">{showInstructions ? '↑' : '→'}</span>
+                  </button>
+
+                  {showInstructions && (
+                    <div className="instructions-editor">
+                      <textarea
+                        className="instructions-textarea"
+                        value={formattingInstructions || defaultInstructions}
+                        onChange={(e) => handleFormattingInstructionsChange(e.target.value)}
+                        placeholder="Enter custom formatting instructions..."
+                        rows={10}
+                      />
+                      <div className="instructions-actions">
+                        <button
+                          className="btn-small"
+                          onClick={handleResetInstructions}
+                          disabled={!formattingInstructions}
+                        >
+                          Reset to Default
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {claudeCliStatus?.version && (
+                  <p className="cli-version">Claude CLI {claudeCliStatus.version}</p>
+                )}
+              </>
             )}
           </div>
 

@@ -21,9 +21,10 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true);
   const [lastVoiceCommand, setLastVoiceCommand] = useState<string | null>(null);
-  const [pasteStatus, setPasteStatus] = useState<'idle' | 'success' | 'permission' | 'no-terminal' | 'error'>('idle');
+  const [pasteStatus, setPasteStatus] = useState<'idle' | 'success' | 'permission' | 'no-terminal' | 'error' | 'formatting'>('idle');
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; text: string } | null>(null);
   const [replacementInitialText, setReplacementInitialText] = useState<string | undefined>(undefined);
+  const [formattingEnabled, setFormattingEnabled] = useState(true);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const transcriptInputRef = useRef<HTMLTextAreaElement>(null);
   const pendingPasteRef = useRef<string | null>(null);
@@ -40,6 +41,12 @@ function App() {
     window.electronAPI.hasApiKey().then(setHasApiKey).catch(err => {
       console.error('Failed to check API key:', err);
       setInitError('Failed to initialize: ' + err.message);
+    });
+    // Load formatting setting
+    window.electronAPI.getPromptFormattingSettings().then(settings => {
+      setFormattingEnabled(settings.enabled);
+    }).catch(err => {
+      console.error('Failed to load formatting settings:', err);
     });
   }, []);
 
@@ -109,23 +116,15 @@ function App() {
       const textToPaste = pendingPasteRef.current;
       pendingPasteRef.current = null;
 
-      // Execute paste to terminal
+      // Execute paste to terminal with formatting
       (async () => {
         try {
           // Apply replacements first
           const processedText = await window.electronAPI.applyReplacements(textToPaste);
           console.log('[App] Voice command paste:', processedText);
 
-          const result = await window.electronAPI.pasteToLastActiveTerminal(processedText);
-          if (result.success) {
-            setPasteStatus('success');
-            setTimeout(() => setPasteStatus('idle'), 2000);
-          } else if (!result.targetApp) {
-            setPasteStatus('no-terminal');
-            setTimeout(() => setPasteStatus('idle'), 3000);
-          } else {
-            setPasteStatus('permission');
-          }
+          // Use the formatAndPaste helper
+          await formatAndPaste(processedText);
         } catch (err) {
           console.error('[App] Voice command paste error:', err);
           setPasteStatus('error');
@@ -133,7 +132,7 @@ function App() {
         }
       })();
     }
-  }, [isRecording]);
+  }, [isRecording, formattingEnabled]);
 
   // Recording timer
   useEffect(() => {
@@ -202,6 +201,47 @@ function App() {
     setEditedTranscript(text);
   };
 
+  // Helper function to format and paste text
+  const formatAndPaste = async (text: string): Promise<void> => {
+    try {
+      let textToPaste = text;
+
+      // Format with Claude if enabled
+      if (formattingEnabled) {
+        setPasteStatus('formatting');
+        console.log('[App] Formatting text with Claude...');
+        const formatResult = await window.electronAPI.formatPrompt(text);
+
+        if (formatResult.success && !formatResult.skipped) {
+          textToPaste = formatResult.formatted;
+          console.log('[App] Formatted text:', textToPaste);
+        } else if (formatResult.error) {
+          console.warn('[App] Formatting failed, using original text:', formatResult.error);
+        }
+      }
+
+      // Paste to terminal
+      const result = await window.electronAPI.pasteToLastActiveTerminal(textToPaste);
+      console.log('[App] Paste result:', result);
+
+      if (result.success) {
+        setPasteStatus('success');
+        setTimeout(() => setPasteStatus('idle'), 2000);
+      } else if (!result.targetApp) {
+        setPasteStatus('no-terminal');
+        setTimeout(() => setPasteStatus('idle'), 3000);
+      } else if (result.needsPermission) {
+        setPasteStatus('permission');
+      } else {
+        setPasteStatus('permission');
+      }
+    } catch (err) {
+      console.error('[App] Format/paste error:', err);
+      setPasteStatus('error');
+      setTimeout(() => setPasteStatus('idle'), 3000);
+    }
+  };
+
   // Handle right-click on transcript textarea
   const handleTranscriptContextMenu = (e: React.MouseEvent<HTMLTextAreaElement>) => {
     const textarea = e.currentTarget;
@@ -246,28 +286,8 @@ function App() {
 
     const text = getCurrentTranscript();
     if (text) {
-      setPasteStatus('idle');
       console.log('[App] Attempting to paste to terminal...');
-      try {
-        const result = await window.electronAPI.pasteToLastActiveTerminal(text);
-        console.log('[App] Paste result:', result);
-        if (result.success) {
-          setPasteStatus('success');
-          setTimeout(() => setPasteStatus('idle'), 2000);
-        } else if (!result.targetApp) {
-          setPasteStatus('no-terminal');
-          setTimeout(() => setPasteStatus('idle'), 3000);
-        } else if (result.needsPermission) {
-          setPasteStatus('permission');
-        } else {
-          // Unknown error - show permission message since text is in clipboard
-          setPasteStatus('permission');
-        }
-      } catch (err) {
-        console.error('[App] Paste error:', err);
-        setPasteStatus('error');
-        setTimeout(() => setPasteStatus('idle'), 3000);
-      }
+      await formatAndPaste(text);
     }
   };
 
@@ -408,10 +428,22 @@ function App() {
               <button
                 onClick={handlePasteToTerminal}
                 className="btn btn-paste"
-                disabled={!hasTranscript}
+                disabled={!hasTranscript || pasteStatus === 'formatting'}
               >
-                Paste to Terminal
+                {pasteStatus === 'formatting' ? (
+                  <>
+                    <span className="formatting-spinner" />
+                    Formatting...
+                  </>
+                ) : (
+                  'Paste to Terminal'
+                )}
               </button>
+              {pasteStatus === 'formatting' && (
+                <div className="paste-notice paste-formatting">
+                  Claude is formatting your prompt...
+                </div>
+              )}
               {pasteStatus === 'permission' && (
                 <div className="paste-notice">
                   Copied to clipboard! Press <kbd>Cmd+V</kbd> in the terminal.

@@ -14,6 +14,27 @@ export interface AppSettings {
   recordHotkey: string
   replacementsEnabled: boolean
   voiceCommandsEnabled: boolean
+  promptFormattingEnabled: boolean
+  promptFormattingInstructions: string
+  promptFormattingModel: 'sonnet' | 'opus' | 'haiku'
+}
+
+export interface PromptFormattingSettings {
+  enabled: boolean
+  instructions: string
+  model: 'sonnet' | 'opus' | 'haiku'
+}
+
+export interface FormatResult {
+  success: boolean
+  formatted: string
+  error?: string
+  skipped?: boolean
+}
+
+export interface ClaudeCliStatus {
+  available: boolean
+  version: string | null
 }
 
 export interface VoiceCommandTrigger {
@@ -94,6 +115,15 @@ export interface ElectronAPI {
 
   // Hotkey operations
   updateHotkey: (type: 'paste' | 'record', newHotkey: string) => Promise<{ success: boolean; error?: string }>
+
+  // Prompt formatting operations
+  formatPrompt: (text: string) => Promise<FormatResult>
+  getPromptFormattingSettings: () => Promise<PromptFormattingSettings>
+  setPromptFormattingEnabled: (enabled: boolean) => Promise<boolean>
+  setPromptFormattingInstructions: (instructions: string) => Promise<boolean>
+  setPromptFormattingModel: (model: 'sonnet' | 'opus' | 'haiku') => Promise<boolean>
+  getDefaultFormattingInstructions: () => Promise<string>
+  checkClaudeCli: () => Promise<ClaudeCliStatus>
 
   // Events from main process
   onToggleRecording: (callback: () => void) => void

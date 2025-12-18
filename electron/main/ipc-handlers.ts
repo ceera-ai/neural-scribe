@@ -20,11 +20,21 @@ import {
   deleteVoiceCommandTrigger,
   resetVoiceCommandTriggers,
   getEnabledVoiceCommands,
+  getPromptFormattingSettings,
+  setPromptFormattingEnabled,
+  setPromptFormattingInstructions,
+  setPromptFormattingModel,
   TranscriptionRecord,
   AppSettings,
   WordReplacement,
   VoiceCommandTrigger
 } from './store'
+import {
+  formatPrompt,
+  isClaudeCliAvailable,
+  getClaudeCliVersion,
+  DEFAULT_FORMATTING_INSTRUCTIONS
+} from './prompt-formatter'
 import { getRunningTerminals, getTerminalWindows, pasteToTerminal, pasteToTerminalWindow, pasteToLastActiveTerminal, SUPPORTED_TERMINALS } from './terminal'
 import { updateHotkey } from './hotkeys'
 
@@ -209,5 +219,48 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   // Hotkey operations
   ipcMain.handle('update-hotkey', (_, type: 'paste' | 'record', newHotkey: string) => {
     return updateHotkey(type, newHotkey)
+  })
+
+  // Prompt formatting operations
+  ipcMain.handle('format-prompt', async (_, text: string) => {
+    const settings = getPromptFormattingSettings()
+    if (!settings.enabled) {
+      return { success: true, formatted: text, skipped: true }
+    }
+    const result = await formatPrompt(
+      text,
+      settings.instructions || undefined,
+      settings.model
+    )
+    return result
+  })
+
+  ipcMain.handle('get-prompt-formatting-settings', () => {
+    return getPromptFormattingSettings()
+  })
+
+  ipcMain.handle('set-prompt-formatting-enabled', (_, enabled: boolean) => {
+    setPromptFormattingEnabled(enabled)
+    return true
+  })
+
+  ipcMain.handle('set-prompt-formatting-instructions', (_, instructions: string) => {
+    setPromptFormattingInstructions(instructions)
+    return true
+  })
+
+  ipcMain.handle('set-prompt-formatting-model', (_, model: 'sonnet' | 'opus' | 'haiku') => {
+    setPromptFormattingModel(model)
+    return true
+  })
+
+  ipcMain.handle('get-default-formatting-instructions', () => {
+    return DEFAULT_FORMATTING_INSTRUCTIONS
+  })
+
+  ipcMain.handle('check-claude-cli', async () => {
+    const available = await isClaudeCliAvailable()
+    const version = available ? await getClaudeCliVersion() : null
+    return { available, version }
   })
 }
