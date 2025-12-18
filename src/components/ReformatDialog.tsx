@@ -36,15 +36,13 @@ export function ReformatDialog({
   const [selectedSourceId, setSelectedSourceId] = useState<string>('original');
   const [customInstructions, setCustomInstructions] = useState('');
   const [isDictating, setIsDictating] = useState(false);
-  const [dictationBaseText, setDictationBaseText] = useState(''); // Text before dictation started
+  const [dictationBaseText, setDictationBaseText] = useState('');
   const [isFormatting, setIsFormatting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Build source options
   const sourceOptions = useMemo<SourceOption[]>(() => {
     const options: SourceOption[] = [];
 
-    // Original always first
     const originalText = record.originalText || record.text;
     options.push({
       id: 'original',
@@ -52,7 +50,6 @@ export function ReformatDialog({
       text: originalText,
     });
 
-    // Add formatted versions
     if (record.formattedVersions && record.formattedVersions.length > 0) {
       const sortedVersions = [...record.formattedVersions].sort((a, b) => b.timestamp - a.timestamp);
       sortedVersions.forEach((version, index) => {
@@ -60,7 +57,7 @@ export function ReformatDialog({
           ? `Custom Format ${sortedVersions.length - index}`
           : index === 0
           ? 'Latest Formatted'
-          : `Formatted Version ${sortedVersions.length - index}`;
+          : `Formatted V${sortedVersions.length - index}`;
         options.push({
           id: version.id,
           label,
@@ -69,7 +66,6 @@ export function ReformatDialog({
         });
       });
     } else if (record.wasFormatted && record.formattedText) {
-      // Legacy formatted version
       options.push({
         id: 'formatted-legacy',
         label: 'Formatted Version',
@@ -98,18 +94,29 @@ export function ReformatDialog({
   };
 
   return (
-    <div className="modal-overlay reformat-overlay" onClick={onClose}>
-      <div className="reformat-dialog" onClick={e => e.stopPropagation()}>
+    <div className="cyber-modal-overlay reformat-overlay" onClick={onClose}>
+      <div className="cyber-reformat-dialog" onClick={e => e.stopPropagation()}>
+        {/* Header */}
         <div className="reformat-header">
-          <h2>Reformat Transcription</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+            Reformat Transcription
+          </h2>
+          <button className="cyber-close-btn" onClick={onClose}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
+        {/* Body */}
         <div className="reformat-body">
           {/* Source Selection */}
           <div className="reformat-section">
-            <label className="reformat-label">Source Version</label>
-            <p className="reformat-hint">Choose which version to use as the starting point for reformatting.</p>
+            <label className="section-label">Source Version</label>
+            <p className="section-hint">Choose which version to use as the starting point</p>
             <div className="source-options">
               {sourceOptions.map(option => (
                 <button
@@ -117,12 +124,12 @@ export function ReformatDialog({
                   className={`source-option ${selectedSourceId === option.id ? 'selected' : ''}`}
                   onClick={() => setSelectedSourceId(option.id)}
                 >
-                  <div className="source-option-header">
-                    <span className="source-option-icon">{option.id === 'original' ? '📝' : '✨'}</span>
-                    <span className="source-option-label">{option.label}</span>
+                  <div className="source-option-left">
+                    <span className="source-icon">{option.id === 'original' ? '📝' : '✨'}</span>
+                    <span className="source-label">{option.label}</span>
                   </div>
                   {option.timestamp && (
-                    <span className="source-option-time">{formatShortTime(option.timestamp)}</span>
+                    <span className="source-time">{formatShortTime(option.timestamp)}</span>
                   )}
                 </button>
               ))}
@@ -131,7 +138,7 @@ export function ReformatDialog({
 
           {/* Source Preview */}
           <div className="reformat-section">
-            <label className="reformat-label">Source Text Preview</label>
+            <label className="section-label">Source Preview</label>
             <div className="source-preview">
               {selectedSource.text.length > 300
                 ? selectedSource.text.slice(0, 300) + '...'
@@ -141,28 +148,25 @@ export function ReformatDialog({
 
           {/* Custom Instructions */}
           <div className="reformat-section">
-            <div className="reformat-label-row">
-              <label className="reformat-label">
-                Custom Instructions <span className="optional-badge">(optional)</span>
+            <div className="section-label-row">
+              <label className="section-label">
+                Custom Instructions
+                <span className="optional-tag">Optional</span>
               </label>
               <DictateButton
                 onRecordingChange={(recording) => {
                   if (recording) {
-                    // Recording started - save current text as base
                     setIsDictating(true);
                     setDictationBaseText(customInstructions);
                   } else {
-                    // Recording stopped - make editable
                     setIsDictating(false);
                   }
                 }}
                 onPartialTranscript={(text) => {
-                  // Show real-time dictation combined with existing text
                   const separator = dictationBaseText ? ' ' : '';
                   setCustomInstructions(dictationBaseText + separator + text);
                 }}
                 onFinalTranscript={(text) => {
-                  // Finalize the dictation
                   const separator = dictationBaseText ? ' ' : '';
                   setCustomInstructions(dictationBaseText + separator + text);
                   setDictationBaseText('');
@@ -170,11 +174,11 @@ export function ReformatDialog({
                 disabled={isFormatting}
               />
             </div>
-            <p className="reformat-hint">
-              Add specific instructions for this reformat. Leave empty to use the default formatting instructions.
+            <p className="section-hint">
+              Add specific instructions for this reformat, or leave empty for default formatting
             </p>
             <textarea
-              className={`reformat-instructions ${isDictating ? 'dictating' : ''}`}
+              className={`cyber-textarea ${isDictating ? 'dictating' : ''}`}
               value={customInstructions}
               onChange={e => setCustomInstructions(e.target.value)}
               placeholder="e.g., Make it more formal, Add bullet points, Summarize in 3 sentences..."
@@ -183,29 +187,41 @@ export function ReformatDialog({
             />
           </div>
 
+          {/* Error */}
           {error && (
             <div className="reformat-error">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="15" y1="9" x2="9" y2="15" />
+                <line x1="9" y1="9" x2="15" y2="15" />
+              </svg>
               {error}
             </div>
           )}
         </div>
 
+        {/* Footer */}
         <div className="reformat-footer">
-          <button className="btn-cancel" onClick={onClose} disabled={isFormatting}>
+          <button className="cyber-btn cancel-btn" onClick={onClose} disabled={isFormatting}>
             Cancel
           </button>
           <button
-            className="btn-do-reformat"
+            className="cyber-btn reformat-btn"
             onClick={handleReformat}
             disabled={isFormatting}
           >
             {isFormatting ? (
               <>
-                <span className="reformat-spinner" />
+                <div className="cyber-spinner-sm" />
                 Formatting...
               </>
             ) : (
-              '✨ Reformat'
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                Reformat
+              </>
             )}
           </button>
         </div>

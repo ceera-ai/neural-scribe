@@ -2,11 +2,19 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import { useElevenLabsScribe } from './hooks/useElevenLabsScribe';
 import { useMicrophoneDevices } from './hooks/useMicrophoneDevices';
 import { useTranscriptionHistory } from './hooks/useTranscriptionHistory';
+import { useGamification } from './hooks/useGamification';
+import { useAudioAnalyzer } from './hooks/useAudioAnalyzer';
 import { MicrophoneSelector } from './components/MicrophoneSelector';
 import { HistoryPanel } from './components/HistoryPanel';
 import { ApiKeySetup } from './components/ApiKeySetup';
 import { ReplacementsModal } from './components/ReplacementsModal';
 import { SettingsModal } from './components/SettingsModal';
+import { AIOrb } from './components/orb/AIOrb';
+import type { OrbState } from './components/orb/AIOrb';
+import { ScanLines } from './components/cyberpunk/ScanLines';
+import { GlitchText } from './components/cyberpunk/GlitchText';
+import { AchievementPopup } from './components/gamification/AchievementPopup';
+import { GamificationModal } from './components/gamification/GamificationModal';
 import './App.css';
 
 // Check if running in Electron
@@ -19,12 +27,16 @@ function App() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [showReplacements, setShowReplacements] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showGamification, setShowGamification] = useState(false);
   const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true);
   const [lastVoiceCommand, setLastVoiceCommand] = useState<string | null>(null);
   const [pasteStatus, setPasteStatus] = useState<'idle' | 'success' | 'permission' | 'no-terminal' | 'error' | 'formatting'>('idle');
+  const [historySaved, setHistorySaved] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; text: string } | null>(null);
   const [replacementInitialText, setReplacementInitialText] = useState<string | undefined>(undefined);
   const [formattingEnabled, setFormattingEnabled] = useState(true);
+  const [recordHotkey, setRecordHotkey] = useState('CommandOrControl+Shift+R');
+  const [pasteHotkey, setPasteHotkey] = useState('CommandOrControl+Shift+V');
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const transcriptInputRef = useRef<HTMLTextAreaElement>(null);
   const pendingPasteRef = useRef<string | null>(null);
@@ -32,6 +44,21 @@ function App() {
 
   const { selectedDeviceId } = useMicrophoneDevices();
   const { saveTranscription, saveTranscriptionWithFormatting } = useTranscriptionHistory();
+  const {
+    stats,
+    level,
+    achievements,
+    recentUnlocks,
+    xpProgress,
+    recordSession,
+    checkDailyLogin,
+    clearRecentUnlocks,
+  } = useGamification();
+
+  // Check daily login on mount
+  useEffect(() => {
+    checkDailyLogin();
+  }, [checkDailyLogin]);
 
   // Check if API key is configured on mount
   useEffect(() => {
@@ -43,11 +70,17 @@ function App() {
       console.error('Failed to check API key:', err);
       setInitError('Failed to initialize: ' + err.message);
     });
-    // Load formatting setting
+    // Load formatting setting and shortcuts
     window.electronAPI.getPromptFormattingSettings().then(settings => {
       setFormattingEnabled(settings.enabled);
     }).catch(err => {
       console.error('Failed to load formatting settings:', err);
+    });
+    window.electronAPI.getSettings().then(settings => {
+      if (settings.recordHotkey) setRecordHotkey(settings.recordHotkey);
+      if (settings.pasteHotkey) setPasteHotkey(settings.pasteHotkey);
+    }).catch(err => {
+      console.error('Failed to load shortcut settings:', err);
     });
   }, []);
 
@@ -66,11 +99,15 @@ function App() {
     // Auto-save transcription to history with duration
     if (processedTranscript.trim()) {
       await saveTranscription(processedTranscript, duration);
+
+      // Record session for gamification
+      const wordCount = processedTranscript.trim().split(/\s+/).length;
+      recordSession(wordCount, duration * 1000); // Convert to milliseconds
     }
 
     // Return the processed transcript to update the UI
     return processedTranscript;
-  }, [saveTranscription]);
+  }, [saveTranscription, recordSession]);
 
   // Handle voice commands
   const handleVoiceCommand = useCallback(async (command: 'send' | 'clear' | 'cancel', transcript: string) => {
@@ -130,6 +167,23 @@ function App() {
     onSaveTranscript: handleSaveTranscript,
   });
 
+  // Real audio level analysis from microphone
+  const { audioLevel, frequencyData } = useAudioAnalyzer({
+    enabled: isRecording,
+    deviceId: selectedDeviceId,
+    fftSize: 128, // 64 frequency bins - enough for visualization
+    smoothingTimeConstant: 0.3, // Low smoothing = snappy response
+  });
+
+  // Determine orb state based on app state
+  const getOrbState = (): OrbState => {
+    if (pasteStatus === 'formatting') return 'processing';
+    if (pasteStatus === 'success') return 'success';
+    if (pasteStatus === 'error' || pasteStatus === 'no-terminal') return 'error';
+    if (isRecording) return 'recording';
+    return 'idle';
+  };
+
   // Handle pending paste after recording stops (triggered by "send it" voice command)
   useEffect(() => {
     if (!isRecording && pendingPasteRef.current) {
@@ -175,6 +229,19 @@ function App() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Format hotkey for display
+  const formatHotkeyForDisplay = (hotkey: string) => {
+    return hotkey
+      .replace('CommandOrControl', '⌘')
+      .replace('Command', '⌘')
+      .replace('Control', 'Ctrl')
+      .replace('Shift', '⇧')
+      .replace('Alt', '⌥')
+      .replace('Option', '⌥')
+      .replace(/\+/g, ' ')
+      .trim();
   };
 
   // Auto-scroll to bottom when new transcript appears
@@ -255,35 +322,11 @@ function App() {
         }
       }
 
-      // Paste to terminal first (don't wait for title)
+      // Paste to terminal first
       const result = await window.electronAPI.pasteToLastActiveTerminal(textToPaste);
       console.log('[App] Paste result:', result);
 
-      // Save to history with both versions and title (after successful paste attempt)
-      if (shouldSaveToHistory && (result.success || result.copied)) {
-        // Generate title from the formatted text (or original if no formatting)
-        const textForTitle = formattedText || originalText;
-        if (textForTitle) {
-          try {
-            console.log('[App] Generating title...');
-            const titleResult = await window.electronAPI.generateTitle(textForTitle);
-            if (titleResult.success && titleResult.title) {
-              title = titleResult.title;
-              console.log('[App] Generated title:', title);
-            }
-          } catch (err) {
-            console.warn('[App] Title generation failed:', err);
-          }
-        }
-
-        await saveTranscriptionWithFormatting({
-          originalText,
-          formattedText,
-          title,
-          duration,
-        });
-      }
-
+      // Show notification IMMEDIATELY after paste
       if (result.success) {
         setPasteStatus('success');
         setTimeout(() => setPasteStatus('idle'), 2000);
@@ -294,6 +337,37 @@ function App() {
         setPasteStatus('permission');
       } else {
         setPasteStatus('permission');
+      }
+
+      // Save to history in background (don't block UI)
+      if (shouldSaveToHistory && (result.success || result.copied)) {
+        // Run title generation and saving in background
+        (async () => {
+          const textForTitle = formattedText || originalText;
+          if (textForTitle) {
+            try {
+              console.log('[App] Generating title in background...');
+              const titleResult = await window.electronAPI.generateTitle(textForTitle);
+              if (titleResult.success && titleResult.title) {
+                title = titleResult.title;
+                console.log('[App] Generated title:', title);
+              }
+            } catch (err) {
+              console.warn('[App] Title generation failed:', err);
+            }
+          }
+
+          await saveTranscriptionWithFormatting({
+            originalText,
+            formattedText,
+            title,
+            duration,
+          });
+
+          // Show notification that history was saved
+          setHistorySaved(title || 'Transcription');
+          setTimeout(() => setHistorySaved(null), 3000);
+        })();
       }
     } catch (err) {
       console.error('[App] Format/paste error:', err);
@@ -386,19 +460,46 @@ function App() {
   const hasTranscript = transcriptSegments.length > 0 || editedTranscript !== null;
 
   return (
-    <div className="app-container">
-      <header className="app-header">
+    <div className="app-container cyber-app">
+      {/* Cyberpunk Scan Lines Overlay */}
+      <ScanLines opacity={0.03} animate={true} />
+
+      {/* Achievement Popup */}
+      {recentUnlocks.length > 0 && (
+        <AchievementPopup
+          achievements={recentUnlocks}
+          onDismiss={clearRecentUnlocks}
+        />
+      )}
+
+      <header className="app-header cyber-header">
         <div className="header-title">
-          <h1>Transcription</h1>
-          <div className={`status-indicator ${isRecording ? 'recording' : isConnected ? 'connected' : ''}`}>
+          <GlitchText as="h1" intensity="subtle" className="cyber-title">
+            Neural Scribe
+          </GlitchText>
+          <div className={`status-indicator cyber-status ${isRecording ? 'recording' : isConnected ? 'connected' : ''}`}>
             <span className="status-dot" />
             <span>{isRecording ? `Recording ${formatTime(recordingTime)}` : isConnected ? 'Connected' : 'Ready'}</span>
           </div>
         </div>
+        <div className="header-center">
+          {/* XP Bar moved to gamification modal */}
+        </div>
         <div className="header-right">
           <MicrophoneSelector disabled={isRecording} />
           <button
-            className="btn settings-btn"
+            className="btn btn-icon cyber-btn"
+            onClick={() => setShowGamification(true)}
+            title="Stats & Progress"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20V10"></path>
+              <path d="M18 20V4"></path>
+              <path d="M6 20v-4"></path>
+            </svg>
+          </button>
+          <button
+            className="btn settings-btn cyber-btn"
             onClick={() => setShowSettings(true)}
             title="Settings"
           >
@@ -468,14 +569,26 @@ function App() {
             </div>
           )}
 
+          {/* AI Orb Visualizer */}
+          <div className="orb-container">
+            <AIOrb
+              state={getOrbState()}
+              size="lg"
+              audioLevel={audioLevel}
+              frequencyData={frequencyData}
+              onClick={isRecording ? handleStopRecording : handleStartRecording}
+            />
+          </div>
+
           {/* Transcript Area */}
-          <div className="transcript-area">
+          <div className="transcript-area cyber-panel">
             {!hasTranscript ? (
-              <div className="transcript-placeholder">
-                <div className="placeholder-icon">🎤</div>
-                <p>Press "Start Recording" to begin</p>
+              <div className="transcript-placeholder cyber-placeholder">
+                <p className="cyber-placeholder-text">
+                  <GlitchText intensity="subtle">Click the orb or press</GlitchText>
+                </p>
                 <p className="placeholder-hint">
-                  Or use <kbd>Cmd+Shift+R</kbd> from anywhere
+                  <kbd className="cyber-kbd">Cmd+Shift+R</kbd> to begin
                 </p>
               </div>
             ) : (
@@ -491,9 +604,9 @@ function App() {
             <div ref={transcriptEndRef} />
           </div>
 
-          {/* Terminal Paste Section */}
-          {hasTranscript && (
-            <div className="terminal-section">
+          {/* Terminal Paste Section - Always visible */}
+          <div className="terminal-section">
+            <div className="paste-button-row">
               <button
                 onClick={handlePasteToTerminal}
                 className="btn btn-paste"
@@ -505,72 +618,104 @@ function App() {
                     Formatting...
                   </>
                 ) : (
-                  'Paste to Terminal'
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 5v14M5 12l7 7 7-7" />
+                    </svg>
+                    Paste to Terminal
+                  </>
                 )}
               </button>
+            </div>
+          </div>
+
+          {/* Toast Notifications */}
+          {(pasteStatus !== 'idle' || lastVoiceCommand || historySaved) && (
+            <div className="toast-container">
+              {lastVoiceCommand && (
+                <div className="toast toast-voice">
+                  <span className="toast-icon">🎤</span>
+                  <span className="toast-message">Voice: {lastVoiceCommand}</span>
+                </div>
+              )}
               {pasteStatus === 'formatting' && (
-                <div className="paste-notice paste-formatting">
-                  Claude is formatting your prompt...
+                <div className="toast toast-processing">
+                  <span className="toast-icon">
+                    <span className="formatting-spinner" />
+                  </span>
+                  <span className="toast-message">Formatting with Claude...</span>
                 </div>
               )}
               {pasteStatus === 'permission' && (
-                <div className="paste-notice">
-                  Copied to clipboard! Press <kbd>Cmd+V</kbd> in the terminal.
-                  <span className="paste-hint">
-                    (Grant Accessibility access in System Preferences for auto-paste)
-                  </span>
+                <div className="toast toast-info">
+                  <span className="toast-icon">📋</span>
+                  <span className="toast-message">Copied! Press ⌘V to paste</span>
                 </div>
               )}
               {pasteStatus === 'success' && (
-                <div className="paste-notice paste-success">
-                  Pasted successfully!
+                <div className="toast toast-success">
+                  <span className="toast-icon">✓</span>
+                  <span className="toast-message">Pasted successfully</span>
                 </div>
               )}
               {pasteStatus === 'no-terminal' && (
-                <div className="paste-notice paste-error">
-                  No terminal app running. Open Terminal, VS Code, or Cursor first.
+                <div className="toast toast-error">
+                  <span className="toast-icon">!</span>
+                  <span className="toast-message">No terminal app running</span>
                 </div>
               )}
               {pasteStatus === 'error' && (
-                <div className="paste-notice paste-error">
-                  Failed to paste. Text copied to clipboard - press Cmd+V manually.
+                <div className="toast toast-error">
+                  <span className="toast-icon">!</span>
+                  <span className="toast-message">Paste failed - copied to clipboard</span>
+                </div>
+              )}
+              {historySaved && (
+                <div className="toast toast-history">
+                  <span className="toast-icon">📝</span>
+                  <span className="toast-message">Saved: {historySaved}</span>
                 </div>
               )}
             </div>
           )}
 
-          {/* Voice Command Indicator */}
-          {lastVoiceCommand && (
-            <div className="voice-command-indicator">
-              Voice command: <strong>{lastVoiceCommand}</strong>
-            </div>
-          )}
+          {/* Voice Command Indicator - now shown as toast */}
+
+          {/* Stats Panel moved to gamification modal */}
 
           {/* Hotkey Footer */}
-          <div className="hotkey-bar">
+          <div className="hotkey-bar cyber-hotkey-bar">
             <div className="hotkey-left">
-              <span><kbd>Cmd+Shift+R</kbd> Toggle recording</span>
-              <span><kbd>Cmd+Shift+V</kbd> Copy last to clipboard</span>
+              <span><kbd className="cyber-kbd">{formatHotkeyForDisplay(recordHotkey)}</kbd> Toggle recording</span>
+              <span><kbd className="cyber-kbd">{formatHotkeyForDisplay(pasteHotkey)}</kbd> Copy last</span>
             </div>
             <div className="hotkey-right">
-              <button
-                className={`footer-toggle ${formattingEnabled ? 'active' : ''}`}
-                onClick={async () => {
-                  const newValue = !formattingEnabled;
-                  setFormattingEnabled(newValue);
-                  await window.electronAPI.setPromptFormattingEnabled(newValue);
-                }}
-                title={formattingEnabled ? 'AI formatting enabled - click to disable' : 'AI formatting disabled - click to enable'}
-              >
-                ✨ {formattingEnabled ? 'Format ON' : 'Format OFF'}
-              </button>
-              <button
-                className={`footer-toggle ${voiceCommandsEnabled ? 'active' : ''}`}
-                onClick={() => setVoiceCommandsEnabled(!voiceCommandsEnabled)}
-                title={voiceCommandsEnabled ? 'Voice commands enabled' : 'Voice commands disabled'}
-              >
-                🎤 {voiceCommandsEnabled ? 'Voice Cmds ON' : 'Voice Cmds OFF'}
-              </button>
+              <label className="footer-switch" title={formattingEnabled ? 'AI formatting enabled' : 'AI formatting disabled'}>
+                <span className="switch-label">Format</span>
+                <input
+                  type="checkbox"
+                  checked={formattingEnabled}
+                  onChange={async (e) => {
+                    const newValue = e.target.checked;
+                    setFormattingEnabled(newValue);
+                    await window.electronAPI.setPromptFormattingEnabled(newValue);
+                  }}
+                />
+                <span className="switch-track">
+                  <span className="switch-thumb" />
+                </span>
+              </label>
+              <label className="footer-switch" title={voiceCommandsEnabled ? 'Voice commands enabled' : 'Voice commands disabled'}>
+                <span className="switch-label">Voice commands</span>
+                <input
+                  type="checkbox"
+                  checked={voiceCommandsEnabled}
+                  onChange={(e) => setVoiceCommandsEnabled(e.target.checked)}
+                />
+                <span className="switch-track">
+                  <span className="switch-thumb" />
+                </span>
+              </label>
               {voiceCommandsEnabled && (
                 <span className="voice-hint">Say "send it" to paste</span>
               )}
@@ -621,6 +766,16 @@ function App() {
           setReplacementInitialText(undefined);
         }}
         initialFromText={replacementInitialText}
+      />
+
+      {/* Gamification Stats Modal */}
+      <GamificationModal
+        isOpen={showGamification}
+        onClose={() => setShowGamification(false)}
+        stats={stats}
+        level={level}
+        xpProgress={xpProgress}
+        achievements={achievements}
       />
     </div>
   );

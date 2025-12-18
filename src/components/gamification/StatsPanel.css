@@ -1,0 +1,111 @@
+/* StatsPanel - Live Stats Display */
+
+.stats-panel {
+  display: flex;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--bg-panel, rgba(10, 10, 20, 0.95));
+  border: 1px solid var(--border-dim, rgba(0, 255, 255, 0.1));
+  border-radius: 12px;
+}
+
+.stats-panel__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.stats-panel__item:hover {
+  background: rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
+}
+
+.stats-panel__icon {
+  font-size: 18px;
+}
+
+.stats-panel__data {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-panel__value {
+  font-family: var(--font-display, 'Orbitron', sans-serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #e0e0e0);
+}
+
+.stats-panel__label {
+  font-family: var(--font-ui, 'Rajdhani', sans-serif);
+  font-size: 10px;
+  color: var(--text-muted, #606060);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Color Variants */
+.stats-panel__item--cyan .stats-panel__value {
+  color: var(--neon-cyan, #00ffff);
+  text-shadow: 0 0 8px var(--neon-cyan, #00ffff);
+}
+
+.stats-panel__item--magenta .stats-panel__value {
+  color: var(--neon-magenta, #ff00ff);
+  text-shadow: 0 0 8px var(--neon-magenta, #ff00ff);
+}
+
+.stats-panel__item--blue .stats-panel__value {
+  color: var(--neon-blue, #00aaff);
+  text-shadow: 0 0 8px var(--neon-blue, #00aaff);
+}
+
+.stats-panel__item--green .stats-panel__value {
+  color: var(--neon-green, #00ff88);
+  text-shadow: 0 0 8px var(--neon-green, #00ff88);
+}
+
+.stats-panel__item--orange .stats-panel__value {
+  color: var(--neon-orange, #ff8800);
+  text-shadow: 0 0 8px var(--neon-orange, #ff8800);
+}
+
+/* Highlight Animation (for streaks, etc.) */
+.stats-panel__item--highlight {
+  animation: stat-pulse 2s ease-in-out infinite;
+}
+
+@keyframes stat-pulse {
+  0%, 100% {
+    box-shadow: none;
+  }
+  50% {
+    box-shadow: 0 0 10px currentColor;
+  }
+}
+
+/* Compact Variant */
+.stats-panel--compact {
+  padding: 8px 12px;
+  gap: 12px;
+}
+
+.stats-panel--compact .stats-panel__item {
+  padding: 6px 10px;
+}
+
+.stats-panel--compact .stats-panel__icon {
+  font-size: 14px;
+}
+
+.stats-panel--compact .stats-panel__value {
+  font-size: 14px;
+}
+
+.stats-panel--compact .stats-panel__label {
+  font-size: 9px;
+}

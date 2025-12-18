@@ -1,0 +1,136 @@
+/* AchievementBadge - Individual Achievement Display */
+
+.achievement-badge {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: var(--bg-card, rgba(18, 18, 26, 0.9));
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  overflow: hidden;
+  min-width: 100px;
+}
+
+.achievement-badge:hover {
+  transform: translateY(-4px);
+  border-color: var(--rarity-color);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Icon */
+.achievement-badge__icon {
+  font-size: 32px;
+  transition: transform 0.2s;
+}
+
+.achievement-badge:hover .achievement-badge__icon {
+  transform: scale(1.1);
+}
+
+/* Locked state */
+.achievement-badge--locked {
+  opacity: 0.6;
+  filter: grayscale(0.5);
+}
+
+.achievement-badge--locked .achievement-badge__icon {
+  filter: brightness(0.5);
+}
+
+/* Unlocked state */
+.achievement-badge--unlocked {
+  border-color: var(--rarity-color);
+}
+
+.achievement-badge--unlocked .achievement-badge__icon {
+  filter: drop-shadow(0 0 8px var(--rarity-color));
+}
+
+/* Progress bar */
+.achievement-badge__progress {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.achievement-badge__progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon-cyan) 0%, var(--neon-magenta) 100%);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Info */
+.achievement-badge__info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.achievement-badge__name {
+  font-family: var(--font-ui, 'Rajdhani', sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary, #e0e0e0);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.achievement-badge__xp {
+  font-family: var(--font-body, monospace);
+  font-size: 10px;
+  color: var(--text-muted, #606060);
+}
+
+.achievement-badge--unlocked .achievement-badge__xp {
+  color: var(--neon-green, #00ff88);
+}
+
+/* Glow effect for unlocked */
+.achievement-badge__glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at center,
+    var(--rarity-color) 0%,
+    transparent 70%
+  );
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+/* Rarity-specific styles */
+.achievement-badge--legendary.achievement-badge--unlocked {
+  animation: legendary-shine 3s ease-in-out infinite;
+}
+
+@keyframes legendary-shine {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 170, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 170, 0, 0.5), 0 0 30px rgba(255, 170, 0, 0.2);
+  }
+}
+
+.achievement-badge--epic.achievement-badge--unlocked {
+  animation: epic-pulse 4s ease-in-out infinite;
+}
+
+@keyframes epic-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(170, 0, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(170, 0, 255, 0.4);
+  }
+}

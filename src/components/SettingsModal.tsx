@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { VoiceCommandTrigger, AppSettings, PromptFormattingSettings } from '../types/electron';
+import type { VoiceCommandTrigger } from '../types/electron';
 import './SettingsModal.css';
 
 interface SettingsModalProps {
@@ -10,6 +10,8 @@ interface SettingsModalProps {
   onVoiceCommandsEnabledChange: (enabled: boolean) => void;
 }
 
+type SettingsTab = 'general' | 'voice' | 'formatting' | 'shortcuts';
+
 export function SettingsModal({
   isOpen,
   onClose,
@@ -17,30 +19,27 @@ export function SettingsModal({
   voiceCommandsEnabled,
   onVoiceCommandsEnabledChange
 }: SettingsModalProps) {
+  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+
+  // API Key state
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingApiKey, setIsEditingApiKey] = useState(false);
   const [newApiKey, setNewApiKey] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [apiKeySuccess, setApiKeySuccess] = useState(false);
 
-  // Settings
+  // Word Replacements
   const [replacementsEnabled, setReplacementsEnabled] = useState(true);
 
-  // Voice command triggers
+  // Voice Commands
   const [triggers, setTriggers] = useState<VoiceCommandTrigger[]>([]);
   const [expandedCommand, setExpandedCommand] = useState<string | null>(null);
   const [newTriggerPhrase, setNewTriggerPhrase] = useState('');
   const [addingToCommand, setAddingToCommand] = useState<'send' | 'clear' | 'cancel' | null>(null);
 
-  // Keyboard shortcuts
-  const [recordHotkey, setRecordHotkey] = useState('CommandOrControl+Shift+R');
-  const [pasteHotkey, setPasteHotkey] = useState('CommandOrControl+Shift+V');
-  const [editingShortcut, setEditingShortcut] = useState<'record' | 'paste' | null>(null);
-  const [shortcutError, setShortcutError] = useState<string | null>(null);
-
-  // Prompt formatting
+  // Prompt Formatting
   const [formattingEnabled, setFormattingEnabled] = useState(true);
   const [formattingModel, setFormattingModel] = useState<'sonnet' | 'opus' | 'haiku'>('sonnet');
   const [formattingInstructions, setFormattingInstructions] = useState('');
@@ -48,62 +47,56 @@ export function SettingsModal({
   const [showInstructions, setShowInstructions] = useState(false);
   const [claudeCliStatus, setClaudeCliStatus] = useState<{ available: boolean; version: string | null } | null>(null);
 
+  // Keyboard Shortcuts
+  const [recordHotkey, setRecordHotkey] = useState('CommandOrControl+Shift+R');
+  const [pasteHotkey, setPasteHotkey] = useState('CommandOrControl+Shift+V');
+  const [editingShortcut, setEditingShortcut] = useState<'record' | 'paste' | null>(null);
+  const [shortcutError, setShortcutError] = useState<string | null>(null);
+
   // Load settings on open
   useEffect(() => {
     if (isOpen) {
-      loadSettings();
-      loadTriggers();
-      loadFormattingSettings();
-      setIsEditing(false);
-      setNewApiKey('');
-      setError(null);
-      setSuccessMessage(null);
-      setExpandedCommand(null);
-      setAddingToCommand(null);
-      setNewTriggerPhrase('');
-      setEditingShortcut(null);
-      setShortcutError(null);
-      setShowInstructions(false);
+      loadAllSettings();
+      resetState();
     }
   }, [isOpen]);
 
-  const loadSettings = async () => {
-    try {
-      const key = await window.electronAPI.getApiKey();
-      setApiKey(key || '');
-
-      const settings = await window.electronAPI.getSettings();
-      setReplacementsEnabled(settings.replacementsEnabled ?? true);
-      setRecordHotkey(settings.recordHotkey || 'CommandOrControl+Shift+R');
-      setPasteHotkey(settings.pasteHotkey || 'CommandOrControl+Shift+V');
-    } catch (err) {
-      console.error('Failed to load settings:', err);
-    }
+  const resetState = () => {
+    setIsEditingApiKey(false);
+    setNewApiKey('');
+    setApiKeyError(null);
+    setApiKeySuccess(false);
+    setExpandedCommand(null);
+    setAddingToCommand(null);
+    setNewTriggerPhrase('');
+    setEditingShortcut(null);
+    setShortcutError(null);
+    setShowInstructions(false);
   };
 
-  const loadTriggers = async () => {
+  const loadAllSettings = async () => {
     try {
-      const data = await window.electronAPI.getVoiceCommandTriggers();
-      setTriggers(data);
-    } catch (err) {
-      console.error('Failed to load voice command triggers:', err);
-    }
-  };
-
-  const loadFormattingSettings = async () => {
-    try {
-      const [settings, defaultInstr, cliStatus] = await Promise.all([
+      const [key, settings, triggersData, formattingSettings, defaultInstr, cliStatus] = await Promise.all([
+        window.electronAPI.getApiKey(),
+        window.electronAPI.getSettings(),
+        window.electronAPI.getVoiceCommandTriggers(),
         window.electronAPI.getPromptFormattingSettings(),
         window.electronAPI.getDefaultFormattingInstructions(),
         window.electronAPI.checkClaudeCli()
       ]);
-      setFormattingEnabled(settings.enabled);
-      setFormattingModel(settings.model);
-      setFormattingInstructions(settings.instructions);
+
+      setApiKey(key || '');
+      setReplacementsEnabled(settings.replacementsEnabled ?? true);
+      setRecordHotkey(settings.recordHotkey || 'CommandOrControl+Shift+R');
+      setPasteHotkey(settings.pasteHotkey || 'CommandOrControl+Shift+V');
+      setTriggers(triggersData);
+      setFormattingEnabled(formattingSettings.enabled);
+      setFormattingModel(formattingSettings.model);
+      setFormattingInstructions(formattingSettings.instructions);
       setDefaultInstructions(defaultInstr);
       setClaudeCliStatus(cliStatus);
     } catch (err) {
-      console.error('Failed to load formatting settings:', err);
+      console.error('Failed to load settings:', err);
     }
   };
 
@@ -115,11 +108,11 @@ export function SettingsModal({
 
   const handleSaveApiKey = async () => {
     if (!newApiKey.trim()) {
-      setError('Please enter an API key');
+      setApiKeyError('Please enter an API key');
       return;
     }
 
-    setError(null);
+    setApiKeyError(null);
     setIsValidating(true);
 
     try {
@@ -128,22 +121,16 @@ export function SettingsModal({
 
       setApiKey(newApiKey.trim());
       setNewApiKey('');
-      setIsEditing(false);
-      setSuccessMessage('API key updated successfully');
-      setTimeout(() => setSuccessMessage(null), 3000);
+      setIsEditingApiKey(false);
+      setApiKeySuccess(true);
+      setTimeout(() => setApiKeySuccess(false), 3000);
     } catch (err) {
       console.error('API key validation failed:', err);
-      setError('Invalid API key. Please check and try again.');
+      setApiKeyError('Invalid API key. Please check and try again.');
       await window.electronAPI.setApiKey(apiKey);
     } finally {
       setIsValidating(false);
     }
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setNewApiKey('');
-    setError(null);
   };
 
   const handleReplacementsEnabledChange = async (enabled: boolean) => {
@@ -151,7 +138,7 @@ export function SettingsModal({
     await window.electronAPI.setSettings({ replacementsEnabled: enabled });
   };
 
-  const handleVoiceCommandsEnabledChange = async (enabled: boolean) => {
+  const handleVoiceCommandsChange = async (enabled: boolean) => {
     onVoiceCommandsEnabledChange(enabled);
     await window.electronAPI.setSettings({ voiceCommandsEnabled: enabled });
   };
@@ -207,7 +194,6 @@ export function SettingsModal({
     return triggers.filter(t => t.command === command);
   };
 
-  // Convert Electron accelerator format to display format
   const formatHotkeyForDisplay = (hotkey: string) => {
     return hotkey
       .replace('CommandOrControl', '⌘')
@@ -219,44 +205,23 @@ export function SettingsModal({
       .replace(/\+/g, ' ');
   };
 
-  // Convert key event to Electron accelerator format
   const keyEventToAccelerator = (e: React.KeyboardEvent): string | null => {
     const parts: string[] = [];
 
-    // Need at least one modifier
-    if (!e.metaKey && !e.ctrlKey && !e.altKey) {
-      return null;
-    }
+    if (!e.metaKey && !e.ctrlKey && !e.altKey) return null;
 
-    if (e.metaKey || e.ctrlKey) {
-      parts.push('CommandOrControl');
-    }
-    if (e.shiftKey) {
-      parts.push('Shift');
-    }
-    if (e.altKey) {
-      parts.push('Alt');
-    }
+    if (e.metaKey || e.ctrlKey) parts.push('CommandOrControl');
+    if (e.shiftKey) parts.push('Shift');
+    if (e.altKey) parts.push('Alt');
 
-    // Get the key (ignore modifier-only presses)
     const key = e.key;
-    if (['Meta', 'Control', 'Shift', 'Alt'].includes(key)) {
-      return null;
-    }
+    if (['Meta', 'Control', 'Shift', 'Alt'].includes(key)) return null;
 
-    // Convert key to Electron format
     let electronKey = key.toUpperCase();
-    if (key.length === 1) {
-      electronKey = key.toUpperCase();
-    } else if (key === 'ArrowUp') {
-      electronKey = 'Up';
-    } else if (key === 'ArrowDown') {
-      electronKey = 'Down';
-    } else if (key === 'ArrowLeft') {
-      electronKey = 'Left';
-    } else if (key === 'ArrowRight') {
-      electronKey = 'Right';
-    }
+    if (key === 'ArrowUp') electronKey = 'Up';
+    else if (key === 'ArrowDown') electronKey = 'Down';
+    else if (key === 'ArrowLeft') electronKey = 'Left';
+    else if (key === 'ArrowRight') electronKey = 'Right';
 
     parts.push(electronKey);
     return parts.join('+');
@@ -266,7 +231,6 @@ export function SettingsModal({
     e.preventDefault();
     e.stopPropagation();
 
-    // Escape to cancel
     if (e.key === 'Escape') {
       setEditingShortcut(null);
       setShortcutError(null);
@@ -274,19 +238,13 @@ export function SettingsModal({
     }
 
     const accelerator = keyEventToAccelerator(e);
-    if (!accelerator) {
-      return; // Wait for a valid key combination
-    }
+    if (!accelerator) return;
 
-    // Try to update the hotkey
     const result = await window.electronAPI.updateHotkey(type, accelerator);
 
     if (result.success) {
-      if (type === 'record') {
-        setRecordHotkey(accelerator);
-      } else {
-        setPasteHotkey(accelerator);
-      }
+      if (type === 'record') setRecordHotkey(accelerator);
+      else setPasteHotkey(accelerator);
       setEditingShortcut(null);
       setShortcutError(null);
     } else {
@@ -294,388 +252,421 @@ export function SettingsModal({
     }
   };
 
-  const commandLabels = {
-    send: { title: 'Send / Paste', description: 'Stop recording and paste to terminal', icon: '📤' },
-    clear: { title: 'Clear', description: 'Clear the current transcript', icon: '🗑️' },
-    cancel: { title: 'Cancel', description: 'Cancel and discard recording', icon: '❌' }
+  const commandConfig = {
+    send: { title: 'Send / Paste', description: 'Stop and paste to terminal', icon: '📤' },
+    clear: { title: 'Clear', description: 'Clear transcript', icon: '🗑️' },
+    cancel: { title: 'Cancel', description: 'Discard recording', icon: '❌' }
   };
+
+  const tabs = [
+    { id: 'general' as SettingsTab, label: 'General', icon: '⚙️' },
+    { id: 'voice' as SettingsTab, label: 'Voice', icon: '🎤' },
+    { id: 'formatting' as SettingsTab, label: 'AI Format', icon: '✨' },
+    { id: 'shortcuts' as SettingsTab, label: 'Shortcuts', icon: '⌨️' },
+  ];
 
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="settings-modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
+    <div className="cyber-modal-overlay" onClick={onClose}>
+      <div className="cyber-settings-modal" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="cyber-modal-header">
           <h2>Settings</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="cyber-close-btn" onClick={onClose}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        <div className="settings-body">
-          {/* API Key Section */}
-          <div className="settings-section">
-            <h3>API Key</h3>
-            <p className="settings-description">
-              Your ElevenLabs API key for speech recognition.
-            </p>
-
-            {!isEditing ? (
-              <div className="api-key-display">
-                <div className="api-key-value">
-                  {showApiKey ? apiKey : maskApiKey(apiKey)}
-                </div>
-                <div className="api-key-actions">
-                  <button
-                    className="btn-small"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                  >
-                    {showApiKey ? 'Hide' : 'Show'}
-                  </button>
-                  <button
-                    className="btn-small btn-primary"
-                    onClick={() => setIsEditing(true)}
-                  >
-                    Change
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="api-key-edit">
-                <input
-                  type="password"
-                  value={newApiKey}
-                  onChange={(e) => setNewApiKey(e.target.value)}
-                  placeholder="Enter new API key"
-                  className="api-key-input"
-                  autoFocus
-                  disabled={isValidating}
-                />
-                <div className="api-key-edit-actions">
-                  <button
-                    className="btn-small"
-                    onClick={handleCancelEdit}
-                    disabled={isValidating}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="btn-small btn-primary"
-                    onClick={handleSaveApiKey}
-                    disabled={isValidating || !newApiKey.trim()}
-                  >
-                    {isValidating ? 'Validating...' : 'Save'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {error && <div className="settings-error">{error}</div>}
-            {successMessage && <div className="settings-success">{successMessage}</div>}
-          </div>
-
-          {/* Word Replacements Section */}
-          <div className="settings-section">
-            <div className="settings-section-header">
-              <div>
-                <h3>Word Replacements</h3>
-                <p className="settings-description">
-                  Automatically correct commonly misheard words.
-                </p>
-              </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={replacementsEnabled}
-                  onChange={(e) => handleReplacementsEnabledChange(e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-            </div>
+        {/* Tabs */}
+        <div className="cyber-settings-tabs">
+          {tabs.map(tab => (
             <button
-              className="btn-settings-action"
-              onClick={onOpenReplacements}
-              disabled={!replacementsEnabled}
+              key={tab.id}
+              className={`cyber-settings-tab ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
             >
-              <span className="btn-icon-left">📝</span>
-              Manage Replacements
-              <span className="btn-arrow">→</span>
+              <span className="tab-icon">{tab.icon}</span>
+              <span className="tab-label">{tab.label}</span>
             </button>
-          </div>
+          ))}
+        </div>
 
-          {/* Voice Commands Section */}
-          <div className="settings-section">
-            <div className="settings-section-header">
-              <div>
-                <h3>Voice Commands</h3>
-                <p className="settings-description">
-                  Control the app with voice while recording.
-                </p>
-              </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={voiceCommandsEnabled}
-                  onChange={(e) => handleVoiceCommandsEnabledChange(e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-            </div>
-
-            {voiceCommandsEnabled && (
-              <div className="voice-commands-list">
-                {(['send', 'clear', 'cancel'] as const).map(command => {
-                  const commandTriggers = getTriggersByCommand(command);
-                  const isExpanded = expandedCommand === command;
-                  const label = commandLabels[command];
-
-                  return (
-                    <div key={command} className="voice-command-group">
-                      <button
-                        className="voice-command-header"
-                        onClick={() => setExpandedCommand(isExpanded ? null : command)}
-                      >
-                        <span className="command-icon">{label.icon}</span>
-                        <div className="command-info">
-                          <span className="command-title">{label.title}</span>
-                          <span className="command-desc">{label.description}</span>
-                        </div>
-                        <span className="command-count">
-                          {commandTriggers.filter(t => t.enabled).length}/{commandTriggers.length}
-                        </span>
-                        <span className={`expand-arrow ${isExpanded ? 'expanded' : ''}`}>▶</span>
-                      </button>
-
-                      {isExpanded && (
-                        <div className="voice-command-triggers">
-                          {commandTriggers.map(trigger => (
-                            <div key={trigger.id} className="trigger-item">
-                              <label className="trigger-toggle">
-                                <input
-                                  type="checkbox"
-                                  checked={trigger.enabled}
-                                  onChange={(e) => handleTriggerToggle(trigger.id, e.target.checked)}
-                                />
-                                <span className="trigger-phrase">"{trigger.phrase}"</span>
-                              </label>
-                              {trigger.isCustom && (
-                                <button
-                                  className="trigger-delete"
-                                  onClick={() => handleDeleteTrigger(trigger.id)}
-                                  title="Delete"
-                                >
-                                  ×
-                                </button>
-                              )}
-                            </div>
-                          ))}
-
-                          {addingToCommand === command ? (
-                            <div className="add-trigger-form">
-                              <input
-                                type="text"
-                                value={newTriggerPhrase}
-                                onChange={(e) => setNewTriggerPhrase(e.target.value)}
-                                placeholder="Enter phrase..."
-                                className="add-trigger-input"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') handleAddTrigger(command);
-                                  if (e.key === 'Escape') {
-                                    setAddingToCommand(null);
-                                    setNewTriggerPhrase('');
-                                  }
-                                }}
-                              />
-                              <button
-                                className="btn-small btn-primary"
-                                onClick={() => handleAddTrigger(command)}
-                                disabled={!newTriggerPhrase.trim()}
-                              >
-                                Add
-                              </button>
-                              <button
-                                className="btn-small"
-                                onClick={() => {
-                                  setAddingToCommand(null);
-                                  setNewTriggerPhrase('');
-                                }}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              className="add-trigger-btn"
-                              onClick={() => setAddingToCommand(command)}
-                            >
-                              + Add custom phrase
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Prompt Formatting Section */}
-          <div className="settings-section">
-            <div className="settings-section-header">
-              <div>
-                <h3>Prompt Formatting</h3>
-                <p className="settings-description">
-                  Use Claude to format your transcription into a clear, professional prompt before pasting.
-                </p>
-              </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={formattingEnabled}
-                  onChange={(e) => handleFormattingEnabledChange(e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-            </div>
-
-            {claudeCliStatus && !claudeCliStatus.available && (
-              <div className="settings-error">
-                Claude CLI not found. Please install Claude Code to use this feature.
-              </div>
-            )}
-
-            {formattingEnabled && claudeCliStatus?.available && (
-              <>
-                <div className="formatting-model-selector">
-                  <label className="formatting-option-label">Model</label>
-                  <div className="model-buttons">
-                    {(['haiku', 'sonnet', 'opus'] as const).map(model => (
-                      <button
-                        key={model}
-                        className={`model-btn ${formattingModel === model ? 'active' : ''}`}
-                        onClick={() => handleFormattingModelChange(model)}
-                      >
-                        {model.charAt(0).toUpperCase() + model.slice(1)}
-                        {model === 'haiku' && <span className="model-badge">Fast</span>}
-                        {model === 'sonnet' && <span className="model-badge">Balanced</span>}
-                        {model === 'opus' && <span className="model-badge">Best</span>}
-                      </button>
-                    ))}
+        {/* Content */}
+        <div className="cyber-settings-content">
+          {/* General Tab */}
+          {activeTab === 'general' && (
+            <div className="settings-panel">
+              {/* API Key */}
+              <div className="cyber-setting-group">
+                <div className="setting-header">
+                  <div className="setting-icon">🔑</div>
+                  <div className="setting-info">
+                    <h3>API Key</h3>
+                    <p>Your ElevenLabs API key for speech recognition</p>
                   </div>
                 </div>
 
-                <div className="formatting-instructions-section">
-                  <button
-                    className="btn-settings-action"
-                    onClick={() => setShowInstructions(!showInstructions)}
-                  >
-                    <span className="btn-icon-left">📝</span>
-                    {showInstructions ? 'Hide Instructions' : 'View/Edit Instructions'}
-                    <span className="btn-arrow">{showInstructions ? '↑' : '→'}</span>
-                  </button>
+                {!isEditingApiKey ? (
+                  <div className="api-key-display">
+                    <code className="api-key-value">
+                      {showApiKey ? apiKey : maskApiKey(apiKey)}
+                    </code>
+                    <div className="api-key-actions">
+                      <button className="cyber-btn-sm" onClick={() => setShowApiKey(!showApiKey)}>
+                        {showApiKey ? 'Hide' : 'Show'}
+                      </button>
+                      <button className="cyber-btn-sm cyber-btn-primary" onClick={() => setIsEditingApiKey(true)}>
+                        Change
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="api-key-edit">
+                    <input
+                      type="password"
+                      value={newApiKey}
+                      onChange={(e) => setNewApiKey(e.target.value)}
+                      placeholder="Enter new API key"
+                      className="cyber-input"
+                      autoFocus
+                      disabled={isValidating}
+                    />
+                    <div className="api-key-actions">
+                      <button
+                        className="cyber-btn-sm"
+                        onClick={() => { setIsEditingApiKey(false); setNewApiKey(''); setApiKeyError(null); }}
+                        disabled={isValidating}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="cyber-btn-sm cyber-btn-primary"
+                        onClick={handleSaveApiKey}
+                        disabled={isValidating || !newApiKey.trim()}
+                      >
+                        {isValidating ? 'Validating...' : 'Save'}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-                  {showInstructions && (
-                    <div className="instructions-editor">
-                      <textarea
-                        className="instructions-textarea"
-                        value={formattingInstructions || defaultInstructions}
-                        onChange={(e) => handleFormattingInstructionsChange(e.target.value)}
-                        placeholder="Enter custom formatting instructions..."
-                        rows={10}
-                      />
-                      <div className="instructions-actions">
+                {apiKeyError && <div className="cyber-error">{apiKeyError}</div>}
+                {apiKeySuccess && <div className="cyber-success">API key updated successfully</div>}
+              </div>
+
+              {/* Word Replacements */}
+              <div className="cyber-setting-group">
+                <div className="setting-row">
+                  <div className="setting-header">
+                    <div className="setting-icon">📝</div>
+                    <div className="setting-info">
+                      <h3>Word Replacements</h3>
+                      <p>Auto-correct misheard words</p>
+                    </div>
+                  </div>
+                  <label className="cyber-toggle">
+                    <input
+                      type="checkbox"
+                      checked={replacementsEnabled}
+                      onChange={(e) => handleReplacementsEnabledChange(e.target.checked)}
+                    />
+                    <span className="toggle-track">
+                      <span className="toggle-thumb" />
+                    </span>
+                  </label>
+                </div>
+
+                <button
+                  className="cyber-action-btn"
+                  onClick={onOpenReplacements}
+                  disabled={!replacementsEnabled}
+                >
+                  <span>Manage Replacements</span>
+                  <span className="action-arrow">→</span>
+                </button>
+              </div>
+
+              {/* About */}
+              <div className="cyber-setting-group about-section">
+                <p className="about-text">Neural Scribe v1.0.0</p>
+                <p className="about-subtext">Powered by ElevenLabs Scribe</p>
+              </div>
+            </div>
+          )}
+
+          {/* Voice Tab */}
+          {activeTab === 'voice' && (
+            <div className="settings-panel">
+              <div className="cyber-setting-group">
+                <div className="setting-row">
+                  <div className="setting-header">
+                    <div className="setting-icon">🎤</div>
+                    <div className="setting-info">
+                      <h3>Voice Commands</h3>
+                      <p>Control the app with your voice while recording</p>
+                    </div>
+                  </div>
+                  <label className="cyber-toggle">
+                    <input
+                      type="checkbox"
+                      checked={voiceCommandsEnabled}
+                      onChange={(e) => handleVoiceCommandsChange(e.target.checked)}
+                    />
+                    <span className="toggle-track">
+                      <span className="toggle-thumb" />
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {voiceCommandsEnabled && (
+                <div className="voice-commands-section">
+                  {(['send', 'clear', 'cancel'] as const).map(command => {
+                    const cmdTriggers = getTriggersByCommand(command);
+                    const isExpanded = expandedCommand === command;
+                    const config = commandConfig[command];
+
+                    return (
+                      <div key={command} className="cyber-command-group">
                         <button
-                          className="btn-small"
+                          className={`cyber-command-header ${isExpanded ? 'expanded' : ''}`}
+                          onClick={() => setExpandedCommand(isExpanded ? null : command)}
+                        >
+                          <span className="command-icon">{config.icon}</span>
+                          <div className="command-info">
+                            <span className="command-title">{config.title}</span>
+                            <span className="command-desc">{config.description}</span>
+                          </div>
+                          <span className="command-count">
+                            {cmdTriggers.filter(t => t.enabled).length}/{cmdTriggers.length}
+                          </span>
+                          <span className="expand-icon">{isExpanded ? '−' : '+'}</span>
+                        </button>
+
+                        {isExpanded && (
+                          <div className="command-triggers">
+                            {cmdTriggers.map(trigger => (
+                              <div key={trigger.id} className="trigger-item">
+                                <label className="cyber-checkbox">
+                                  <input
+                                    type="checkbox"
+                                    checked={trigger.enabled}
+                                    onChange={(e) => handleTriggerToggle(trigger.id, e.target.checked)}
+                                  />
+                                  <span className="checkbox-mark" />
+                                </label>
+                                <span className="trigger-phrase">"{trigger.phrase}"</span>
+                                {trigger.isCustom && (
+                                  <button
+                                    className="trigger-delete"
+                                    onClick={() => handleDeleteTrigger(trigger.id)}
+                                  >
+                                    ×
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+
+                            {addingToCommand === command ? (
+                              <div className="add-trigger-form">
+                                <input
+                                  type="text"
+                                  value={newTriggerPhrase}
+                                  onChange={(e) => setNewTriggerPhrase(e.target.value)}
+                                  placeholder="Enter phrase..."
+                                  className="cyber-input cyber-input-sm"
+                                  autoFocus
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleAddTrigger(command);
+                                    if (e.key === 'Escape') {
+                                      setAddingToCommand(null);
+                                      setNewTriggerPhrase('');
+                                    }
+                                  }}
+                                />
+                                <button
+                                  className="cyber-btn-sm cyber-btn-primary"
+                                  onClick={() => handleAddTrigger(command)}
+                                  disabled={!newTriggerPhrase.trim()}
+                                >
+                                  Add
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                className="add-trigger-btn"
+                                onClick={() => setAddingToCommand(command)}
+                              >
+                                + Add phrase
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Formatting Tab */}
+          {activeTab === 'formatting' && (
+            <div className="settings-panel">
+              <div className="cyber-setting-group">
+                <div className="setting-row">
+                  <div className="setting-header">
+                    <div className="setting-icon">✨</div>
+                    <div className="setting-info">
+                      <h3>AI Formatting</h3>
+                      <p>Use Claude to format your transcription</p>
+                    </div>
+                  </div>
+                  <label className="cyber-toggle">
+                    <input
+                      type="checkbox"
+                      checked={formattingEnabled}
+                      onChange={(e) => handleFormattingEnabledChange(e.target.checked)}
+                    />
+                    <span className="toggle-track">
+                      <span className="toggle-thumb" />
+                    </span>
+                  </label>
+                </div>
+
+                {claudeCliStatus && !claudeCliStatus.available && (
+                  <div className="cyber-error">
+                    Claude CLI not found. Install Claude Code to use this feature.
+                  </div>
+                )}
+              </div>
+
+              {formattingEnabled && claudeCliStatus?.available && (
+                <>
+                  <div className="cyber-setting-group">
+                    <h4 className="setting-label">Model</h4>
+                    <div className="model-selector">
+                      {(['haiku', 'sonnet', 'opus'] as const).map(model => (
+                        <button
+                          key={model}
+                          className={`model-btn ${formattingModel === model ? 'active' : ''}`}
+                          onClick={() => handleFormattingModelChange(model)}
+                        >
+                          <span className="model-name">{model.charAt(0).toUpperCase() + model.slice(1)}</span>
+                          <span className="model-badge">
+                            {model === 'haiku' && 'Fast'}
+                            {model === 'sonnet' && 'Balanced'}
+                            {model === 'opus' && 'Best'}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="cyber-setting-group">
+                    <button
+                      className="cyber-action-btn"
+                      onClick={() => setShowInstructions(!showInstructions)}
+                    >
+                      <span>{showInstructions ? 'Hide' : 'View'} Instructions</span>
+                      <span className="action-arrow">{showInstructions ? '↑' : '→'}</span>
+                    </button>
+
+                    {showInstructions && (
+                      <div className="instructions-editor">
+                        <textarea
+                          className="cyber-textarea"
+                          value={formattingInstructions || defaultInstructions}
+                          onChange={(e) => handleFormattingInstructionsChange(e.target.value)}
+                          placeholder="Enter custom formatting instructions..."
+                          rows={8}
+                        />
+                        <button
+                          className="cyber-btn-sm"
                           onClick={handleResetInstructions}
                           disabled={!formattingInstructions}
                         >
                           Reset to Default
                         </button>
                       </div>
-                    </div>
+                    )}
+                  </div>
+
+                  {claudeCliStatus?.version && (
+                    <p className="cli-version">Claude CLI {claudeCliStatus.version}</p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Shortcuts Tab */}
+          {activeTab === 'shortcuts' && (
+            <div className="settings-panel">
+              <div className="cyber-setting-group">
+                <div className="setting-header">
+                  <div className="setting-icon">⌨️</div>
+                  <div className="setting-info">
+                    <h3>Keyboard Shortcuts</h3>
+                    <p>Global hotkeys that work from any app</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="shortcuts-list">
+                <div className="shortcut-item">
+                  <span className="shortcut-label">Toggle Recording</span>
+                  {editingShortcut === 'record' ? (
+                    <input
+                      type="text"
+                      className="cyber-input cyber-input-sm shortcut-input"
+                      placeholder="Press keys..."
+                      autoFocus
+                      onKeyDown={(e) => handleShortcutKeyDown(e, 'record')}
+                      onBlur={() => { setEditingShortcut(null); setShortcutError(null); }}
+                      readOnly
+                    />
+                  ) : (
+                    <button
+                      className="shortcut-key"
+                      onClick={() => { setEditingShortcut('record'); setShortcutError(null); }}
+                    >
+                      {formatHotkeyForDisplay(recordHotkey)}
+                    </button>
                   )}
                 </div>
 
-                {claudeCliStatus?.version && (
-                  <p className="cli-version">Claude CLI {claudeCliStatus.version}</p>
-                )}
-              </>
-            )}
-          </div>
+                <div className="shortcut-item">
+                  <span className="shortcut-label">Paste Last Transcription</span>
+                  {editingShortcut === 'paste' ? (
+                    <input
+                      type="text"
+                      className="cyber-input cyber-input-sm shortcut-input"
+                      placeholder="Press keys..."
+                      autoFocus
+                      onKeyDown={(e) => handleShortcutKeyDown(e, 'paste')}
+                      onBlur={() => { setEditingShortcut(null); setShortcutError(null); }}
+                      readOnly
+                    />
+                  ) : (
+                    <button
+                      className="shortcut-key"
+                      onClick={() => { setEditingShortcut('paste'); setShortcutError(null); }}
+                    >
+                      {formatHotkeyForDisplay(pasteHotkey)}
+                    </button>
+                  )}
+                </div>
+              </div>
 
-          {/* Keyboard Shortcuts Section */}
-          <div className="settings-section">
-            <h3>Keyboard Shortcuts</h3>
-            <p className="settings-description">
-              Global hotkeys that work from any application. Click to change.
-            </p>
-            <div className="shortcuts-list">
-              <div className="shortcut-item">
-                <span className="shortcut-label">Toggle Recording</span>
-                {editingShortcut === 'record' ? (
-                  <input
-                    type="text"
-                    className="shortcut-input"
-                    placeholder="Press keys..."
-                    autoFocus
-                    onKeyDown={(e) => handleShortcutKeyDown(e, 'record')}
-                    onBlur={() => {
-                      setEditingShortcut(null);
-                      setShortcutError(null);
-                    }}
-                    readOnly
-                  />
-                ) : (
-                  <button
-                    className="shortcut-key-btn"
-                    onClick={() => {
-                      setEditingShortcut('record');
-                      setShortcutError(null);
-                    }}
-                  >
-                    {formatHotkeyForDisplay(recordHotkey)}
-                  </button>
-                )}
-              </div>
-              <div className="shortcut-item">
-                <span className="shortcut-label">Paste Last Transcription</span>
-                {editingShortcut === 'paste' ? (
-                  <input
-                    type="text"
-                    className="shortcut-input"
-                    placeholder="Press keys..."
-                    autoFocus
-                    onKeyDown={(e) => handleShortcutKeyDown(e, 'paste')}
-                    onBlur={() => {
-                      setEditingShortcut(null);
-                      setShortcutError(null);
-                    }}
-                    readOnly
-                  />
-                ) : (
-                  <button
-                    className="shortcut-key-btn"
-                    onClick={() => {
-                      setEditingShortcut('paste');
-                      setShortcutError(null);
-                    }}
-                  >
-                    {formatHotkeyForDisplay(pasteHotkey)}
-                  </button>
-                )}
-              </div>
+              {shortcutError && <div className="cyber-error">{shortcutError}</div>}
+
+              <p className="shortcut-hint">Click a shortcut to change it. Press Escape to cancel.</p>
             </div>
-            {shortcutError && (
-              <div className="settings-error">{shortcutError}</div>
-            )}
-          </div>
-
-          {/* About Section */}
-          <div className="settings-section settings-about">
-            <p className="about-text">
-              ElevenLabs Transcription v1.0.0
-            </p>
-          </div>
+          )}
         </div>
       </div>
     </div>
