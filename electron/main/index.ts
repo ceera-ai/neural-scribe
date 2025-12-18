@@ -21,6 +21,7 @@ function createWindow(): void {
     autoHideMenuBar: true,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 15, y: 15 },
+    icon: join(__dirname, '../../resources/icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false,
@@ -57,7 +58,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.elevenlabs.transcription')
+  electronApp.setAppUserModelId('com.neuralscribe.app')
 
   // Default open or close DevTools by F12 in development
   app.on('browser-window-created', (_, window) => {

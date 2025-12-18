@@ -59,6 +59,13 @@
   margin: 0;
 }
 
+.header-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.5));
+}
+
 .header-title {
   display: flex;
   align-items: center;

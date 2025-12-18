@@ -1,5 +1,5 @@
-appId: com.elevenlabs.transcription
-productName: ElevenLabs Transcription
+appId: com.neuralscribe.app
+productName: Neural Scribe
 directories:
   buildResources: resources
   output: release
