@@ -156,6 +156,24 @@
   color: #ff8080;
 }
 
+.history-toggle-btn {
+  background: #2a2a4a;
+  color: #a5b4fc;
+}
+
+.history-toggle-btn:hover {
+  background: #3a3a5a;
+  color: #c4b5fd;
+}
+
+.history-formatted-badge {
+  padding: 1px 6px;
+  background: rgba(139, 92, 246, 0.2);
+  border-radius: 3px;
+  color: #a78bfa;
+  font-size: 10px;
+}
+
 .history-empty {
   flex: 1;
   display: flex;

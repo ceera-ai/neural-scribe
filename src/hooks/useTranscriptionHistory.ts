@@ -1,9 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { TranscriptionRecord } from '../types/electron';
 
+interface SaveTranscriptionOptions {
+  originalText?: string;
+  formattedText?: string;
+  duration?: number;
+}
+
 interface UseTranscriptionHistoryReturn {
   history: TranscriptionRecord[];
   saveTranscription: (text: string, duration?: number) => Promise<void>;
+  saveTranscriptionWithFormatting: (options: SaveTranscriptionOptions) => Promise<void>;
   deleteTranscription: (id: string) => Promise<void>;
   clearHistory: () => Promise<void>;
   copyTranscription: (text: string) => Promise<void>;
@@ -31,6 +38,34 @@ export const useTranscriptionHistory = (): UseTranscriptionHistoryReturn => {
       text: text.trim(),
       timestamp: Date.now(),
       wordCount: text.trim().split(/\s+/).length,
+      duration,
+    };
+
+    try {
+      await window.electronAPI.saveTranscription(record);
+      setHistory(prev => [record, ...prev]);
+    } catch (err) {
+      console.error('Failed to save transcription:', err);
+    }
+  }, []);
+
+  const saveTranscriptionWithFormatting = useCallback(async (options: SaveTranscriptionOptions) => {
+    const { originalText, formattedText, duration = 0 } = options;
+
+    // Need at least one text
+    if (!originalText?.trim() && !formattedText?.trim()) return;
+
+    const primaryText = formattedText?.trim() || originalText?.trim() || '';
+    const wasFormatted = !!(formattedText && originalText && formattedText !== originalText);
+
+    const record: TranscriptionRecord = {
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+      text: primaryText,
+      originalText: originalText?.trim(),
+      formattedText: wasFormatted ? formattedText?.trim() : undefined,
+      wasFormatted,
+      timestamp: Date.now(),
+      wordCount: primaryText.split(/\s+/).length,
       duration,
     };
 
@@ -90,6 +125,7 @@ export const useTranscriptionHistory = (): UseTranscriptionHistoryReturn => {
   return {
     history,
     saveTranscription,
+    saveTranscriptionWithFormatting,
     deleteTranscription,
     clearHistory,
     copyTranscription,

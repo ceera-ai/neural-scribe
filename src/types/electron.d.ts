@@ -1,6 +1,9 @@
 export interface TranscriptionRecord {
   id: string
-  text: string
+  text: string // The primary text (formatted if available, otherwise original)
+  originalText?: string // Raw transcription before formatting
+  formattedText?: string // Formatted version (if formatting was applied)
+  wasFormatted?: boolean // Whether formatting was applied
   timestamp: number
   wordCount: number
   duration: number // Recording duration in seconds

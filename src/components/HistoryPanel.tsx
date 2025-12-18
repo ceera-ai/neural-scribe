@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranscriptionHistory } from '../hooks/useTranscriptionHistory';
 import type { TranscriptionRecord } from '../types/electron';
 import './HistoryPanel.css';
@@ -69,6 +69,9 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
     clearHistory
   } = useTranscriptionHistory();
 
+  // Track which records are showing original vs formatted
+  const [showingOriginal, setShowingOriginal] = useState<Set<string>>(new Set());
+
   // Group history by date
   const groupedHistory = useMemo((): DayGroup[] => {
     const groups = new Map<string, DayGroup>();
@@ -95,13 +98,33 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
     return Array.from(groups.values());
   }, [history]);
 
+  const getDisplayText = (record: TranscriptionRecord): string => {
+    const isShowingOriginal = showingOriginal.has(record.id);
+    if (isShowingOriginal && record.originalText) {
+      return record.originalText;
+    }
+    return record.text;
+  };
+
+  const toggleVersion = (recordId: string) => {
+    setShowingOriginal(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(recordId)) {
+        newSet.delete(recordId);
+      } else {
+        newSet.add(recordId);
+      }
+      return newSet;
+    });
+  };
+
   const handleCopy = async (record: TranscriptionRecord) => {
-    await copyTranscription(record.text);
+    await copyTranscription(getDisplayText(record));
   };
 
   const handleSelect = (record: TranscriptionRecord) => {
     if (onSelectTranscription) {
-      onSelectTranscription(record.text);
+      onSelectTranscription(getDisplayText(record));
     }
   };
 
@@ -148,42 +171,61 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
               </span>
             </div>
             <div className="history-day-items">
-              {group.records.map((record) => (
-                <div key={record.id} className="history-item">
-                  <div
-                    className="history-content"
-                    onClick={() => handleSelect(record)}
-                    title="Click to load into editor"
-                  >
-                    <div className="history-preview">
-                      {truncateText(record.text, 100)}
+              {group.records.map((record) => {
+                const hasVersions = record.wasFormatted && record.originalText;
+                const isShowingOriginal = showingOriginal.has(record.id);
+
+                return (
+                  <div key={record.id} className="history-item">
+                    <div
+                      className="history-content"
+                      onClick={() => handleSelect(record)}
+                      title="Click to load into editor"
+                    >
+                      <div className="history-preview">
+                        {truncateText(getDisplayText(record), 100)}
+                      </div>
+                      <div className="history-meta">
+                        <span className="history-time">{formatTime(record.timestamp)}</span>
+                        <span className="history-words">{record.wordCount} words</span>
+                        {record.duration > 0 && (
+                          <span className="history-duration">{formatDuration(record.duration)}</span>
+                        )}
+                        {hasVersions && (
+                          <span className="history-formatted-badge">
+                            {isShowingOriginal ? 'Original' : 'Formatted'}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="history-meta">
-                      <span className="history-time">{formatTime(record.timestamp)}</span>
-                      <span className="history-words">{record.wordCount} words</span>
-                      {record.duration > 0 && (
-                        <span className="history-duration">{formatDuration(record.duration)}</span>
+                    <div className="history-actions">
+                      {hasVersions && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleVersion(record.id); }}
+                          className="history-action-btn history-toggle-btn"
+                          title={isShowingOriginal ? 'Show formatted' : 'Show original'}
+                        >
+                          {isShowingOriginal ? 'Formatted' : 'Original'}
+                        </button>
                       )}
+                      <button
+                        onClick={() => handleCopy(record)}
+                        className="history-action-btn"
+                        title="Copy to clipboard"
+                      >
+                        Copy
+                      </button>
+                      <button
+                        onClick={() => handleDelete(record)}
+                        className="history-action-btn history-delete-btn"
+                        title="Delete"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
-                  <div className="history-actions">
-                    <button
-                      onClick={() => handleCopy(record)}
-                      className="history-action-btn"
-                      title="Copy to clipboard"
-                    >
-                      Copy
-                    </button>
-                    <button
-                      onClick={() => handleDelete(record)}
-                      className="history-action-btn history-delete-btn"
-                      title="Delete"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}

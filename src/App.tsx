@@ -30,7 +30,7 @@ function App() {
   const pendingPasteRef = useRef<string | null>(null);
 
   const { selectedDeviceId } = useMicrophoneDevices();
-  const { saveTranscription } = useTranscriptionHistory();
+  const { saveTranscription, saveTranscriptionWithFormatting } = useTranscriptionHistory();
 
   // Check if API key is configured on mount
   useEffect(() => {
@@ -221,9 +221,11 @@ function App() {
   };
 
   // Helper function to format and paste text
-  const formatAndPaste = async (text: string): Promise<void> => {
+  const formatAndPaste = async (text: string, shouldSaveToHistory: boolean = true): Promise<void> => {
     try {
       let textToPaste = text;
+      let formattedText: string | undefined;
+      const originalText = text;
 
       // Format with Claude if enabled
       if (formattingEnabled) {
@@ -233,6 +235,7 @@ function App() {
 
         if (formatResult.success && !formatResult.skipped) {
           textToPaste = formatResult.formatted;
+          formattedText = formatResult.formatted;
           console.log('[App] Formatted text:', textToPaste);
         } else if (formatResult.error) {
           console.warn('[App] Formatting failed, using original text:', formatResult.error);
@@ -242,6 +245,15 @@ function App() {
       // Paste to terminal
       const result = await window.electronAPI.pasteToLastActiveTerminal(textToPaste);
       console.log('[App] Paste result:', result);
+
+      // Save to history with both versions (after successful paste attempt)
+      if (shouldSaveToHistory && (result.success || result.copied)) {
+        await saveTranscriptionWithFormatting({
+          originalText,
+          formattedText,
+          duration: 0, // Duration is already tracked from recording
+        });
+      }
 
       if (result.success) {
         setPasteStatus('success');
