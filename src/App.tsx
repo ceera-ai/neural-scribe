@@ -17,7 +17,11 @@ function App() {
   const [initError, setInitError] = useState<string | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [showReplacements, setShowReplacements] = useState(false);
+  const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true);
+  const [lastVoiceCommand, setLastVoiceCommand] = useState<string | null>(null);
+  const [pasteStatus, setPasteStatus] = useState<'idle' | 'success' | 'permission' | 'no-terminal' | 'error'>('idle');
   const transcriptEndRef = useRef<HTMLDivElement>(null);
+  const pendingPasteRef = useRef<string | null>(null);
 
   const { selectedDeviceId } = useMicrophoneDevices();
   const { saveTranscription } = useTranscriptionHistory();
@@ -52,6 +56,28 @@ function App() {
     return processedTranscript;
   }, [saveTranscription]);
 
+  // Handle voice commands
+  const handleVoiceCommand = useCallback(async (command: 'send' | 'clear' | 'cancel', transcript: string) => {
+    console.log(`[App] Voice command received: ${command}, transcript: "${transcript}"`);
+    setLastVoiceCommand(command);
+    setTimeout(() => setLastVoiceCommand(null), 2000);
+
+    switch (command) {
+      case 'send':
+        // Store transcript for paste, will be executed after recording stops
+        if (transcript.trim()) {
+          pendingPasteRef.current = transcript;
+        }
+        break;
+      case 'clear':
+        // Will be handled after recording stops
+        break;
+      case 'cancel':
+        // Will be handled after recording stops
+        break;
+    }
+  }, []);
+
   const {
     isConnected,
     isRecording,
@@ -65,7 +91,41 @@ function App() {
   } = useElevenLabsScribe({
     selectedMicrophoneId: selectedDeviceId,
     onRecordingStopped: handleRecordingStopped,
+    onVoiceCommand: handleVoiceCommand,
+    voiceCommandsEnabled,
   });
+
+  // Handle pending paste after recording stops (triggered by "send it" voice command)
+  useEffect(() => {
+    if (!isRecording && pendingPasteRef.current) {
+      const textToPaste = pendingPasteRef.current;
+      pendingPasteRef.current = null;
+
+      // Execute paste to terminal
+      (async () => {
+        try {
+          // Apply replacements first
+          const processedText = await window.electronAPI.applyReplacements(textToPaste);
+          console.log('[App] Voice command paste:', processedText);
+
+          const result = await window.electronAPI.pasteToLastActiveTerminal(processedText);
+          if (result.success) {
+            setPasteStatus('success');
+            setTimeout(() => setPasteStatus('idle'), 2000);
+          } else if (!result.targetApp) {
+            setPasteStatus('no-terminal');
+            setTimeout(() => setPasteStatus('idle'), 3000);
+          } else {
+            setPasteStatus('permission');
+          }
+        } catch (err) {
+          console.error('[App] Voice command paste error:', err);
+          setPasteStatus('error');
+          setTimeout(() => setPasteStatus('idle'), 3000);
+        }
+      })();
+    }
+  }, [isRecording]);
 
   // Recording timer
   useEffect(() => {
@@ -133,8 +193,6 @@ function App() {
   const handleSelectFromHistory = (text: string) => {
     setEditedTranscript(text);
   };
-
-  const [pasteStatus, setPasteStatus] = useState<'idle' | 'success' | 'permission' | 'no-terminal' | 'error'>('idle');
 
   const handlePasteToTerminal = async () => {
     // Stop recording first if active
@@ -333,10 +391,31 @@ function App() {
             </div>
           )}
 
+          {/* Voice Command Indicator */}
+          {lastVoiceCommand && (
+            <div className="voice-command-indicator">
+              Voice command: <strong>{lastVoiceCommand}</strong>
+            </div>
+          )}
+
           {/* Hotkey Footer */}
           <div className="hotkey-bar">
-            <span><kbd>Cmd+Shift+R</kbd> Toggle recording</span>
-            <span><kbd>Cmd+Shift+V</kbd> Copy last to clipboard</span>
+            <div className="hotkey-left">
+              <span><kbd>Cmd+Shift+R</kbd> Toggle recording</span>
+              <span><kbd>Cmd+Shift+V</kbd> Copy last to clipboard</span>
+            </div>
+            <div className="hotkey-right">
+              <button
+                className={`voice-cmd-toggle ${voiceCommandsEnabled ? 'active' : ''}`}
+                onClick={() => setVoiceCommandsEnabled(!voiceCommandsEnabled)}
+                title={voiceCommandsEnabled ? 'Voice commands enabled' : 'Voice commands disabled'}
+              >
+                🎤 {voiceCommandsEnabled ? 'Voice Cmds ON' : 'Voice Cmds OFF'}
+              </button>
+              {voiceCommandsEnabled && (
+                <span className="voice-hint">Say "send it" to paste</span>
+              )}
+            </div>
           </div>
         </main>
 

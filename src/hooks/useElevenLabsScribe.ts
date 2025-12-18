@@ -21,13 +21,63 @@ interface UseElevenLabsScribeReturn {
   setEditedTranscript: (text: string | null) => void;
 }
 
+// Voice commands that trigger actions (include common transcription variations)
+const VOICE_COMMANDS = {
+  SEND: [
+    'send it', 'send this', 'paste it', 'paste this',
+    'sendit', 'sent it', 'send that', 'paste that',
+    'submit', 'submit it', 'go ahead', 'execute',
+  ],
+  CLEAR: ['clear it', 'clear this', 'start over', 'clear that'],
+  CANCEL: ['cancel', 'never mind', 'nevermind', 'cancel that', 'stop'],
+} as const;
+
 interface UseElevenLabsScribeOptions {
   selectedMicrophoneId?: string | null;
   onRecordingStopped?: (transcript: string, duration: number) => Promise<string> | string | void;
+  onVoiceCommand?: (command: 'send' | 'clear' | 'cancel', transcript: string) => void;
+  voiceCommandsEnabled?: boolean;
+}
+
+// Helper to detect and extract voice commands from text
+function detectVoiceCommand(text: string): { command: 'send' | 'clear' | 'cancel' | null; cleanedText: string } {
+  // Normalize: lowercase, trim, and remove trailing punctuation for matching
+  const normalizedText = text.toLowerCase().trim().replace(/[.,!?]+$/, '');
+
+  console.log('[VoiceCommand] Checking text:', `"${text}"`, '-> normalized:', `"${normalizedText}"`);
+
+  // Check for send commands at the end
+  for (const phrase of VOICE_COMMANDS.SEND) {
+    if (normalizedText.endsWith(phrase)) {
+      // Find where the phrase starts in the original text (case-insensitive)
+      const phraseStart = normalizedText.lastIndexOf(phrase);
+      const cleanedText = text.slice(0, phraseStart).trim().replace(/[.,!?]+$/, '').trim();
+      console.log('[VoiceCommand] DETECTED "send" command, cleaned text:', `"${cleanedText}"`);
+      return { command: 'send', cleanedText };
+    }
+  }
+
+  // Check for clear commands
+  for (const phrase of VOICE_COMMANDS.CLEAR) {
+    if (normalizedText.endsWith(phrase) || normalizedText === phrase) {
+      console.log('[VoiceCommand] DETECTED "clear" command');
+      return { command: 'clear', cleanedText: '' };
+    }
+  }
+
+  // Check for cancel commands
+  for (const phrase of VOICE_COMMANDS.CANCEL) {
+    if (normalizedText.endsWith(phrase) || normalizedText === phrase) {
+      console.log('[VoiceCommand] DETECTED "cancel" command');
+      return { command: 'cancel', cleanedText: '' };
+    }
+  }
+
+  return { command: null, cleanedText: text };
 }
 
 export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): UseElevenLabsScribeReturn => {
-  const { selectedMicrophoneId, onRecordingStopped } = options;
+  const { selectedMicrophoneId, onRecordingStopped, onVoiceCommand, voiceCommandsEnabled = true } = options;
 
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -39,6 +89,18 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
   const connectionRef = useRef<any>(null);
   const transcriptSegmentsRef = useRef<TranscriptSegment[]>([]);
   const recordingStartTimeRef = useRef<number>(0);
+  const voiceCommandTriggeredRef = useRef<boolean>(false); // Prevent multiple triggers
+  const voiceCommandsEnabledRef = useRef<boolean>(voiceCommandsEnabled); // Track current setting
+  const onVoiceCommandRef = useRef(onVoiceCommand); // Track current callback
+
+  // Keep refs in sync with props
+  useEffect(() => {
+    voiceCommandsEnabledRef.current = voiceCommandsEnabled;
+  }, [voiceCommandsEnabled]);
+
+  useEffect(() => {
+    onVoiceCommandRef.current = onVoiceCommand;
+  }, [onVoiceCommand]);
 
   // Keep ref in sync with state for use in callbacks
   useEffect(() => {
@@ -55,6 +117,7 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
   const startRecording = useCallback(async () => {
     try {
       setError(null);
+      voiceCommandTriggeredRef.current = false; // Reset for new recording
 
       // Generate session ID only if we don't have one
       if (!sessionId) {
@@ -113,6 +176,65 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
         const data = args[0] as { text: string };
         console.log('Partial transcript:', data.text);
 
+        // Check for voice commands in partial transcripts (real-time detection)
+        // Use ref to get current value (not captured value from when handler was created)
+        if (voiceCommandsEnabledRef.current && data.text && !voiceCommandTriggeredRef.current) {
+          const { command, cleanedText } = detectVoiceCommand(data.text);
+
+          if (command) {
+            console.log(`[VoiceCommand] Detected in partial: "${command}"`);
+            voiceCommandTriggeredRef.current = true; // Prevent multiple triggers
+
+            // Get full transcript with cleaned text
+            const existingFinalText = transcriptSegmentsRef.current
+              .filter(s => s.isFinal)
+              .map(s => s.text)
+              .join(' ');
+            const fullCleanedTranscript = existingFinalText
+              ? `${existingFinalText} ${cleanedText}`.trim()
+              : cleanedText;
+
+            // Update segment with cleaned text (without the command)
+            const cleanedSegment: TranscriptSegment = {
+              text: cleanedText,
+              isFinal: false,
+              timestamp: Date.now(),
+            };
+
+            setTranscriptSegments((prev) => {
+              if (prev.length > 0 && !prev[prev.length - 1].isFinal) {
+                const updated = [...prev];
+                updated[updated.length - 1] = cleanedSegment;
+                return updated;
+              }
+              return [...prev, cleanedSegment];
+            });
+
+            // Trigger voice command callback (use ref for current callback)
+            if (onVoiceCommandRef.current) {
+              onVoiceCommandRef.current(command, fullCleanedTranscript);
+            }
+
+            // Auto-stop recording after voice command
+            setTimeout(() => {
+              console.log('[VoiceCommand] Auto-stopping recording...');
+              if (connectionRef.current) {
+                try {
+                  connectionRef.current.close();
+                } catch (err) {
+                  console.error('Error closing connection:', err);
+                }
+                connectionRef.current = null;
+              }
+              setIsRecording(false);
+              setIsConnected(false);
+              window.electronAPI.notifyRecordingState(false);
+            }, 200);
+
+            return; // Don't update segment again
+          }
+        }
+
         const newSegment: TranscriptSegment = {
           text: data.text || '',
           isFinal: false,
@@ -133,6 +255,60 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
       connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (...args: unknown[]) => {
         const data = args[0] as { text: string };
         console.log('Committed transcript:', data.text);
+
+        // Check for voice commands if enabled (use ref for current value)
+        if (voiceCommandsEnabledRef.current && data.text && !voiceCommandTriggeredRef.current) {
+          const { command, cleanedText } = detectVoiceCommand(data.text);
+
+          if (command) {
+            console.log(`[VoiceCommand] Detected: "${command}", cleaned text: "${cleanedText}"`);
+
+            // Update the segment with cleaned text (without the command)
+            if (cleanedText) {
+              const cleanedSegment: TranscriptSegment = {
+                text: cleanedText,
+                isFinal: true,
+                timestamp: Date.now(),
+              };
+
+              setTranscriptSegments((prev) => {
+                if (prev.length > 0 && !prev[prev.length - 1].isFinal) {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = cleanedSegment;
+                  return updated;
+                }
+                return [...prev, cleanedSegment];
+              });
+            }
+
+            // Trigger the voice command callback (use ref for current callback)
+            if (onVoiceCommandRef.current) {
+              // Get full transcript including the cleaned segment
+              const fullTranscript = cleanedText
+                ? [...transcriptSegmentsRef.current.filter(s => s.isFinal).map(s => s.text), cleanedText].join(' ').trim()
+                : transcriptSegmentsRef.current.filter(s => s.isFinal).map(s => s.text).join(' ').trim();
+
+              onVoiceCommandRef.current(command, fullTranscript);
+
+              // Auto-stop recording after voice command (with small delay)
+              setTimeout(() => {
+                if (connectionRef.current) {
+                  console.log('[VoiceCommand] Auto-stopping recording...');
+                  try {
+                    connectionRef.current.close();
+                  } catch (err) {
+                    console.error('Error closing connection:', err);
+                  }
+                  connectionRef.current = null;
+                }
+                setIsRecording(false);
+                setIsConnected(false);
+                window.electronAPI.notifyRecordingState(false);
+              }, 100);
+            }
+            return;
+          }
+        }
 
         const newSegment: TranscriptSegment = {
           text: data.text || '',
@@ -195,18 +371,48 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
     }
 
     // Get the full transcript before clearing state
-    const transcript = getFullTranscript();
+    let transcript = getFullTranscript();
 
     // Calculate recording duration in seconds
     const duration = recordingStartTimeRef.current > 0
       ? Math.floor((Date.now() - recordingStartTimeRef.current) / 1000)
       : 0;
 
+    // Check for voice commands in the final transcript (in case it wasn't committed yet)
+    // Use refs to get current values
+    if (voiceCommandsEnabledRef.current && transcript && !voiceCommandTriggeredRef.current) {
+      const { command, cleanedText } = detectVoiceCommand(transcript);
+      if (command) {
+        console.log(`[VoiceCommand] Detected on stop: "${command}", cleaned text: "${cleanedText}"`);
+        voiceCommandTriggeredRef.current = true;
+        transcript = cleanedText; // Use cleaned transcript
+
+        // Update the last segment with cleaned text
+        if (cleanedText) {
+          setTranscriptSegments(prev => {
+            if (prev.length > 0) {
+              const updated = [...prev];
+              updated[updated.length - 1] = {
+                ...updated[updated.length - 1],
+                text: cleanedText,
+              };
+              return updated;
+            }
+            return prev;
+          });
+        }
+
+        if (onVoiceCommandRef.current) {
+          onVoiceCommandRef.current(command, cleanedText);
+        }
+      }
+    }
+
     setIsRecording(false);
     setIsConnected(false);
     window.electronAPI.notifyRecordingState(false);
 
-    // Call callback if transcript has content
+    // Call callback if transcript has content (and no voice command was triggered)
     if (transcript && onRecordingStopped) {
       const result = await onRecordingStopped(transcript, duration);
       // If callback returns a modified transcript, update the edited state
