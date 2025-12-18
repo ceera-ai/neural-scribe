@@ -21,16 +21,12 @@ interface UseElevenLabsScribeReturn {
   setEditedTranscript: (text: string | null) => void;
 }
 
-// Voice commands that trigger actions (include common transcription variations)
-const VOICE_COMMANDS = {
-  SEND: [
-    'send it', 'send this', 'paste it', 'paste this',
-    'sendit', 'sent it', 'send that', 'paste that',
-    'submit', 'submit it', 'go ahead', 'execute',
-  ],
-  CLEAR: ['clear it', 'clear this', 'start over', 'clear that'],
-  CANCEL: ['cancel', 'never mind', 'nevermind', 'cancel that', 'stop'],
-} as const;
+// Voice commands interface
+interface VoiceCommands {
+  send: string[];
+  clear: string[];
+  cancel: string[];
+}
 
 interface UseElevenLabsScribeOptions {
   selectedMicrophoneId?: string | null;
@@ -40,14 +36,14 @@ interface UseElevenLabsScribeOptions {
 }
 
 // Helper to detect and extract voice commands from text
-function detectVoiceCommand(text: string): { command: 'send' | 'clear' | 'cancel' | null; cleanedText: string } {
+function detectVoiceCommand(text: string, voiceCommands: VoiceCommands): { command: 'send' | 'clear' | 'cancel' | null; cleanedText: string } {
   // Normalize: lowercase, trim, and remove trailing punctuation for matching
   const normalizedText = text.toLowerCase().trim().replace(/[.,!?]+$/, '');
 
   console.log('[VoiceCommand] Checking text:', `"${text}"`, '-> normalized:', `"${normalizedText}"`);
 
   // Check for send commands at the end
-  for (const phrase of VOICE_COMMANDS.SEND) {
+  for (const phrase of voiceCommands.send) {
     if (normalizedText.endsWith(phrase)) {
       // Find where the phrase starts in the original text (case-insensitive)
       const phraseStart = normalizedText.lastIndexOf(phrase);
@@ -58,7 +54,7 @@ function detectVoiceCommand(text: string): { command: 'send' | 'clear' | 'cancel
   }
 
   // Check for clear commands
-  for (const phrase of VOICE_COMMANDS.CLEAR) {
+  for (const phrase of voiceCommands.clear) {
     if (normalizedText.endsWith(phrase) || normalizedText === phrase) {
       console.log('[VoiceCommand] DETECTED "clear" command');
       return { command: 'clear', cleanedText: '' };
@@ -66,7 +62,7 @@ function detectVoiceCommand(text: string): { command: 'send' | 'clear' | 'cancel
   }
 
   // Check for cancel commands
-  for (const phrase of VOICE_COMMANDS.CANCEL) {
+  for (const phrase of voiceCommands.cancel) {
     if (normalizedText.endsWith(phrase) || normalizedText === phrase) {
       console.log('[VoiceCommand] DETECTED "cancel" command');
       return { command: 'cancel', cleanedText: '' };
@@ -92,6 +88,7 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
   const voiceCommandTriggeredRef = useRef<boolean>(false); // Prevent multiple triggers
   const voiceCommandsEnabledRef = useRef<boolean>(voiceCommandsEnabled); // Track current setting
   const onVoiceCommandRef = useRef(onVoiceCommand); // Track current callback
+  const voiceCommandsRef = useRef<VoiceCommands>({ send: [], clear: [], cancel: [] }); // Dynamic voice commands
 
   // Keep refs in sync with props
   useEffect(() => {
@@ -118,6 +115,16 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
     try {
       setError(null);
       voiceCommandTriggeredRef.current = false; // Reset for new recording
+
+      // Load voice commands from store
+      try {
+        const commands = await window.electronAPI.getEnabledVoiceCommands();
+        voiceCommandsRef.current = commands;
+        console.log('[VoiceCommand] Loaded triggers:', commands);
+      } catch (err) {
+        console.error('Failed to load voice commands:', err);
+        voiceCommandsRef.current = { send: [], clear: [], cancel: [] };
+      }
 
       // Generate session ID only if we don't have one
       if (!sessionId) {
@@ -179,7 +186,7 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
         // Check for voice commands in partial transcripts (real-time detection)
         // Use ref to get current value (not captured value from when handler was created)
         if (voiceCommandsEnabledRef.current && data.text && !voiceCommandTriggeredRef.current) {
-          const { command, cleanedText } = detectVoiceCommand(data.text);
+          const { command, cleanedText } = detectVoiceCommand(data.text, voiceCommandsRef.current);
 
           if (command) {
             console.log(`[VoiceCommand] Detected in partial: "${command}"`);
@@ -258,7 +265,7 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
 
         // Check for voice commands if enabled (use ref for current value)
         if (voiceCommandsEnabledRef.current && data.text && !voiceCommandTriggeredRef.current) {
-          const { command, cleanedText } = detectVoiceCommand(data.text);
+          const { command, cleanedText } = detectVoiceCommand(data.text, voiceCommandsRef.current);
 
           if (command) {
             console.log(`[VoiceCommand] Detected: "${command}", cleaned text: "${cleanedText}"`);
@@ -381,7 +388,7 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
     // Check for voice commands in the final transcript (in case it wasn't committed yet)
     // Use refs to get current values
     if (voiceCommandsEnabledRef.current && transcript && !voiceCommandTriggeredRef.current) {
-      const { command, cleanedText } = detectVoiceCommand(transcript);
+      const { command, cleanedText } = detectVoiceCommand(transcript, voiceCommandsRef.current);
       if (command) {
         console.log(`[VoiceCommand] Detected on stop: "${command}", cleaned text: "${cleanedText}"`);
         voiceCommandTriggeredRef.current = true;

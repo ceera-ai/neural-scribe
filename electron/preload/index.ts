@@ -14,6 +14,16 @@ export interface AppSettings {
   selectedTerminalId: string | null
   pasteHotkey: string
   recordHotkey: string
+  replacementsEnabled: boolean
+  voiceCommandsEnabled: boolean
+}
+
+export interface VoiceCommandTrigger {
+  id: string
+  phrase: string
+  command: 'send' | 'clear' | 'cancel'
+  enabled: boolean
+  isCustom: boolean
 }
 
 export interface TerminalApp {
@@ -94,6 +104,24 @@ const electronAPI = {
     ipcRenderer.invoke('delete-replacement', id),
   applyReplacements: (text: string): Promise<string> =>
     ipcRenderer.invoke('apply-replacements', text),
+
+  // Voice command trigger operations
+  getVoiceCommandTriggers: (): Promise<VoiceCommandTrigger[]> =>
+    ipcRenderer.invoke('get-voice-command-triggers'),
+  updateVoiceCommandTrigger: (id: string, updates: Partial<VoiceCommandTrigger>): Promise<boolean> =>
+    ipcRenderer.invoke('update-voice-command-trigger', id, updates),
+  addVoiceCommandTrigger: (trigger: VoiceCommandTrigger): Promise<boolean> =>
+    ipcRenderer.invoke('add-voice-command-trigger', trigger),
+  deleteVoiceCommandTrigger: (id: string): Promise<boolean> =>
+    ipcRenderer.invoke('delete-voice-command-trigger', id),
+  resetVoiceCommandTriggers: (): Promise<boolean> =>
+    ipcRenderer.invoke('reset-voice-command-triggers'),
+  getEnabledVoiceCommands: (): Promise<{ send: string[], clear: string[], cancel: string[] }> =>
+    ipcRenderer.invoke('get-enabled-voice-commands'),
+
+  // Hotkey operations
+  updateHotkey: (type: 'paste' | 'record', newHotkey: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('update-hotkey', type, newHotkey),
 
   // Events from main process
   onToggleRecording: (callback: RecordingToggleCallback): void => {

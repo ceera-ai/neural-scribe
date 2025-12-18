@@ -12,6 +12,16 @@ export interface AppSettings {
   selectedTerminalId: string | null
   pasteHotkey: string
   recordHotkey: string
+  replacementsEnabled: boolean
+  voiceCommandsEnabled: boolean
+}
+
+export interface VoiceCommandTrigger {
+  id: string
+  phrase: string
+  command: 'send' | 'clear' | 'cancel'
+  enabled: boolean
+  isCustom: boolean
 }
 
 export interface TerminalApp {
@@ -73,6 +83,17 @@ export interface ElectronAPI {
   updateReplacement: (id: string, updates: Partial<WordReplacement>) => Promise<boolean>
   deleteReplacement: (id: string) => Promise<boolean>
   applyReplacements: (text: string) => Promise<string>
+
+  // Voice command trigger operations
+  getVoiceCommandTriggers: () => Promise<VoiceCommandTrigger[]>
+  updateVoiceCommandTrigger: (id: string, updates: Partial<VoiceCommandTrigger>) => Promise<boolean>
+  addVoiceCommandTrigger: (trigger: VoiceCommandTrigger) => Promise<boolean>
+  deleteVoiceCommandTrigger: (id: string) => Promise<boolean>
+  resetVoiceCommandTriggers: () => Promise<boolean>
+  getEnabledVoiceCommands: () => Promise<{ send: string[], clear: string[], cancel: string[] }>
+
+  // Hotkey operations
+  updateHotkey: (type: 'paste' | 'record', newHotkey: string) => Promise<{ success: boolean; error?: string }>
 
   // Events from main process
   onToggleRecording: (callback: () => void) => void

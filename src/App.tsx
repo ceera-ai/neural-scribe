@@ -44,10 +44,13 @@ function App() {
   }, []);
 
   const handleRecordingStopped = useCallback(async (transcript: string, duration: number) => {
-    // Apply word replacements
+    // Apply word replacements if enabled
     let processedTranscript = transcript;
     try {
-      processedTranscript = await window.electronAPI.applyReplacements(transcript);
+      const settings = await window.electronAPI.getSettings();
+      if (settings.replacementsEnabled) {
+        processedTranscript = await window.electronAPI.applyReplacements(transcript);
+      }
     } catch (err) {
       console.error('Failed to apply replacements:', err);
     }
@@ -494,6 +497,8 @@ function App() {
           setShowSettings(false);
           setShowReplacements(true);
         }}
+        voiceCommandsEnabled={voiceCommandsEnabled}
+        onVoiceCommandsEnabledChange={setVoiceCommandsEnabled}
       />
 
       {/* Replacements Modal */}

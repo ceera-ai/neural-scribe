@@ -14,11 +14,19 @@ import {
   updateReplacement,
   deleteReplacement,
   applyReplacements,
+  getVoiceCommandTriggers,
+  updateVoiceCommandTrigger,
+  addVoiceCommandTrigger,
+  deleteVoiceCommandTrigger,
+  resetVoiceCommandTriggers,
+  getEnabledVoiceCommands,
   TranscriptionRecord,
   AppSettings,
-  WordReplacement
+  WordReplacement,
+  VoiceCommandTrigger
 } from './store'
 import { getRunningTerminals, getTerminalWindows, pasteToTerminal, pasteToTerminalWindow, pasteToLastActiveTerminal, SUPPORTED_TERMINALS } from './terminal'
+import { updateHotkey } from './hotkeys'
 
 let onRecordingStateChange: ((isRecording: boolean) => void) | null = null
 
@@ -167,5 +175,39 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
 
   ipcMain.handle('apply-replacements', (_, text: string) => {
     return applyReplacements(text)
+  })
+
+  // Voice command trigger operations
+  ipcMain.handle('get-voice-command-triggers', () => {
+    return getVoiceCommandTriggers()
+  })
+
+  ipcMain.handle('update-voice-command-trigger', (_, id: string, updates: Partial<VoiceCommandTrigger>) => {
+    updateVoiceCommandTrigger(id, updates)
+    return true
+  })
+
+  ipcMain.handle('add-voice-command-trigger', (_, trigger: VoiceCommandTrigger) => {
+    addVoiceCommandTrigger(trigger)
+    return true
+  })
+
+  ipcMain.handle('delete-voice-command-trigger', (_, id: string) => {
+    deleteVoiceCommandTrigger(id)
+    return true
+  })
+
+  ipcMain.handle('reset-voice-command-triggers', () => {
+    resetVoiceCommandTriggers()
+    return true
+  })
+
+  ipcMain.handle('get-enabled-voice-commands', () => {
+    return getEnabledVoiceCommands()
+  })
+
+  // Hotkey operations
+  ipcMain.handle('update-hotkey', (_, type: 'paste' | 'record', newHotkey: string) => {
+    return updateHotkey(type, newHotkey)
   })
 }

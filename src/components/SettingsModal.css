@@ -3,7 +3,7 @@
   border-radius: 12px;
   border: 1px solid #252525;
   width: 90%;
-  max-width: 480px;
+  max-width: 520px;
   max-height: 85vh;
   overflow: hidden;
   display: flex;
@@ -31,11 +31,70 @@
   color: #e0e0e0;
 }
 
+.settings-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.settings-section-header > div {
+  flex: 1;
+}
+
 .settings-description {
   margin: 0;
   font-size: 12px;
   color: #707070;
   line-height: 1.5;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #333;
+  transition: 0.2s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #808080;
+  transition: 0.2s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #6366f1;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+  background-color: white;
 }
 
 /* API Key Display */
@@ -82,6 +141,7 @@
   font-family: 'SF Mono', Monaco, 'Courier New', monospace;
   outline: none;
   transition: border-color 0.15s;
+  box-sizing: border-box;
 }
 
 .api-key-input:focus {
@@ -154,9 +214,14 @@
   text-align: left;
 }
 
-.btn-settings-action:hover {
+.btn-settings-action:hover:not(:disabled) {
   background: #222;
   border-color: #333;
+}
+
+.btn-settings-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-icon-left {
@@ -187,6 +252,236 @@
   border-radius: 6px;
   color: #86efac;
   font-size: 12px;
+}
+
+/* Voice Commands List */
+.voice-commands-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.voice-command-group {
+  background: #1a1a1a;
+  border: 1px solid #252525;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.voice-command-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  color: #d0d0d0;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+  gap: 10px;
+}
+
+.voice-command-header:hover {
+  background: #222;
+}
+
+.command-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.command-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.command-title {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.command-desc {
+  font-size: 11px;
+  color: #606060;
+}
+
+.command-count {
+  font-size: 11px;
+  color: #707070;
+  background: #252525;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.expand-arrow {
+  font-size: 10px;
+  color: #505050;
+  transition: transform 0.2s;
+}
+
+.expand-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+/* Voice Command Triggers */
+.voice-command-triggers {
+  border-top: 1px solid #252525;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trigger-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+
+.trigger-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.trigger-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #6366f1;
+  cursor: pointer;
+}
+
+.trigger-phrase {
+  font-size: 13px;
+  color: #a0a0a0;
+}
+
+.trigger-delete {
+  background: none;
+  border: none;
+  color: #505050;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: 4px;
+}
+
+.trigger-delete:hover {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+/* Add Trigger Form */
+.add-trigger-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid #252525;
+  margin-top: 4px;
+}
+
+.add-trigger-input {
+  flex: 1;
+  padding: 8px 10px;
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-size: 12px;
+  outline: none;
+}
+
+.add-trigger-input:focus {
+  border-color: #6366f1;
+}
+
+.add-trigger-input::placeholder {
+  color: #505050;
+}
+
+.add-trigger-btn {
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: 1px dashed #333;
+  border-radius: 6px;
+  color: #606060;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.add-trigger-btn:hover {
+  background: #222;
+  border-color: #404040;
+  color: #a0a0a0;
+}
+
+/* Keyboard Shortcuts */
+.shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shortcut-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #1a1a1a;
+  border: 1px solid #252525;
+  border-radius: 8px;
+}
+
+.shortcut-label {
+  font-size: 13px;
+  color: #a0a0a0;
+}
+
+.shortcut-key-btn {
+  padding: 6px 12px;
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  color: #a0a0a0;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 100px;
+  text-align: center;
+}
+
+.shortcut-key-btn:hover {
+  background: #303030;
+  border-color: #444;
+  color: #d0d0d0;
+}
+
+.shortcut-input {
+  padding: 6px 12px;
+  background: #1a1a1a;
+  border: 2px solid #6366f1;
+  border-radius: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  color: #a0a0a0;
+  min-width: 100px;
+  text-align: center;
+  outline: none;
+}
+
+.shortcut-input::placeholder {
+  color: #606060;
 }
 
 /* About Section */
