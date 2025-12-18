@@ -346,6 +346,24 @@
   color: #fca5a5;
 }
 
+.paste-formatting {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.2);
+  color: #c4b5fd;
+}
+
+.formatting-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+}
+
 .btn-paste {
   padding: 12px 24px;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -423,7 +441,7 @@
   margin-right: 6px;
 }
 
-.voice-cmd-toggle {
+.footer-toggle {
   padding: 4px 10px;
   background: #1a1a1a;
   border: 1px solid #303030;
@@ -434,15 +452,15 @@
   transition: all 0.15s;
 }
 
-.voice-cmd-toggle:hover {
+.footer-toggle:hover {
   background: #252525;
   border-color: #404040;
 }
 
-.voice-cmd-toggle.active {
-  background: rgba(74, 158, 255, 0.1);
-  border-color: rgba(74, 158, 255, 0.3);
-  color: #4a9eff;
+.footer-toggle.active {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.3);
+  color: #a78bfa;
 }
 
 .voice-hint {

@@ -109,6 +109,14 @@
   word-break: break-word;
 }
 
+.history-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #e8e8e8;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
 .history-meta {
   display: flex;
   gap: 12px;
@@ -154,6 +162,24 @@
 .history-delete-btn:hover {
   background: #4a2020;
   color: #ff8080;
+}
+
+.history-toggle-btn {
+  background: #2a2a4a;
+  color: #a5b4fc;
+}
+
+.history-toggle-btn:hover {
+  background: #3a3a5a;
+  color: #c4b5fd;
+}
+
+.history-formatted-badge {
+  padding: 1px 6px;
+  background: rgba(139, 92, 246, 0.2);
+  border-radius: 3px;
+  color: #a78bfa;
+  font-size: 10px;
 }
 
 .history-empty {

@@ -142,6 +142,11 @@ export async function pasteToTerminalWindow(
   bundleId: string,
   windowName: string
 ): Promise<{ success: boolean; needsPermission: boolean; copied: boolean }> {
+  // Try to acquire paste lock
+  if (!acquirePasteLock(text)) {
+    return { success: false, needsPermission: false, copied: false }
+  }
+
   try {
     // Get the app name from bundle ID
     const terminal = SUPPORTED_TERMINALS.find(t => t.bundleId === bundleId)
@@ -214,6 +219,9 @@ end tell
   } catch (error) {
     console.error('[Paste] Failed to paste to terminal window:', error)
     return { success: false, needsPermission: false, copied: false }
+  } finally {
+    releasePasteLock()
+    console.log('[Paste] Lock released')
   }
 }
 
@@ -222,6 +230,11 @@ end tell
  * Returns: { success: boolean, needsPermission: boolean, copied: boolean }
  */
 export async function pasteToTerminal(text: string, bundleId: string): Promise<{ success: boolean; needsPermission: boolean; copied: boolean }> {
+  // Try to acquire paste lock
+  if (!acquirePasteLock(text)) {
+    return { success: false, needsPermission: false, copied: false }
+  }
+
   try {
     // Escape special characters for AppleScript
     const escapedText = text
@@ -266,6 +279,9 @@ end tell
   } catch (error) {
     console.error('Failed to paste to terminal:', error)
     return { success: false, needsPermission: false, copied: false }
+  } finally {
+    releasePasteLock()
+    console.log('[Paste] Lock released')
   }
 }
 
@@ -284,6 +300,49 @@ export async function getFrontmostApp(): Promise<string | null> {
   }
 }
 
+// Global paste lock to prevent any concurrent paste operations
+let isPasting = false
+let lastPasteTime = 0
+let lastPasteText = ''
+const PASTE_DEBOUNCE_MS = 3000 // Minimum time between pastes
+
+/**
+ * Acquire paste lock - returns true if lock acquired, false if already locked
+ */
+function acquirePasteLock(text: string): boolean {
+  const now = Date.now()
+
+  // Check if already pasting
+  if (isPasting) {
+    console.log('[Paste] Lock already held, rejecting paste')
+    return false
+  }
+
+  // Check time-based debounce
+  if (now - lastPasteTime < PASTE_DEBOUNCE_MS) {
+    console.log(`[Paste] Debounce active (${now - lastPasteTime}ms since last), rejecting paste`)
+    return false
+  }
+
+  // Check if same text was just pasted (content-based dedup)
+  if (text === lastPasteText && now - lastPasteTime < 10000) {
+    console.log('[Paste] Same text pasted recently, rejecting duplicate')
+    return false
+  }
+
+  isPasting = true
+  lastPasteTime = now
+  lastPasteText = text
+  return true
+}
+
+/**
+ * Release paste lock
+ */
+function releasePasteLock(): void {
+  isPasting = false
+}
+
 /**
  * Paste text to the last active terminal (simpler workflow)
  * Returns: { success: boolean, needsPermission: boolean, copied: boolean, targetApp: string }
@@ -291,6 +350,13 @@ export async function getFrontmostApp(): Promise<string | null> {
 export async function pasteToLastActiveTerminal(
   text: string
 ): Promise<{ success: boolean; needsPermission: boolean; copied: boolean; targetApp: string | null }> {
+  // Try to acquire paste lock
+  if (!acquirePasteLock(text)) {
+    return { success: false, needsPermission: false, copied: false, targetApp: null }
+  }
+
+  console.log(`[Paste] Lock acquired, starting paste operation`)
+
   try {
     // Step 1: Copy to clipboard using Electron's clipboard
     clipboard.writeText(text)
@@ -348,5 +414,9 @@ end tell
   } catch (error) {
     console.error('[Paste] Failed to paste to terminal:', error)
     return { success: false, needsPermission: false, copied: false, targetApp: null }
+  } finally {
+    // Always release the lock
+    releasePasteLock()
+    console.log('[Paste] Lock released')
   }
 }
