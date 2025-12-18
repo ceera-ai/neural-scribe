@@ -57,8 +57,15 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  // Set app user model id for windows
+  // Set app name and user model id
+  app.setName('Neural Scribe')
   electronApp.setAppUserModelId('com.neuralscribe.app')
+
+  // Set dock icon on macOS
+  if (process.platform === 'darwin' && app.dock) {
+    const iconPath = join(__dirname, '../../resources/icon.png')
+    app.dock.setIcon(iconPath)
+  }
 
   // Default open or close DevTools by F12 in development
   app.on('browser-window-created', (_, window) => {

@@ -15,7 +15,6 @@ import { ScanLines } from './components/cyberpunk/ScanLines';
 import { GlitchText } from './components/cyberpunk/GlitchText';
 import { AchievementPopup } from './components/gamification/AchievementPopup';
 import { GamificationModal } from './components/gamification/GamificationModal';
-import logoImage from './assets/logo.png';
 import './App.css';
 
 // Check if running in Electron
@@ -475,7 +474,6 @@ function App() {
 
       <header className="app-header cyber-header">
         <div className="header-title">
-          <img src={logoImage} alt="Neural Scribe" className="header-logo" />
           <GlitchText as="h1" intensity="subtle" className="cyber-title">
             Neural Scribe
           </GlitchText>

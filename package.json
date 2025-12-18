@@ -1,8 +1,8 @@
 {
-  "name": "elevenlabs-transcription",
+  "name": "neural-scribe",
   "private": true,
   "version": "1.0.0",
-  "description": "Voice-to-text transcription app for Claude Code integration",
+  "description": "AI-powered voice transcription app",
   "main": "out/main/index.js",
   "type": "module",
   "scripts": {
