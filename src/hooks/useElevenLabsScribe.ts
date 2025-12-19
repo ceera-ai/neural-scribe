@@ -36,7 +36,31 @@ interface UseElevenLabsScribeOptions {
   onSaveTranscript?: (transcript: string) => Promise<void> | void;
 }
 
-// Helper to detect and extract voice commands from text
+/**
+ * Detects voice commands in transcribed text and extracts the command with cleaned text
+ *
+ * @remarks
+ * This function analyzes transcribed text to detect voice commands like "send it",
+ * "clear that", or "cancel". It performs case-insensitive matching and removes
+ * trailing punctuation before matching. When a command is detected, the function
+ * returns both the command type and the text with the command phrase removed.
+ *
+ * @param text - The transcribed text to analyze for voice commands
+ * @param voiceCommands - Object containing arrays of command phrases for each command type
+ *
+ * @returns Object containing the detected command ('send' | 'clear' | 'cancel' | null)
+ * and the cleaned text with the command phrase removed
+ *
+ * @example
+ * ```typescript
+ * const result = detectVoiceCommand("Hello world send it", {
+ *   send: ["send it", "send"],
+ *   clear: ["clear"],
+ *   cancel: ["cancel"]
+ * })
+ * // Returns: { command: 'send', cleanedText: 'Hello world' }
+ * ```
+ */
 function detectVoiceCommand(text: string, voiceCommands: VoiceCommands): { command: 'send' | 'clear' | 'cancel' | null; cleanedText: string } {
   // Normalize: lowercase, trim, and remove trailing punctuation for matching
   const normalizedText = text.toLowerCase().trim().replace(/[.,!?]+$/, '');
@@ -73,6 +97,58 @@ function detectVoiceCommand(text: string, voiceCommands: VoiceCommands): { comma
   return { command: null, cleanedText: text };
 }
 
+/**
+ * React hook for real-time speech transcription using ElevenLabs Scribe v2 API
+ *
+ * @remarks
+ * This hook manages the complete WebSocket lifecycle for real-time transcription,
+ * including connection management, microphone streaming, transcript reception,
+ * and automatic cleanup. It provides both partial (real-time) and committed (final)
+ * transcription results.
+ *
+ * Features:
+ * - Real-time partial transcripts that update as you speak
+ * - Committed transcripts that are finalized and won't change
+ * - Voice command detection (e.g., "send it", "clear", "cancel")
+ * - Automatic token refresh and connection management
+ * - Microphone device selection
+ * - Session tracking with unique IDs
+ *
+ * WebSocket Events Handled:
+ * - OPEN: Connection established
+ * - SESSION_STARTED: Session ID received
+ * - PARTIAL_TRANSCRIPT: Real-time updates (not final)
+ * - COMMITTED_TRANSCRIPT: Final transcript segment
+ * - CLOSE: Connection closed
+ * - ERROR: Error occurred
+ *
+ * @param options - Configuration options for the transcription hook
+ * @param options.selectedMicrophoneId - ID of the microphone device to use
+ * @param options.onRecordingStopped - Callback when recording stops, receives transcript and duration
+ * @param options.onVoiceCommand - Callback when a voice command is detected
+ * @param options.voiceCommandsEnabled - Whether to detect voice commands (default: true)
+ * @param options.onSaveTranscript - Callback to save the transcript
+ *
+ * @returns Object containing transcription state and control functions
+ *
+ * @example
+ * ```typescript
+ * const {
+ *   isConnected,
+ *   isRecording,
+ *   transcriptSegments,
+ *   startRecording,
+ *   stopRecording,
+ *   clearTranscript
+ * } = useElevenLabsScribe({
+ *   selectedMicrophoneId: 'default',
+ *   voiceCommandsEnabled: true,
+ *   onRecordingStopped: async (transcript, duration) => {
+ *     console.log(`Recorded ${duration}ms:`, transcript)
+ *   }
+ * })
+ * ```
+ */
 export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): UseElevenLabsScribeReturn => {
   const { selectedMicrophoneId, onRecordingStopped, onVoiceCommand, voiceCommandsEnabled = true, onSaveTranscript } = options;
 

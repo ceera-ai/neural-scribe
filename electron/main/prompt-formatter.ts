@@ -43,7 +43,47 @@ export interface FormatResult {
 }
 
 /**
- * Format a raw transcription using Claude CLI
+ * Formats raw speech transcription using Claude CLI for improved readability
+ *
+ * @remarks
+ * This function sends transcribed text to Claude Code CLI to clean up speech
+ * artifacts, fix grammar, and improve punctuation while preserving the original
+ * meaning and technical content. The formatter explicitly disables all tools
+ * to prevent command execution (security).
+ *
+ * Process:
+ * 1. Encodes text and instructions as base64 (handles special characters safely)
+ * 2. Pipes text to `claude` CLI with --tools "" flag (disables tool execution)
+ * 3. Applies formatting instructions (removes "um", "uh", fixes grammar)
+ * 4. Returns formatted text or original text on error
+ *
+ * Security:
+ * - Tools are disabled via --tools "" flag
+ * - 60-second timeout prevents hanging
+ * - 1MB max buffer prevents memory issues
+ * - Base64 encoding prevents shell injection
+ *
+ * @param rawText - The raw transcribed text to format
+ * @param customInstructions - Optional custom formatting instructions (defaults to DEFAULT_FORMATTING_INSTRUCTIONS)
+ * @param model - Claude model to use: 'sonnet' | 'opus' | 'haiku' (default: 'sonnet')
+ *
+ * @returns Promise resolving to FormatResult with success status and formatted text
+ *
+ * @throws Returns error in FormatResult (doesn't throw) on:
+ * - Empty input text
+ * - Claude CLI not installed (ENOENT)
+ * - Formatting timeout (>60s)
+ * - Empty response from Claude
+ *
+ * @example
+ * ```typescript
+ * const result = await formatPrompt(
+ *   "so like I was thinking um we need to handle that edge case",
+ *   undefined,
+ *   'sonnet'
+ * )
+ * // result.formatted: "I was thinking we need to handle that edge case."
+ * ```
  */
 export async function formatPrompt(
   rawText: string,

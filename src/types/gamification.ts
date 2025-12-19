@@ -492,6 +492,35 @@ export function calculateXPForLevel(level: number, config = DEFAULT_LEVEL_CONFIG
   return total;
 }
 
+/**
+ * Calculates the player's level based on accumulated XP using exponential growth
+ *
+ * @remarks
+ * This function implements a progressive leveling system where each level requires
+ * more XP than the previous one. The XP requirement grows exponentially based on
+ * the configured growth rate (default: 1.5x per level).
+ *
+ * Formula: XP for level N = baseXP * (growthRate ^ (N - 1))
+ *
+ * Example progression (baseXP: 100, growthRate: 1.5):
+ * - Level 1: 0 XP
+ * - Level 2: 100 XP (100 * 1.5^0)
+ * - Level 3: 250 XP (100 + 150)
+ * - Level 4: 475 XP (100 + 150 + 225)
+ *
+ * @param xp - Total accumulated experience points
+ * @param config - Level configuration (defaults to DEFAULT_LEVEL_CONFIG)
+ * @param config.baseXP - Base XP required for first level (default: 100)
+ * @param config.growthRate - Exponential growth multiplier (default: 1.5)
+ *
+ * @returns The calculated level (minimum: 1)
+ *
+ * @example
+ * ```typescript
+ * const level = calculateLevelFromXP(500)  // Returns 4
+ * const level = calculateLevelFromXP(1000) // Returns 6
+ * ```
+ */
 export function calculateLevelFromXP(xp: number, config = DEFAULT_LEVEL_CONFIG): number {
   let level = 1;
   let xpRequired = 0;
