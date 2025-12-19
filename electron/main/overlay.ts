@@ -274,6 +274,22 @@ export function updateAudioLevel(level: number): void {
       lastLogTime = now
     }
 
+    // Generate waveform bar heights with some variation based on audio level
+    // Creates a subtle wave pattern that reacts to voice
+    const waveformHeights: number[] = []
+    for (let i = 0; i < 16; i++) {
+      // Create a wave pattern - center bars are taller
+      const centerDistance = Math.abs(i - 7.5) / 7.5
+      const baseHeight = 4 + (1 - centerDistance) * 8 // 4-12px base
+      const audioBoost = clampedLevel * 8 * (1 - centerDistance * 0.5) // Add up to 8px based on audio
+      // Add slight randomness for organic feel
+      const variation = Math.sin(Date.now() / 100 + i * 0.5) * 2 * clampedLevel
+      waveformHeights.push(Math.round(baseHeight + audioBoost + variation))
+    }
+    const waveformUpdates = waveformHeights.map((h, i) =>
+      `if (wfBars[${i}]) wfBars[${i}].style.height = "${h}px";`
+    ).join('\n      ')
+
     // Update all voice-controlled elements
     const script = `
       var m = document.querySelector(".magenta-wave");
@@ -282,12 +298,14 @@ export function updateAudioLevel(level: number): void {
       var highlight = document.querySelector(".highlight-layer");
       var gradient = document.querySelector(".gradient-animation");
       var glow = document.querySelector(".glow-spots");
+      var wfBars = document.querySelectorAll(".waveform-bar");
       if (m) m.style.opacity = "${magentaOpacity}";
       if (c) c.style.opacity = "${cyanBoost}";
       if (cloud) cloud.style.transform = "scaleY(${scaleY}) scaleX(${scaleX})";
       if (highlight) highlight.style.transform = "scaleY(${scaleY}) scaleX(${scaleX})";
       if (gradient) gradient.style.transform = "scaleY(${scaleY}) scaleX(${scaleX})";
       if (glow) glow.style.opacity = "${glowOpacity}";
+      ${waveformUpdates}
     `
     overlayWindow.webContents.executeJavaScript(script).catch(() => {})
   } catch (err) {
@@ -298,6 +316,187 @@ export function updateAudioLevel(level: number): void {
 export function setOverlayReady(ready: boolean): void {
   overlayReady = ready
   console.log('[Overlay] Ready:', ready)
+}
+
+/**
+ * Format seconds to MM:SS
+ */
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+/**
+ * Update the recording time display in the overlay
+ * @param seconds - Recording time in seconds
+ */
+export function updateRecordingTime(seconds: number): void {
+  try {
+    if (!overlayWindow || overlayWindow.isDestroyed() || !overlayWindow.isVisible() || !overlayReady || overlayWindow.webContents.isDestroyed()) {
+      return
+    }
+
+    const timeStr = formatTime(seconds)
+    const script = `
+      var timeEl = document.getElementById('recording-time');
+      if (timeEl) timeEl.textContent = '${timeStr}';
+    `
+    overlayWindow.webContents.executeJavaScript(script).catch(() => {})
+  } catch (err) {
+    // Ignore errors silently
+  }
+}
+
+/**
+ * Update the voice commands display in the overlay
+ * @param commands - Object with send, clear, cancel command arrays
+ */
+export function updateVoiceCommands(commands: { send: string[], clear: string[], cancel: string[] }): void {
+  try {
+    if (!overlayWindow || overlayWindow.isDestroyed() || !overlayReady || overlayWindow.webContents.isDestroyed()) {
+      return
+    }
+
+    // Build HTML for voice commands
+    const allCommands: { phrase: string, action: string }[] = []
+    commands.send.forEach(phrase => allCommands.push({ phrase, action: 'Send' }))
+    commands.clear.forEach(phrase => allCommands.push({ phrase, action: 'Clear' }))
+    commands.cancel.forEach(phrase => allCommands.push({ phrase, action: 'Cancel' }))
+
+    const commandsHtml = allCommands.slice(0, 4).map(cmd =>
+      `<div class="voice-cmd-item"><span class="voice-cmd-phrase">"${cmd.phrase}"</span><span class="voice-cmd-action">${cmd.action}</span></div>`
+    ).join('')
+
+    const script = `
+      var container = document.getElementById('voice-commands-list');
+      if (container) container.innerHTML = '${commandsHtml.replace(/'/g, "\\'")}';
+    `
+    overlayWindow.webContents.executeJavaScript(script).catch(() => {})
+  } catch (err) {
+    // Ignore errors silently
+  }
+}
+
+/**
+ * Split text into lines of approximately maxChars characters, breaking at word boundaries
+ */
+function splitIntoLines(text: string, maxChars: number = 60): string[] {
+  const words = text.split(/\s+/).filter(w => w.length > 0)
+  const lines: string[] = []
+  let currentLine = ''
+
+  for (const word of words) {
+    if (currentLine.length === 0) {
+      currentLine = word
+    } else if (currentLine.length + 1 + word.length <= maxChars) {
+      currentLine += ' ' + word
+    } else {
+      lines.push(currentLine)
+      currentLine = word
+    }
+  }
+
+  if (currentLine.length > 0) {
+    lines.push(currentLine)
+  }
+
+  return lines
+}
+
+/**
+ * Update the live transcript preview in the overlay
+ * @param text - The transcript text to display
+ * @param wordCount - Total word count
+ */
+export function updateTranscriptPreview(text: string, wordCount: number): void {
+  try {
+    if (!overlayWindow || overlayWindow.isDestroyed() || !overlayWindow.isVisible() || !overlayReady || overlayWindow.webContents.isDestroyed()) {
+      return
+    }
+
+    // Get last ~50 characters for the small preview card
+    const previewText = text.length > 50 ? '...' + text.slice(-50) : text
+    // Escape quotes for JS
+    const escapedPreview = previewText.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, ' ')
+
+    // Split text into lines for focus mode (show last 4 lines max)
+    const allLines = splitIntoLines(text, 55)
+    const displayLines = allLines.slice(-4) // Show last 4 lines
+    const maxLines = 4
+
+    // Build HTML for focus mode lines
+    let focusHtml = ''
+    if (displayLines.length === 0) {
+      focusHtml = '<div class="focus-placeholder">Listening...</div>'
+    } else {
+      focusHtml = displayLines.map((line, index) => {
+        const isCurrentLine = index === displayLines.length - 1
+        const escapedLine = line.replace(/'/g, "\\'").replace(/"/g, '\\"')
+        if (isCurrentLine) {
+          return `<div class="focus-line current">${escapedLine}<span class="focus-cursor"></span></div>`
+        }
+        return `<div class="focus-line">${escapedLine}</div>`
+      }).join('')
+    }
+
+    const script = `
+      // Update small preview card
+      var previewEl = document.getElementById('transcript-preview');
+      var wordCountEl = document.getElementById('word-count');
+      if (previewEl) previewEl.textContent = "${escapedPreview}";
+      if (wordCountEl) wordCountEl.textContent = '${wordCount}';
+
+      // Update focus mode typewriter display
+      var focusLinesEl = document.getElementById('focus-lines');
+      var focusWordCountEl = document.getElementById('focus-word-count');
+      if (focusLinesEl) focusLinesEl.innerHTML = '${focusHtml.replace(/'/g, "\\'")}';
+      if (focusWordCountEl) focusWordCountEl.textContent = '${wordCount}';
+    `
+    overlayWindow.webContents.executeJavaScript(script).catch(() => {})
+  } catch (err) {
+    // Ignore errors silently
+  }
+}
+
+/**
+ * Update the overlay status indicators
+ * @param status - Object with connected and formattingEnabled flags
+ */
+export function updateOverlayStatus(status: { connected: boolean, formattingEnabled: boolean }): void {
+  try {
+    if (!overlayWindow || overlayWindow.isDestroyed() || !overlayReady || overlayWindow.webContents.isDestroyed()) {
+      return
+    }
+
+    const connectedClass = status.connected ? 'connected' : 'disconnected'
+    const formattingText = status.formattingEnabled ? 'ON' : 'OFF'
+    const formattingClass = status.formattingEnabled ? 'enabled' : 'disabled'
+
+    const connectedLabel = status.connected ? 'Connected' : 'Disconnected'
+
+    const script = `
+      var connDot = document.getElementById('connection-dot');
+      var connLabel = document.getElementById('connection-label');
+      var fmtBadge = document.getElementById('formatting-badge');
+      var fmtValue = document.getElementById('formatting-value');
+      if (connDot) {
+        connDot.className = 'connection-dot ${connectedClass}';
+      }
+      if (connLabel) {
+        connLabel.textContent = '${connectedLabel}';
+      }
+      if (fmtBadge) {
+        fmtBadge.className = 'formatting-badge ${formattingClass}';
+      }
+      if (fmtValue) {
+        fmtValue.textContent = '${formattingText}';
+      }
+    `
+    overlayWindow.webContents.executeJavaScript(script).catch(() => {})
+  } catch (err) {
+    // Ignore errors silently
+  }
 }
 
 /**

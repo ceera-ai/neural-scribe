@@ -1,5 +1,5 @@
 import { ipcMain, clipboard, BrowserWindow } from 'electron'
-import { updateAudioLevel, updateFrequencyData } from './overlay'
+import { updateAudioLevel, updateFrequencyData, updateRecordingTime, updateVoiceCommands, updateTranscriptPreview, updateOverlayStatus } from './overlay'
 import {
   getSettings,
   setSettings,
@@ -159,6 +159,26 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   // Frequency data from renderer (for spectrum visualization)
   ipcMain.on('frequency-data', (_, frequencyData: number[]) => {
     updateFrequencyData(frequencyData)
+  })
+
+  // Recording time from renderer (for overlay display)
+  ipcMain.on('recording-time', (_, seconds: number) => {
+    updateRecordingTime(seconds)
+  })
+
+  // Voice commands from renderer (for overlay display)
+  ipcMain.on('voice-commands-update', (_, commands: { send: string[], clear: string[], cancel: string[] }) => {
+    updateVoiceCommands(commands)
+  })
+
+  // Transcript preview from renderer (for overlay display)
+  ipcMain.on('transcript-preview', (_, data: { text: string, wordCount: number }) => {
+    updateTranscriptPreview(data.text, data.wordCount)
+  })
+
+  // Overlay status from renderer
+  ipcMain.on('overlay-status', (_, status: { connected: boolean, formattingEnabled: boolean }) => {
+    updateOverlayStatus(status)
   })
 
   // Terminal operations

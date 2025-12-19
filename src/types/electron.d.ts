@@ -158,6 +158,18 @@ export interface ElectronAPI {
 
   // Send frequency data to main process (for spectrum visualization)
   sendFrequencyData: (frequencyData: number[]) => void
+
+  // Send recording time to main process (for overlay display)
+  sendRecordingTime: (seconds: number) => void
+
+  // Send voice commands to main process (for overlay display)
+  sendVoiceCommands: (commands: { send: string[], clear: string[], cancel: string[] }) => void
+
+  // Send live transcript preview to main process (for overlay display)
+  sendTranscriptPreview: (text: string, wordCount: number) => void
+
+  // Send overlay status info to main process
+  sendOverlayStatus: (status: { connected: boolean, formattingEnabled: boolean }) => void
 }
 
 declare global {

@@ -671,7 +671,7 @@
     .spectrum-bar:nth-child(11), .spectrum-bar:nth-child(14) { transform: translateY(-24.5px); opacity: 1; }
     .spectrum-bar:nth-child(12), .spectrum-bar:nth-child(13) { transform: translateY(-25px); opacity: 1; }
 
-    /* ========== STATUS PILL BAR ========== */
+    /* ========== STATUS PILL BAR (Cyberpunk Theme) ========== */
     .status-pill {
       position: absolute;
       bottom: 24px;
@@ -679,20 +679,23 @@
       transform: translateX(-50%);
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 12px 24px;
-      background: rgba(0, 0, 0, 0.6);
+      gap: 12px;
+      padding: 10px 20px;
+      background: linear-gradient(135deg, rgba(10, 10, 20, 0.85) 0%, rgba(20, 10, 30, 0.85) 100%);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.5),
+        0 0 20px rgba(0, 255, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
       z-index: 100;
     }
 
     .status-icon {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -700,33 +703,50 @@
 
     /* Pulsing microphone dot */
     .mic-dot {
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
       background: linear-gradient(135deg, #00ffff, #ff00ff);
       border-radius: 50%;
       animation: micPulse 1.5s ease-in-out infinite;
-      box-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+      box-shadow: 0 0 10px rgba(255, 0, 255, 0.6), 0 0 20px rgba(0, 255, 255, 0.4);
+    }
+
+    .status-divider {
+      width: 1px;
+      height: 16px;
+      background: linear-gradient(to bottom, transparent, rgba(0, 255, 255, 0.4), transparent);
+    }
+
+    .recording-time {
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #00ffff;
+      text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+      letter-spacing: 1px;
+      min-width: 36px;
     }
 
     .status-text {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 14px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 12px;
       font-weight: 500;
-      color: rgba(255, 255, 255, 0.9);
+      color: rgba(255, 255, 255, 0.7);
       letter-spacing: 0.3px;
     }
 
     .status-key {
       display: inline-flex;
       align-items: center;
-      padding: 4px 8px;
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 6px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 3px 8px;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(255, 0, 255, 0.15) 100%);
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      border-radius: 4px;
+      font-family: 'SF Mono', 'Monaco', monospace;
       font-size: 11px;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.8);
-      text-transform: uppercase;
+      color: #00ffff;
+      text-shadow: 0 0 6px rgba(0, 255, 255, 0.4);
       letter-spacing: 0.5px;
     }
 
@@ -734,11 +754,475 @@
       0%, 100% {
         transform: scale(1);
         opacity: 1;
+        box-shadow: 0 0 10px rgba(255, 0, 255, 0.6), 0 0 20px rgba(0, 255, 255, 0.4);
       }
       50% {
-        transform: scale(1.2);
-        opacity: 0.7;
+        transform: scale(1.15);
+        opacity: 0.8;
+        box-shadow: 0 0 15px rgba(255, 0, 255, 0.8), 0 0 30px rgba(0, 255, 255, 0.6);
       }
+    }
+
+    /* ========== VOICE COMMANDS CARD ========== */
+    .voice-commands-card {
+      position: absolute;
+      bottom: 24px;
+      right: 40px;
+      min-width: 160px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, rgba(10, 10, 20, 0.85) 0%, rgba(20, 10, 30, 0.85) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 0, 255, 0.3);
+      box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.5),
+        0 0 20px rgba(255, 0, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      z-index: 100;
+    }
+
+    .voice-commands-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 0, 255, 0.2);
+    }
+
+    .voice-commands-icon {
+      width: 14px;
+      height: 14px;
+      color: #ff00ff;
+      opacity: 0.8;
+    }
+
+    .voice-commands-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .voice-cmd-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 4px 0;
+    }
+
+    .voice-cmd-phrase {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      color: #ff00ff;
+      text-shadow: 0 0 6px rgba(255, 0, 255, 0.4);
+    }
+
+    .voice-cmd-action {
+      font-family: 'SF Mono', 'Monaco', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(0, 255, 255, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 6px;
+      background: rgba(0, 255, 255, 0.1);
+      border-radius: 3px;
+      border: 1px solid rgba(0, 255, 255, 0.2);
+    }
+
+    /* ========== TRANSCRIPT PREVIEW CARD ========== */
+    .transcript-card {
+      position: absolute;
+      bottom: 24px;
+      left: 40px;
+      max-width: 280px;
+      min-width: 180px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, rgba(10, 10, 20, 0.85) 0%, rgba(20, 10, 30, 0.85) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 8px;
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.5),
+        0 0 20px rgba(0, 255, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      z-index: 100;
+    }
+
+    .transcript-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+    }
+
+    .transcript-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .transcript-icon {
+      width: 14px;
+      height: 14px;
+      color: #00ffff;
+      opacity: 0.8;
+    }
+
+    .transcript-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .word-count-badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      background: rgba(0, 255, 255, 0.1);
+      border: 1px solid rgba(0, 255, 255, 0.2);
+      border-radius: 10px;
+    }
+
+    .word-count-value {
+      font-family: 'SF Mono', 'Monaco', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      color: #00ffff;
+      text-shadow: 0 0 6px rgba(0, 255, 255, 0.4);
+    }
+
+    .word-count-label {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 9px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+    }
+
+    .transcript-preview-text {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.85);
+      line-height: 1.4;
+      min-height: 36px;
+      word-break: break-word;
+    }
+
+    .transcript-preview-text:empty::before {
+      content: 'Listening...';
+      color: rgba(255, 255, 255, 0.4);
+      font-style: italic;
+    }
+
+    /* ========== STATUS INDICATORS ========== */
+    .status-indicators {
+      position: absolute;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 100;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(10, 10, 20, 0.7);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .connection-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+
+    .connection-dot.connected {
+      background: #00ff88;
+      box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+    }
+
+    .connection-dot.disconnected {
+      background: #ff4444;
+      box-shadow: 0 0 8px rgba(255, 68, 68, 0.6);
+      animation: pulse-error 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse-error {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .connection-label {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .formatting-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(10, 10, 20, 0.7);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .formatting-badge.enabled {
+      border-color: rgba(0, 255, 255, 0.3);
+    }
+
+    .formatting-badge.disabled {
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .formatting-icon {
+      width: 12px;
+      height: 12px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .formatting-badge.enabled .formatting-icon {
+      color: #00ffff;
+    }
+
+    .formatting-label {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .formatting-value {
+      font-family: 'SF Mono', 'Monaco', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .formatting-badge.enabled .formatting-value {
+      color: #00ffff;
+      text-shadow: 0 0 6px rgba(0, 255, 255, 0.4);
+    }
+
+    /* ========== SUBTLE WAVEFORM ========== */
+    .waveform-container {
+      position: absolute;
+      bottom: 56px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 2px;
+      height: 20px;
+      z-index: 99;
+    }
+
+    .waveform-bar {
+      width: 3px;
+      height: 4px;
+      background: linear-gradient(to top, rgba(0, 255, 255, 0.4), rgba(255, 0, 255, 0.4));
+      border-radius: 1.5px;
+      transition: height 0.08s ease-out;
+    }
+
+    /* ========== FOCUS MODE TYPEWRITER ========== */
+    .focus-mode {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 70%;
+      max-width: 800px;
+      height: 200px;
+      z-index: 150;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      overflow: hidden;
+      /* Gradient mask - fades out at top, clear at bottom where current text is */
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(0, 0, 0, 0.1) 15%,
+        rgba(0, 0, 0, 0.3) 30%,
+        rgba(0, 0, 0, 0.6) 50%,
+        rgba(0, 0, 0, 0.85) 70%,
+        black 85%,
+        black 100%
+      );
+      mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(0, 0, 0, 0.1) 15%,
+        rgba(0, 0, 0, 0.3) 30%,
+        rgba(0, 0, 0, 0.6) 50%,
+        rgba(0, 0, 0, 0.85) 70%,
+        black 85%,
+        black 100%
+      );
+    }
+
+    .focus-mode-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 20px;
+      min-height: 100%;
+    }
+
+    /* Individual lines container */
+    .focus-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .focus-line {
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 22px;
+      font-weight: 400;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.5);
+      text-align: center;
+      transition: color 0.3s ease, text-shadow 0.3s ease, transform 0.3s ease;
+      text-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+    }
+
+    /* Current/active line - full brightness with glow */
+    .focus-line.current {
+      color: rgba(255, 255, 255, 0.95);
+      font-weight: 500;
+      text-shadow:
+        0 0 10px rgba(0, 255, 255, 0.4),
+        0 0 20px rgba(0, 255, 255, 0.2),
+        0 0 40px rgba(255, 0, 255, 0.15);
+    }
+
+    /* Typing cursor effect */
+    .focus-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1.2em;
+      background: linear-gradient(180deg, #00ffff, #ff00ff);
+      margin-left: 4px;
+      vertical-align: text-bottom;
+      animation: cursorBlink 1s ease-in-out infinite;
+      box-shadow: 0 0 8px rgba(0, 255, 255, 0.6), 0 0 16px rgba(255, 0, 255, 0.4);
+    }
+
+    @keyframes cursorBlink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    /* Placeholder when no text */
+    .focus-placeholder {
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 20px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.25);
+      text-align: center;
+      font-style: italic;
+      text-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+    }
+
+    /* Cyberpunk decorative elements */
+    .focus-mode::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(0, 255, 255, 0.3) 20%,
+        rgba(0, 255, 255, 0.5) 50%,
+        rgba(0, 255, 255, 0.3) 80%,
+        transparent
+      );
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+    }
+
+    /* Side accent lines */
+    .focus-mode::after {
+      content: '';
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40%;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 0, 255, 0.2) 30%,
+        rgba(255, 0, 255, 0.3) 50%,
+        rgba(255, 0, 255, 0.2) 70%,
+        transparent
+      );
+    }
+
+    /* Word count floating badge */
+    .focus-word-count {
+      position: absolute;
+      bottom: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background: rgba(10, 10, 20, 0.6);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 12px;
+      border: 1px solid rgba(0, 255, 255, 0.2);
+    }
+
+    .focus-word-count-value {
+      font-family: 'SF Mono', 'Monaco', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: #00ffff;
+      text-shadow: 0 0 6px rgba(0, 255, 255, 0.4);
+    }
+
+    .focus-word-count-label {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
   </style>
 </head>
@@ -760,77 +1244,105 @@
     <div class="magenta-glow"></div>
   </div>
 
-  <!-- AI Orb with spectrum (matching main app AIOrb) -->
-  <div class="overlay-orb">
-    <!-- Outer Glow -->
-    <div class="orb-glow"></div>
-
-    <!-- Orbital Rings -->
-    <div class="orb-rings">
-      <div class="orb-ring orb-ring--1"></div>
-      <div class="orb-ring orb-ring--2"></div>
-      <div class="orb-ring orb-ring--3"></div>
+  <!-- Focus Mode Typewriter Display (Centered) -->
+  <div class="focus-mode" id="focus-mode">
+    <div class="focus-mode-content">
+      <div class="focus-lines" id="focus-lines">
+        <div class="focus-placeholder" id="focus-placeholder">Listening...</div>
+      </div>
     </div>
-
-    <!-- Orbiting Particles -->
-    <div class="orb-particles">
-      <div class="orb-particle" style="--particle-delay: 0s; --particle-duration: 2.5s; --particle-size: 3px; --particle-distance: 65%; --particle-angle: 0deg;"></div>
-      <div class="orb-particle" style="--particle-delay: 0.2s; --particle-duration: 3s; --particle-size: 4px; --particle-distance: 70%; --particle-angle: 30deg;"></div>
-      <div class="orb-particle" style="--particle-delay: 0.4s; --particle-duration: 2.8s; --particle-size: 3px; --particle-distance: 60%; --particle-angle: 60deg;"></div>
-      <div class="orb-particle" style="--particle-delay: 0.6s; --particle-duration: 3.2s; --particle-size: 5px; --particle-distance: 75%; --particle-angle: 90deg;"></div>
-      <div class="orb-particle" style="--particle-delay: 0.8s; --particle-duration: 2.6s; --particle-size: 3px; --particle-distance: 65%; --particle-angle: 120deg;"></div>
-      <div class="orb-particle" style="--particle-delay: 1s; --particle-duration: 3.1s; --particle-size: 4px; --particle-distance: 70%; --particle-angle: 150deg;"></div>
-      <div class="orb-particle" style="--particle-delay: 1.2s; --particle-duration: 2.7s; --particle-size: 3px; --particle-distance: 62%; --particle-angle: 180deg;"></div>
-      <div class="orb-particle" style="--particle-delay: 1.4s; --particle-duration: 3.3s; --particle-size: 5px; --particle-distance: 72%; --particle-angle: 210deg;"></div>
-      <div class="orb-particle" style="--particle-delay: 1.6s; --particle-duration: 2.9s; --particle-size: 3px; --particle-distance: 68%; --particle-angle: 240deg;"></div>
-      <div class="orb-particle" style="--particle-delay: 1.8s; --particle-duration: 2.5s; --particle-size: 4px; --particle-distance: 63%; --particle-angle: 270deg;"></div>
-      <div class="orb-particle" style="--particle-delay: 2s; --particle-duration: 3s; --particle-size: 3px; --particle-distance: 67%; --particle-angle: 300deg;"></div>
-      <div class="orb-particle" style="--particle-delay: 2.2s; --particle-duration: 2.8s; --particle-size: 4px; --particle-distance: 71%; --particle-angle: 330deg;"></div>
-    </div>
-
-    <!-- Core Sphere -->
-    <div class="orb-core">
-      <div class="orb-core-inner"></div>
-      <div class="orb-core-highlight"></div>
-    </div>
-
-    <!-- Arc Spectrum -->
-    <div class="orb-spectrum">
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
-      <div class="spectrum-bar"></div>
+    <div class="focus-word-count">
+      <span class="focus-word-count-value" id="focus-word-count">0</span>
+      <span class="focus-word-count-label">words</span>
     </div>
   </div>
 
-  <!-- Status pill indicator -->
+  <!-- Status pill indicator (Cyberpunk themed) -->
   <div class="status-pill">
     <div class="status-icon">
       <div class="mic-dot"></div>
     </div>
-    <span class="status-text">Listening... press</span>
+    <span class="recording-time" id="recording-time">0:00</span>
+    <div class="status-divider"></div>
+    <span class="status-text">press</span>
     <span class="status-key" id="hotkey-display">⌘⇧R</span>
     <span class="status-text">to stop</span>
+  </div>
+
+  <!-- Transcript Preview Card (Left side) -->
+  <div class="transcript-card">
+    <div class="transcript-header">
+      <div class="transcript-header-left">
+        <svg class="transcript-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+        <span class="transcript-title">Live Preview</span>
+      </div>
+      <div class="word-count-badge">
+        <span class="word-count-value" id="word-count">0</span>
+        <span class="word-count-label">words</span>
+      </div>
+    </div>
+    <div class="transcript-preview-text" id="transcript-preview"></div>
+  </div>
+
+  <!-- Status Indicators (Above status pill) -->
+  <div class="status-indicators">
+    <div class="connection-status">
+      <div class="connection-dot connected" id="connection-dot"></div>
+      <span class="connection-label" id="connection-label">Connected</span>
+    </div>
+    <div class="formatting-badge enabled" id="formatting-badge">
+      <svg class="formatting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="4 7 4 4 20 4 20 7"></polyline>
+        <line x1="9" y1="20" x2="15" y2="20"></line>
+        <line x1="12" y1="4" x2="12" y2="20"></line>
+      </svg>
+      <span class="formatting-label">Format</span>
+      <span class="formatting-value" id="formatting-value">ON</span>
+    </div>
+  </div>
+
+  <!-- Subtle Waveform (Between indicators and status pill) -->
+  <div class="waveform-container" id="waveform">
+    <div class="waveform-bar"></div>
+    <div class="waveform-bar"></div>
+    <div class="waveform-bar"></div>
+    <div class="waveform-bar"></div>
+    <div class="waveform-bar"></div>
+    <div class="waveform-bar"></div>
+    <div class="waveform-bar"></div>
+    <div class="waveform-bar"></div>
+    <div class="waveform-bar"></div>
+    <div class="waveform-bar"></div>
+    <div class="waveform-bar"></div>
+    <div class="waveform-bar"></div>
+    <div class="waveform-bar"></div>
+    <div class="waveform-bar"></div>
+    <div class="waveform-bar"></div>
+    <div class="waveform-bar"></div>
+  </div>
+
+  <!-- Voice Commands Card (Right side) -->
+  <div class="voice-commands-card">
+    <div class="voice-commands-header">
+      <svg class="voice-commands-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+        <line x1="12" y1="19" x2="12" y2="23"></line>
+        <line x1="8" y1="23" x2="16" y2="23"></line>
+      </svg>
+      <span class="voice-commands-title">Voice Commands</span>
+    </div>
+    <div id="voice-commands-list">
+      <div class="voice-cmd-item">
+        <span class="voice-cmd-phrase">"send it"</span>
+        <span class="voice-cmd-action">Send</span>
+      </div>
+    </div>
   </div>
 </body>
 </html>

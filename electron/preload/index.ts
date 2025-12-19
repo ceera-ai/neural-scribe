@@ -210,6 +210,26 @@ const electronAPI = {
   // Send frequency data to main process (for spectrum visualization)
   sendFrequencyData: (frequencyData: number[]): void => {
     ipcRenderer.send('frequency-data', frequencyData)
+  },
+
+  // Send recording time to main process (for overlay display)
+  sendRecordingTime: (seconds: number): void => {
+    ipcRenderer.send('recording-time', seconds)
+  },
+
+  // Send voice commands to main process (for overlay display)
+  sendVoiceCommands: (commands: { send: string[], clear: string[], cancel: string[] }): void => {
+    ipcRenderer.send('voice-commands-update', commands)
+  },
+
+  // Send live transcript preview to main process (for overlay display)
+  sendTranscriptPreview: (text: string, wordCount: number): void => {
+    ipcRenderer.send('transcript-preview', { text, wordCount })
+  },
+
+  // Send overlay status info to main process
+  sendOverlayStatus: (status: { connected: boolean, formattingEnabled: boolean }): void => {
+    ipcRenderer.send('overlay-status', status)
   }
 }
 

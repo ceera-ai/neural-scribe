@@ -216,14 +216,46 @@ function App() {
     let interval: NodeJS.Timeout | null = null;
     if (isRecording) {
       setRecordingTime(0);
+      window.electronAPI.sendRecordingTime(0);
       interval = setInterval(() => {
-        setRecordingTime(t => t + 1);
+        setRecordingTime(t => {
+          const newTime = t + 1;
+          window.electronAPI.sendRecordingTime(newTime);
+          return newTime;
+        });
       }, 1000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
   }, [isRecording]);
+
+  // Send voice commands and status to overlay when recording starts
+  useEffect(() => {
+    if (isRecording) {
+      // Send voice commands
+      window.electronAPI.getEnabledVoiceCommands().then(commands => {
+        window.electronAPI.sendVoiceCommands(commands);
+      }).catch(err => {
+        console.error('Failed to get voice commands for overlay:', err);
+      });
+
+      // Send status (connected, formatting enabled)
+      window.electronAPI.sendOverlayStatus({
+        connected: isConnected,
+        formattingEnabled: formattingEnabled
+      });
+    }
+  }, [isRecording, isConnected, formattingEnabled]);
+
+  // Send live transcript preview to overlay
+  useEffect(() => {
+    if (isRecording) {
+      const fullText = transcriptSegments.map(s => s.text).join(' ').trim();
+      const wordCount = fullText ? fullText.split(/\s+/).length : 0;
+      window.electronAPI.sendTranscriptPreview(fullText, wordCount);
+    }
+  }, [transcriptSegments, isRecording]);
 
   // Format seconds to MM:SS
   const formatTime = (seconds: number) => {
