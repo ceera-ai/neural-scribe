@@ -96,8 +96,9 @@ function App() {
       console.error('Failed to apply replacements:', err);
     }
 
-    // Auto-save transcription to history with duration
-    if (processedTranscript.trim()) {
+    // Only auto-save if there's no pending paste operation
+    // If there's a pending paste, formatAndPaste will handle saving with formatting
+    if (processedTranscript.trim() && !pendingPasteRef.current) {
       await saveTranscription(processedTranscript, duration);
 
       // Record session for gamification
