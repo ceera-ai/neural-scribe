@@ -1,4 +1,4 @@
-import { Achievement, UserStats, LevelSystem } from '../../types/gamification';
+import type { Achievement, UserStats, LevelSystem } from '../../types/gamification';
 import { getRarityColor } from '../../types/gamification';
 import './AchievementDetailModal.css';
 
