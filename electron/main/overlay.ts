@@ -1,6 +1,63 @@
 import { BrowserWindow, screen, Display } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
+import { getSettings } from './store'
+
+/**
+ * Format a hotkey string for display (e.g., "CommandOrControl+Shift+R" → "⌘⇧R" on Mac)
+ */
+function formatHotkeyForDisplay(hotkey: string): string {
+  const isMac = process.platform === 'darwin'
+
+  // Split by + and format each part
+  const parts = hotkey.split('+').map(part => {
+    const p = part.trim().toLowerCase()
+
+    if (p === 'commandorcontrol' || p === 'cmdorctrl') {
+      return isMac ? '⌘' : 'Ctrl'
+    }
+    if (p === 'command' || p === 'cmd') {
+      return isMac ? '⌘' : 'Ctrl'
+    }
+    if (p === 'control' || p === 'ctrl') {
+      return isMac ? '⌃' : 'Ctrl'
+    }
+    if (p === 'shift') {
+      return isMac ? '⇧' : 'Shift'
+    }
+    if (p === 'alt' || p === 'option') {
+      return isMac ? '⌥' : 'Alt'
+    }
+    if (p === 'meta' || p === 'super') {
+      return isMac ? '⌘' : 'Win'
+    }
+    // Capitalize single letter keys
+    if (p.length === 1) {
+      return p.toUpperCase()
+    }
+    // Special keys
+    if (p === 'escape' || p === 'esc') return 'Esc'
+    if (p === 'space') return 'Space'
+    if (p === 'tab') return 'Tab'
+    if (p === 'enter' || p === 'return') return '↵'
+    if (p === 'backspace') return '⌫'
+    if (p === 'delete') return '⌦'
+    if (p === 'up') return '↑'
+    if (p === 'down') return '↓'
+    if (p === 'left') return '←'
+    if (p === 'right') return '→'
+
+    // Return as-is with first letter capitalized
+    return part.charAt(0).toUpperCase() + part.slice(1)
+  })
+
+  // On Mac, join without separator for modifier symbols
+  if (isMac) {
+    return parts.join('')
+  }
+  // On other platforms, join with +
+  return parts.join('+')
+}
 
 let overlayWindow: BrowserWindow | null = null
 let mainWindowRef: BrowserWindow | null = null
@@ -132,8 +189,16 @@ export function showOverlay(): void {
       const targetDisplay = getBestDisplay()
       positionOverlay(targetDisplay)
 
+      // Update the hotkey display from current settings
+      const settings = getSettings()
+      const hotkeyText = formatHotkeyForDisplay(settings.recordHotkey)
+      overlayWindow.webContents.executeJavaScript(`
+        const hotkeyEl = document.getElementById('hotkey-display');
+        if (hotkeyEl) hotkeyEl.textContent = '${hotkeyText}';
+      `).catch(() => {})
+
       overlayWindow.show()
-      console.log('[Overlay] Shown on display:', targetDisplay.id)
+      console.log('[Overlay] Shown on display:', targetDisplay.id, 'with hotkey:', hotkeyText)
     }
   } catch (err) {
     console.log('[Overlay] Error showing overlay:', err)
