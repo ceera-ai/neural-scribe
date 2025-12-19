@@ -11,7 +11,15 @@
     "preview": "electron-vite preview",
     "lint": "eslint .",
     "package": "electron-builder",
-    "package:mac": "electron-builder --mac"
+    "package:mac": "electron-builder --mac",
+    "test": "vitest",
+    "test:unit": "vitest run",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:all": "npm run test:unit && npm run test:e2e"
   },
   "dependencies": {
     "@electron-toolkit/utils": "^4.0.0",
@@ -21,22 +29,35 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@axe-core/react": "^4.11.0",
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.57.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^4.0.16",
+    "@vitest/ui": "^4.0.16",
+    "axe-playwright": "^2.2.2",
     "electron": "^33.2.1",
     "electron-builder": "^25.1.8",
+    "electron-mock-ipc": "^0.3.12",
+    "electron-playwright-helpers": "^2.0.1",
     "electron-vite": "^2.3.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "jsdom": "^27.3.0",
+    "playwright": "^1.57.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vitest": "^4.0.16"
   }
 }
