@@ -1,4 +1,5 @@
 import { ipcMain, clipboard, BrowserWindow } from 'electron'
+import { updateAudioLevel } from './overlay'
 import {
   getSettings,
   setSettings,
@@ -148,6 +149,11 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     if (onRecordingStateChange) {
       onRecordingStateChange(isRecording)
     }
+  })
+
+  // Audio level from renderer (for overlay visualization)
+  ipcMain.on('audio-level', (_, level: number) => {
+    updateAudioLevel(level)
   })
 
   // Terminal operations

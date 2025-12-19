@@ -91,6 +91,12 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
   const onVoiceCommandRef = useRef(onVoiceCommand); // Track current callback
   const voiceCommandsRef = useRef<VoiceCommands>({ send: [], clear: [], cancel: [] }); // Dynamic voice commands
 
+  // Audio level analysis refs
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioStreamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
   // Keep refs in sync with props
   useEffect(() => {
     voiceCommandsEnabledRef.current = voiceCommandsEnabled;
@@ -110,6 +116,99 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
       .map(segment => segment.text)
       .join(' ')
       .trim();
+  }, []);
+
+  // Start audio level analysis for overlay visualization
+  const startAudioAnalysis = useCallback(async (microphoneId?: string | null) => {
+    try {
+      // Create audio context
+      audioContextRef.current = new AudioContext();
+
+      // Get microphone stream
+      const constraints: MediaStreamConstraints = {
+        audio: microphoneId
+          ? { deviceId: { exact: microphoneId } }
+          : true
+      };
+      audioStreamRef.current = await navigator.mediaDevices.getUserMedia(constraints);
+
+      // Create analyser
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 256;
+      analyserRef.current.smoothingTimeConstant = 0.8;
+
+      // Connect microphone to analyser
+      const source = audioContextRef.current.createMediaStreamSource(audioStreamRef.current);
+      source.connect(analyserRef.current);
+
+      // Start analyzing using frequency data (matching useAudioAnalyzer approach)
+      const bufferLength = analyserRef.current.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      let prevLevel = 0;
+
+      const analyze = () => {
+        if (!analyserRef.current) return;
+
+        // Get frequency data
+        analyserRef.current.getByteFrequencyData(dataArray);
+
+        // Focus on voice frequency range (roughly 85-255 Hz to 3400 Hz)
+        // With 256 FFT at 44100Hz, each bin is ~172Hz
+        // So bins 0-20 roughly cover human voice range
+        const voiceRangeEnd = Math.min(20, bufferLength);
+
+        let sum = 0;
+        for (let i = 0; i < voiceRangeEnd; i++) {
+          sum += dataArray[i];
+        }
+
+        const average = sum / voiceRangeEnd;
+
+        // Normalize to 0-1 with scaling for better responsiveness
+        const normalized = Math.min(1, (average / 255) * 1.5);
+
+        // Apply easing for smooth but snappy transitions
+        const diff = normalized - prevLevel;
+        const factor = diff > 0 ? 0.5 : 0.4; // Fast rise, fast fall
+        const smoothedLevel = prevLevel + diff * factor;
+        prevLevel = smoothedLevel;
+
+        // Send to main process
+        window.electronAPI.sendAudioLevel(smoothedLevel);
+
+        animationFrameRef.current = requestAnimationFrame(analyze);
+      };
+
+      analyze();
+      console.log('[AudioAnalysis] Started');
+    } catch (err) {
+      console.error('[AudioAnalysis] Failed to start:', err);
+    }
+  }, []);
+
+  // Stop audio level analysis
+  const stopAudioAnalysis = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    if (audioStreamRef.current) {
+      audioStreamRef.current.getTracks().forEach(track => track.stop());
+      audioStreamRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+
+    analyserRef.current = null;
+
+    // Reset overlay to zero level
+    window.electronAPI.sendAudioLevel(0);
+
+    console.log('[AudioAnalysis] Stopped');
   }, []);
 
   const startRecording = useCallback(async () => {
@@ -177,6 +276,8 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
         recordingStartTimeRef.current = Date.now();
         // Notify main process
         window.electronAPI.notifyRecordingState(true);
+        // Start audio level analysis for overlay visualization
+        startAudioAnalysis(selectedMicrophoneId);
       });
 
       // Handle partial (interim) transcripts
@@ -226,6 +327,7 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
             // Auto-stop recording after voice command
             setTimeout(() => {
               console.log('[VoiceCommand] Auto-stopping recording...');
+              stopAudioAnalysis();
               if (connectionRef.current) {
                 try {
                   connectionRef.current.close();
@@ -300,6 +402,7 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
 
               // Auto-stop recording after voice command (with small delay)
               setTimeout(() => {
+                stopAudioAnalysis();
                 if (connectionRef.current) {
                   console.log('[VoiceCommand] Auto-stopping recording...');
                   try {
@@ -365,9 +468,12 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
       setIsConnected(false);
       window.electronAPI.notifyRecordingState(false);
     }
-  }, [sessionId, selectedMicrophoneId]);
+  }, [sessionId, selectedMicrophoneId, startAudioAnalysis]);
 
   const stopRecording = useCallback(async () => {
+    // Stop audio level analysis
+    stopAudioAnalysis();
+
     if (connectionRef.current) {
       console.log('Stopping recording and closing connection...');
       try {
@@ -428,7 +534,7 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
         setEditedTranscript(result);
       }
     }
-  }, [getFullTranscript, onRecordingStopped]);
+  }, [getFullTranscript, onRecordingStopped, stopAudioAnalysis]);
 
   const clearTranscript = useCallback(() => {
     setTranscriptSegments([]);

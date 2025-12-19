@@ -152,6 +152,9 @@ export interface ElectronAPI {
 
   // Notify main process of recording state
   notifyRecordingState: (isRecording: boolean) => void
+
+  // Send audio level to main process (for overlay visualization)
+  sendAudioLevel: (level: number) => void
 }
 
 declare global {

@@ -179,6 +179,12 @@ export function createOverlayWindow(mainWindow?: BrowserWindow): void {
     overlayWindow.loadFile(join(__dirname, '../overlay.html'))
   }
 
+  // Set ready when page finishes loading
+  overlayWindow.webContents.on('did-finish-load', () => {
+    overlayReady = true
+    console.log('[Overlay] Page loaded, ready for updates')
+  })
+
   console.log('[Overlay] Window created')
 }
 
@@ -232,4 +238,64 @@ export function destroyOverlay(): void {
 
 export function setMainWindowRef(mainWindow: BrowserWindow): void {
   mainWindowRef = mainWindow
+}
+
+// Track last log time to avoid spam
+let lastLogTime = 0
+let overlayReady = false
+
+/**
+ * Update the overlay's audio level visualization
+ * @param level - Audio level from 0 to 1
+ */
+export function updateAudioLevel(level: number): void {
+  try {
+    if (!overlayWindow || overlayWindow.isDestroyed() || !overlayWindow.isVisible() || !overlayReady) {
+      return
+    }
+
+    // Clamp level between 0 and 1
+    const clampedLevel = Math.max(0, Math.min(1, level))
+    // Round to 2 decimal places to avoid floating point issues in JS
+    const magentaOpacity = Math.round(clampedLevel * 100) / 100
+    // Cyan boost is more subtle - just a gentle glow increase
+    const cyanBoost = Math.round(clampedLevel * 0.5 * 100) / 100
+
+    // Breathing scale: 1.0 at silence, up to 1.08 at max volume
+    const scaleY = (1 + clampedLevel * 0.08).toFixed(3)
+    const scaleX = (1 + clampedLevel * 0.02).toFixed(3)
+    // Glow spots opacity: 0.6 at silence, 1.0 at max
+    const glowOpacity = (0.6 + clampedLevel * 0.4).toFixed(2)
+
+    // Log occasionally for debugging
+    const now = Date.now()
+    if (now - lastLogTime > 1000) {
+      console.log(`[Overlay] Audio level: ${magentaOpacity}`)
+      lastLogTime = now
+    }
+
+    // Update all voice-controlled elements
+    const script = `
+      var m = document.querySelector(".magenta-wave");
+      var c = document.querySelector(".cyan-boost");
+      var cloud = document.querySelector(".cloud-overlay");
+      var highlight = document.querySelector(".highlight-layer");
+      var gradient = document.querySelector(".gradient-animation");
+      var glow = document.querySelector(".glow-spots");
+      if (m) m.style.opacity = "${magentaOpacity}";
+      if (c) c.style.opacity = "${cyanBoost}";
+      if (cloud) cloud.style.transform = "scaleY(${scaleY}) scaleX(${scaleX})";
+      if (highlight) highlight.style.transform = "scaleY(${scaleY}) scaleX(${scaleX})";
+      if (gradient) gradient.style.transform = "scaleY(${scaleY}) scaleX(${scaleX})";
+      if (glow) glow.style.opacity = "${glowOpacity}";
+    `
+    overlayWindow.webContents.executeJavaScript(script).catch(() => {})
+  } catch (err) {
+    // Ignore errors silently
+  }
+}
+
+export function setOverlayReady(ready: boolean): void {
+  overlayReady = ready
+  console.log('[Overlay] Ready:', ready)
 }

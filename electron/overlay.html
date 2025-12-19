@@ -114,8 +114,10 @@
           transparent 70%);
 
       filter: blur(25px);
-      animation: breathe 3s ease-in-out infinite;
+      /* Breathing now controlled by voice level via JavaScript */
       transform-origin: center bottom;
+      transform: scaleY(1) scaleX(1);
+      transition: transform 0.15s ease-out;
     }
 
     /* Highlight layer - light from above */
@@ -145,8 +147,10 @@
           rgba(200, 255, 255, 0.08) 50%,
           transparent 60%);
       filter: blur(15px);
-      animation: highlightPulse 4s ease-in-out infinite;
+      /* Controlled by voice level via JavaScript */
       transform-origin: center bottom;
+      transform: scaleY(1) scaleX(1);
+      transition: transform 0.15s ease-out;
       mix-blend-mode: screen;
     }
 
@@ -162,8 +166,10 @@
           rgba(0, 170, 255, 0.15) 0%,
           transparent 50%);
       filter: blur(40px);
-      animation: gradientShift 6s ease-in-out infinite;
+      /* Controlled by voice level via JavaScript */
       transform-origin: center bottom;
+      transform: scaleY(1) scaleX(1);
+      transition: transform 0.15s ease-out;
       mix-blend-mode: screen;
     }
 
@@ -185,34 +191,49 @@
           rgba(255, 255, 255, 0.05) 0%,
           transparent 40%);
       filter: blur(10px);
-      animation: glowPulse 5s ease-in-out infinite;
+      /* Controlled by voice level via JavaScript */
+      opacity: 0.6;
+      transition: opacity 0.15s ease-out;
       mix-blend-mode: overlay;
     }
 
     /* ========== MAGENTA WAVE LAYER ========== */
-    /* Container with gradient mask animation for soft blend */
+    /* Container controlled by audio level via opacity + blend mode */
     .magenta-wave {
       position: absolute;
       bottom: 0;
       left: 0;
       right: 0;
       height: 100%;
-      /* Use mask with gradient for soft edge transition */
-      -webkit-mask: linear-gradient(to top,
-        rgba(0,0,0,1) 0%,
-        rgba(0,0,0,1) 20%,
-        rgba(0,0,0,0) 60%,
-        rgba(0,0,0,0) 100%);
-      mask: linear-gradient(to top,
-        rgba(0,0,0,1) 0%,
-        rgba(0,0,0,1) 20%,
-        rgba(0,0,0,0) 60%,
-        rgba(0,0,0,0) 100%);
-      -webkit-mask-size: 100% 300%;
-      mask-size: 100% 300%;
-      -webkit-mask-position: 0% 100%;
-      mask-position: 0% 100%;
-      animation: colorWaveMask 8s ease-in-out infinite;
+      /* Start hidden - controlled by JavaScript audio level */
+      opacity: 0;
+      /* Lighten blend mode - shows brighter of two colors, preserves magenta better */
+      mix-blend-mode: lighten;
+      /* Smooth transitions for audio-reactive movement */
+      transition: opacity 0.15s ease-out;
+    }
+
+    /* Cyan glow boost layer - subtle intensification with audio */
+    .cyan-boost {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      background:
+        radial-gradient(ellipse 50% 100% at 50% 100%,
+          rgba(0, 255, 255, 0.2) 0%,
+          rgba(0, 255, 255, 0.1) 40%,
+          transparent 60%),
+        radial-gradient(ellipse 70% 80% at 30% 100%,
+          rgba(0, 255, 255, 0.15) 0%,
+          transparent 50%),
+        radial-gradient(ellipse 70% 80% at 70% 100%,
+          rgba(0, 255, 255, 0.15) 0%,
+          transparent 50%);
+      filter: blur(30px);
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
     }
 
     /* Magenta cloud layer */
@@ -494,7 +515,10 @@
   <div class="gradient-animation"></div>
   <div class="glow-spots"></div>
 
-  <!-- Magenta wave overlay (animated with clip-path) -->
+  <!-- Cyan boost layer - intensifies with audio -->
+  <div class="cyan-boost"></div>
+
+  <!-- Magenta wave overlay (blends with cyan via screen mode) -->
   <div class="magenta-wave">
     <div class="magenta-clouds"></div>
     <div class="magenta-highlight"></div>

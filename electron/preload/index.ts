@@ -200,6 +200,11 @@ const electronAPI = {
   // Notify main process of recording state
   notifyRecordingState: (isRecording: boolean): void => {
     ipcRenderer.send('recording-state-changed', isRecording)
+  },
+
+  // Send audio level to main process (for overlay visualization)
+  sendAudioLevel: (level: number): void => {
+    ipcRenderer.send('audio-level', level)
   }
 }
 
