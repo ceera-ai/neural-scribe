@@ -205,6 +205,11 @@ const electronAPI = {
   // Send audio level to main process (for overlay visualization)
   sendAudioLevel: (level: number): void => {
     ipcRenderer.send('audio-level', level)
+  },
+
+  // Send frequency data to main process (for spectrum visualization)
+  sendFrequencyData: (frequencyData: number[]): void => {
+    ipcRenderer.send('frequency-data', frequencyData)
   }
 }
 

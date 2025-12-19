@@ -155,6 +155,9 @@ export interface ElectronAPI {
 
   // Send audio level to main process (for overlay visualization)
   sendAudioLevel: (level: number) => void
+
+  // Send frequency data to main process (for spectrum visualization)
+  sendFrequencyData: (frequencyData: number[]) => void
 }
 
 declare global {

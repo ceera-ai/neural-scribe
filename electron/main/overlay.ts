@@ -250,7 +250,7 @@ let overlayReady = false
  */
 export function updateAudioLevel(level: number): void {
   try {
-    if (!overlayWindow || overlayWindow.isDestroyed() || !overlayWindow.isVisible() || !overlayReady) {
+    if (!overlayWindow || overlayWindow.isDestroyed() || !overlayWindow.isVisible() || !overlayReady || overlayWindow.webContents.isDestroyed()) {
       return
     }
 
@@ -298,4 +298,74 @@ export function updateAudioLevel(level: number): void {
 export function setOverlayReady(ready: boolean): void {
   overlayReady = ready
   console.log('[Overlay] Ready:', ready)
+}
+
+/**
+ * Update the overlay's spectrum visualization with frequency data
+ * @param frequencyData - Array of 24 frequency values from 0 to 1
+ */
+export function updateFrequencyData(frequencyData: number[]): void {
+  try {
+    if (!overlayWindow || overlayWindow.isDestroyed() || !overlayWindow.isVisible() || !overlayReady || overlayWindow.webContents.isDestroyed()) {
+      return
+    }
+
+    // Build the JavaScript to update all spectrum bars
+    const barUpdates = frequencyData.slice(0, 24).map((value, index) => {
+      // Clamp value between 0 and 1
+      const clampedValue = Math.max(0, Math.min(1, value))
+      // Map to bar height: min 4px, max 40px
+      const height = Math.round(4 + clampedValue * 36)
+      return `bars[${index}].style.height = "${height}px";`
+    }).join('\n      ')
+
+    // Calculate overall level from frequency data for orb effects
+    const avgLevel = frequencyData.reduce((sum, val) => sum + val, 0) / frequencyData.length
+    const clampedLevel = Math.max(0, Math.min(1, avgLevel))
+
+    // Audio level drives the color interpolation (0 = cyan, 1 = magenta)
+    const audioLevelCss = clampedLevel.toFixed(3)
+
+    // Scale and glow calculations
+    const orbScale = (1 + clampedLevel * 0.15).toFixed(3)
+    const orbGlowOpacity = (0.3 + clampedLevel * 0.5).toFixed(2)
+    const ringOpacity = (0.35 + clampedLevel * 0.25).toFixed(2)
+
+    const script = `
+      var orb = document.querySelector(".overlay-orb");
+      var bars = document.querySelectorAll(".spectrum-bar");
+      var orbGlow = document.querySelector(".orb-glow");
+      var orbCore = document.querySelector(".orb-core");
+      var rings = document.querySelectorAll(".orb-ring");
+
+      // Set audio level CSS variable for color interpolation (cyan -> magenta)
+      if (orb) {
+        orb.style.setProperty("--audio-level", "${audioLevelCss}");
+      }
+
+      // Update spectrum bars
+      if (bars.length >= 24) {
+        ${barUpdates}
+      }
+
+      // Update orb glow
+      if (orbGlow) {
+        orbGlow.style.opacity = "${orbGlowOpacity}";
+        orbGlow.style.transform = "scale(${orbScale})";
+      }
+
+      // Update orb core scale
+      if (orbCore) {
+        orbCore.style.transform = "scale(${orbScale})";
+      }
+
+      // Update ring opacity based on audio
+      rings.forEach(function(ring) {
+        ring.style.opacity = "${ringOpacity}";
+      });
+    `
+    overlayWindow.webContents.executeJavaScript(script).catch(() => {})
+  } catch (err) {
+    // Ignore errors silently
+  }
 }

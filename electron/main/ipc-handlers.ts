@@ -1,5 +1,5 @@
 import { ipcMain, clipboard, BrowserWindow } from 'electron'
-import { updateAudioLevel } from './overlay'
+import { updateAudioLevel, updateFrequencyData } from './overlay'
 import {
   getSettings,
   setSettings,
@@ -154,6 +154,11 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   // Audio level from renderer (for overlay visualization)
   ipcMain.on('audio-level', (_, level: number) => {
     updateAudioLevel(level)
+  })
+
+  // Frequency data from renderer (for spectrum visualization)
+  ipcMain.on('frequency-data', (_, frequencyData: number[]) => {
+    updateFrequencyData(frequencyData)
   })
 
   // Terminal operations

@@ -145,6 +145,7 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
       const bufferLength = analyserRef.current.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
       let prevLevel = 0;
+      const prevBars = new Array(24).fill(0);
 
       const analyze = () => {
         if (!analyserRef.current) return;
@@ -173,8 +174,33 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
         const smoothedLevel = prevLevel + diff * factor;
         prevLevel = smoothedLevel;
 
-        // Send to main process
+        // Send audio level for cloud animations
         window.electronAPI.sendAudioLevel(smoothedLevel);
+
+        // Extract 24 frequency bins for spectrum visualization
+        // Map first 48 bins to 24 bars (averaging pairs)
+        const frequencyData: number[] = [];
+        const binsPerBar = 2;
+        for (let i = 0; i < 24; i++) {
+          let barSum = 0;
+          for (let j = 0; j < binsPerBar; j++) {
+            const binIndex = i * binsPerBar + j;
+            if (binIndex < bufferLength) {
+              barSum += dataArray[binIndex];
+            }
+          }
+          const barAvg = barSum / binsPerBar;
+          // Normalize and scale
+          const normalizedBar = Math.min(1, (barAvg / 255) * 1.8);
+          // Apply easing per bar
+          const barDiff = normalizedBar - prevBars[i];
+          const barFactor = barDiff > 0 ? 0.6 : 0.4; // Fast rise, medium fall
+          prevBars[i] = prevBars[i] + barDiff * barFactor;
+          frequencyData.push(prevBars[i]);
+        }
+
+        // Send frequency data for spectrum bars
+        window.electronAPI.sendFrequencyData(frequencyData);
 
         animationFrameRef.current = requestAnimationFrame(analyze);
       };
@@ -207,6 +233,8 @@ export const useElevenLabsScribe = (options: UseElevenLabsScribeOptions = {}): U
 
     // Reset overlay to zero level
     window.electronAPI.sendAudioLevel(0);
+    // Reset spectrum bars
+    window.electronAPI.sendFrequencyData(new Array(24).fill(0));
 
     console.log('[AudioAnalysis] Stopped');
   }, []);
