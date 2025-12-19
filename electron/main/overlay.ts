@@ -364,24 +364,42 @@ export function updateVoiceCommands(commands: { send: string[], clear: string[],
     commands.clear.forEach(phrase => allCommands.push({ phrase, action: 'Clear' }))
     commands.cancel.forEach(phrase => allCommands.push({ phrase, action: 'Cancel' }))
 
-    const commandsHtml = allCommands.slice(0, 4).map(cmd =>
-      `<div class="voice-cmd-item"><span class="voice-cmd-phrase">"${cmd.phrase}"</span><span class="voice-cmd-action">${cmd.action}</span></div>`
-    ).join('')
+    const commandsHtml = allCommands.slice(0, 4).map(cmd => {
+      // Escape HTML entities
+      const escapedPhrase = cmd.phrase
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+      const escapedAction = cmd.action
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+      return `<div class="voice-cmd-item"><span class="voice-cmd-phrase">"${escapedPhrase}"</span><span class="voice-cmd-action">${escapedAction}</span></div>`
+    }).join('')
+
+    // Escape the entire HTML for JS string
+    const escapedCommandsHtml = escapeForJS(commandsHtml)
 
     const script = `
       var container = document.getElementById('voice-commands-list');
-      if (container) container.innerHTML = '${commandsHtml.replace(/'/g, "\\'")}';
+      if (container) container.innerHTML = '${escapedCommandsHtml}';
     `
-    overlayWindow.webContents.executeJavaScript(script).catch(() => {})
+    overlayWindow.webContents.executeJavaScript(script).catch((err) => {
+      console.error('[Overlay] Failed to update voice commands:', err)
+    })
   } catch (err) {
-    // Ignore errors silently
+    console.error('[Overlay] Error in updateVoiceCommands:', err)
   }
 }
 
 /**
  * Split text into lines of approximately maxChars characters, breaking at word boundaries
  */
-function splitIntoLines(text: string, maxChars: number = 60): string[] {
+function splitIntoLines(text: string, maxChars: number = 90): string[] {
   const words = text.split(/\s+/).filter(w => w.length > 0)
   const lines: string[] = []
   let currentLine = ''
@@ -405,6 +423,23 @@ function splitIntoLines(text: string, maxChars: number = 60): string[] {
 }
 
 /**
+ * Safely escape a string for use in JavaScript string literals
+ * Handles all special characters that could break JS execution
+ */
+function escapeForJS(str: string): string {
+  return str
+    .replace(/\\/g, '\\\\')  // Backslash must be first
+    .replace(/'/g, "\\'")     // Single quote
+    .replace(/"/g, '\\"')     // Double quote
+    .replace(/`/g, '\\`')     // Backtick
+    .replace(/\n/g, '\\n')    // Newline
+    .replace(/\r/g, '\\r')    // Carriage return
+    .replace(/\t/g, '\\t')    // Tab
+    .replace(/\f/g, '\\f')    // Form feed
+    .replace(/\v/g, '\\v')    // Vertical tab
+}
+
+/**
  * Update the live transcript preview in the overlay
  * @param text - The transcript text to display
  * @param wordCount - Total word count
@@ -417,13 +452,12 @@ export function updateTranscriptPreview(text: string, wordCount: number): void {
 
     // Get last ~50 characters for the small preview card
     const previewText = text.length > 50 ? '...' + text.slice(-50) : text
-    // Escape quotes for JS
-    const escapedPreview = previewText.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, ' ')
+    // Escape all special characters for JS
+    const escapedPreview = escapeForJS(previewText).replace(/\n/g, ' ')
 
     // Split text into lines for focus mode (show last 4 lines max)
-    const allLines = splitIntoLines(text, 55)
+    const allLines = splitIntoLines(text, 90)
     const displayLines = allLines.slice(-4) // Show last 4 lines
-    const maxLines = 4
 
     // Build HTML for focus mode lines
     let focusHtml = ''
@@ -432,13 +466,22 @@ export function updateTranscriptPreview(text: string, wordCount: number): void {
     } else {
       focusHtml = displayLines.map((line, index) => {
         const isCurrentLine = index === displayLines.length - 1
-        const escapedLine = line.replace(/'/g, "\\'").replace(/"/g, '\\"')
+        // Properly escape for HTML content
+        const escapedLine = line
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;')
         if (isCurrentLine) {
           return `<div class="focus-line current">${escapedLine}<span class="focus-cursor"></span></div>`
         }
         return `<div class="focus-line">${escapedLine}</div>`
       }).join('')
     }
+
+    // Escape the entire HTML string for JS
+    const escapedFocusHtml = escapeForJS(focusHtml)
 
     const script = `
       // Update small preview card
@@ -450,12 +493,15 @@ export function updateTranscriptPreview(text: string, wordCount: number): void {
       // Update focus mode typewriter display
       var focusLinesEl = document.getElementById('focus-lines');
       var focusWordCountEl = document.getElementById('focus-word-count');
-      if (focusLinesEl) focusLinesEl.innerHTML = '${focusHtml.replace(/'/g, "\\'")}';
+      if (focusLinesEl) focusLinesEl.innerHTML = '${escapedFocusHtml}';
       if (focusWordCountEl) focusWordCountEl.textContent = '${wordCount}';
     `
-    overlayWindow.webContents.executeJavaScript(script).catch(() => {})
+    overlayWindow.webContents.executeJavaScript(script).catch((err) => {
+      // Log errors for debugging (will appear in main process console)
+      console.error('[Overlay] Failed to update transcript preview:', err)
+    })
   } catch (err) {
-    // Ignore errors silently
+    console.error('[Overlay] Error in updateTranscriptPreview:', err)
   }
 }
 
@@ -472,7 +518,6 @@ export function updateOverlayStatus(status: { connected: boolean, formattingEnab
     const connectedClass = status.connected ? 'connected' : 'disconnected'
     const formattingText = status.formattingEnabled ? 'ON' : 'OFF'
     const formattingClass = status.formattingEnabled ? 'enabled' : 'disabled'
-
     const connectedLabel = status.connected ? 'Connected' : 'Disconnected'
 
     const script = `
@@ -493,9 +538,11 @@ export function updateOverlayStatus(status: { connected: boolean, formattingEnab
         fmtValue.textContent = '${formattingText}';
       }
     `
-    overlayWindow.webContents.executeJavaScript(script).catch(() => {})
+    overlayWindow.webContents.executeJavaScript(script).catch((err) => {
+      console.error('[Overlay] Failed to update status:', err)
+    })
   } catch (err) {
-    // Ignore errors silently
+    console.error('[Overlay] Error in updateOverlayStatus:', err)
   }
 }
 

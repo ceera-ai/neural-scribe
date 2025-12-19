@@ -679,18 +679,54 @@
       transform: translateX(-50%);
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 10px 20px;
+      gap: 16px;
+      padding: 12px 24px;
       background: linear-gradient(135deg, rgba(10, 10, 20, 0.85) 0%, rgba(20, 10, 30, 0.85) 100%);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      border-radius: 8px;
+      border-radius: 12px;
       border: 1px solid rgba(0, 255, 255, 0.3);
       box-shadow:
         0 4px 24px rgba(0, 0, 0, 0.5),
         0 0 20px rgba(0, 255, 255, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
       z-index: 100;
+      overflow: hidden;
+    }
+
+    /* Animated background gradient */
+    .status-pill::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 200%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(0, 255, 255, 0.05) 25%,
+        rgba(255, 0, 255, 0.05) 50%,
+        rgba(0, 255, 255, 0.05) 75%,
+        transparent
+      );
+      animation: shimmer 4s ease-in-out infinite;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .status-pill > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    @keyframes shimmer {
+      0% {
+        left: -100%;
+      }
+      100% {
+        left: 100%;
+      }
     }
 
     .status-icon {
@@ -713,8 +749,51 @@
 
     .status-divider {
       width: 1px;
-      height: 16px;
+      height: 20px;
       background: linear-gradient(to bottom, transparent, rgba(0, 255, 255, 0.4), transparent);
+    }
+
+    /* Status pill buttons */
+    .status-pill-button {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(0, 255, 255, 0.1);
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      border-radius: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: #00ffff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .status-pill-button:hover {
+      background: rgba(0, 255, 255, 0.2);
+      border-color: rgba(0, 255, 255, 0.5);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 255, 255, 0.3);
+    }
+
+    .status-pill-button.stop {
+      background: rgba(255, 0, 100, 0.1);
+      border-color: rgba(255, 0, 100, 0.3);
+      color: #ff0064;
+    }
+
+    .status-pill-button.stop:hover {
+      background: rgba(255, 0, 100, 0.2);
+      border-color: rgba(255, 0, 100, 0.5);
+      box-shadow: 0 2px 8px rgba(255, 0, 100, 0.3);
+    }
+
+    .status-pill-button svg {
+      width: 14px;
+      height: 14px;
     }
 
     .recording-time {
@@ -836,24 +915,9 @@
       border: 1px solid rgba(0, 255, 255, 0.2);
     }
 
-    /* ========== TRANSCRIPT PREVIEW CARD ========== */
+    /* ========== TRANSCRIPT PREVIEW CARD - REMOVED ========== */
     .transcript-card {
-      position: absolute;
-      bottom: 24px;
-      left: 40px;
-      max-width: 280px;
-      min-width: 180px;
-      padding: 12px 16px;
-      background: linear-gradient(135deg, rgba(10, 10, 20, 0.85) 0%, rgba(20, 10, 30, 0.85) 100%);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: 8px;
-      border: 1px solid rgba(0, 255, 255, 0.3);
-      box-shadow:
-        0 4px 24px rgba(0, 0, 0, 0.5),
-        0 0 20px rgba(0, 255, 255, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      z-index: 100;
+      display: none;
     }
 
     .transcript-header {
@@ -931,7 +995,7 @@
     /* ========== STATUS INDICATORS ========== */
     .status-indicators {
       position: absolute;
-      bottom: 70px;
+      bottom: 90px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -1055,7 +1119,7 @@
     /* ========== FOCUS MODE TYPEWRITER ========== */
     .focus-mode {
       position: absolute;
-      top: 50%;
+      top: 58%;
       left: 50%;
       transform: translate(-50%, -50%);
       width: 70%;
@@ -1102,27 +1166,37 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+      align-items: center;
     }
 
     .focus-line {
-      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 22px;
+      font-family: 'Share Tech Mono', monospace, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 20px;
       font-weight: 400;
-      line-height: 1.5;
-      color: rgba(255, 255, 255, 0.5);
+      line-height: 1.7;
+      color: #00e5ff;
       text-align: center;
-      transition: color 0.3s ease, text-shadow 0.3s ease, transform 0.3s ease;
-      text-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+      padding: 6px 16px;
+      background: rgba(0, 10, 20, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 6px;
+      display: inline-block;
+      transition: all 0.3s ease;
+      text-shadow:
+        0 0 10px rgba(0, 229, 255, 0.3),
+        0 0 20px rgba(0, 229, 255, 0.15);
     }
 
     /* Current/active line - full brightness with glow */
     .focus-line.current {
-      color: rgba(255, 255, 255, 0.95);
+      color: #ffffff;
       font-weight: 500;
+      background: rgba(0, 10, 20, 0.8);
       text-shadow:
-        0 0 10px rgba(0, 255, 255, 0.4),
-        0 0 20px rgba(0, 255, 255, 0.2),
-        0 0 40px rgba(255, 0, 255, 0.15);
+        0 0 8px rgba(0, 255, 255, 0.4),
+        0 0 16px rgba(0, 255, 255, 0.3),
+        0 0 24px rgba(255, 0, 255, 0.15);
     }
 
     /* Typing cursor effect */
@@ -1264,9 +1338,30 @@
     </div>
     <span class="recording-time" id="recording-time">0:00</span>
     <div class="status-divider"></div>
-    <span class="status-text">press</span>
-    <span class="status-key" id="hotkey-display">⌘⇧R</span>
-    <span class="status-text">to stop</span>
+
+    <!-- Stop Button -->
+    <button class="status-pill-button stop">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <rect x="6" y="6" width="12" height="12" rx="2" />
+      </svg>
+      Stop
+    </button>
+
+    <!-- Paste to Terminal Button -->
+    <button class="status-pill-button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12l7 7 7-7" />
+      </svg>
+      Paste
+    </button>
+
+    <!-- Clear Button -->
+    <button class="status-pill-button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      </svg>
+      Clear
+    </button>
   </div>
 
   <!-- Transcript Preview Card (Left side) -->
