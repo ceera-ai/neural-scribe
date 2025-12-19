@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { setupIpcHandlers } from './ipc-handlers'
 import { createTray, updateTrayRecordingState } from './tray'
 import { registerHotkeys, unregisterHotkeys } from './hotkeys'
+import { createOverlayWindow, showOverlay, hideOverlay, destroyOverlay } from './overlay'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -77,10 +78,19 @@ app.whenReady().then(() => {
     if (mainWindow) {
       updateTrayRecordingState(mainWindow, isRecording)
     }
+    // Show/hide recording overlay
+    if (isRecording) {
+      showOverlay()
+    } else {
+      hideOverlay()
+    }
   })
 
   // Create window
   createWindow()
+
+  // Create recording overlay window (pass main window for fallback display detection)
+  createOverlayWindow(mainWindow!)
 
   // Create system tray
   createTray(mainWindow!)
@@ -103,6 +113,7 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', () => {
   unregisterHotkeys()
+  destroyOverlay()
 })
 
 export { updateTrayRecordingState }
