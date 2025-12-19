@@ -61,33 +61,38 @@ function getBestDisplay(): Display {
 
 /**
  * Position the overlay on the given display
+ * Full width, 30% height, anchored to absolute bottom
  */
 function positionOverlay(display: Display): void {
   if (!overlayWindow || overlayWindow.isDestroyed()) return
 
-  const { width, height } = display.workAreaSize
-  const { x: displayX, y: displayY } = display.bounds
+  // Use bounds (full screen) not workAreaSize (excludes dock/menu)
+  const { x: displayX, y: displayY, width, height } = display.bounds
 
-  // Center horizontally on the display, near the bottom
-  const overlayWidth = 350
-  const overlayHeight = 50
-  const x = displayX + Math.round(width / 2 - overlayWidth / 2)
-  const y = displayY + height - 80
+  // Full width, 60% of screen height, at the absolute bottom
+  const overlayWidth = width
+  const overlayHeight = Math.round(height * 0.6)
+  const x = displayX
+  const y = displayY + height - overlayHeight
 
   overlayWindow.setBounds({ x, y, width: overlayWidth, height: overlayHeight })
+  console.log(`[Overlay] Positioned: ${overlayWidth}x${overlayHeight} at (${x}, ${y})`)
 }
 
 export function createOverlayWindow(mainWindow?: BrowserWindow): void {
   mainWindowRef = mainWindow || null
 
   const display = screen.getPrimaryDisplay()
-  const { width, height } = display.workAreaSize
+  const { width, height } = display.bounds
+
+  // Initial size: full width, 60% height at absolute bottom
+  const overlayHeight = Math.round(height * 0.6)
 
   overlayWindow = new BrowserWindow({
-    width: 350,
-    height: 50,
-    x: Math.round(width / 2 - 175),
-    y: height - 80,
+    width: width,
+    height: overlayHeight,
+    x: 0,
+    y: height - overlayHeight,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
