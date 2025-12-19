@@ -204,6 +204,12 @@ export function showOverlay(): void {
       `).catch(() => {})
 
       overlayWindow.show()
+
+      // Trigger animation and sound
+      overlayWindow.webContents.executeJavaScript(`
+        if (window.showOverlay) window.showOverlay();
+      `).catch(() => {})
+
       console.log('[Overlay] Shown on display:', targetDisplay.id, 'with hotkey:', hotkeyText)
     }
   } catch (err) {
@@ -215,8 +221,18 @@ export function showOverlay(): void {
 export function hideOverlay(): void {
   try {
     if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.hide()
-      console.log('[Overlay] Hidden')
+      // Trigger hide animation and sound
+      overlayWindow.webContents.executeJavaScript(`
+        if (window.hideOverlay) window.hideOverlay();
+      `).catch(() => {})
+
+      // Hide window after animation completes (350ms)
+      setTimeout(() => {
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+          overlayWindow.hide()
+          console.log('[Overlay] Hidden')
+        }
+      }, 350)
     }
   } catch (err) {
     console.log('[Overlay] Error hiding overlay:', err)

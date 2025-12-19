@@ -17,6 +17,181 @@
       overflow: hidden;
     }
 
+    /* Overlay container with animations */
+    .overlay-container {
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transform: scale(0.95);
+      filter: blur(0px);
+    }
+
+    /* Glitch in animation - faster and smoother */
+    @keyframes glitchIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.92) translateX(-15px);
+        filter: blur(4px);
+      }
+      8% {
+        transform: scale(0.94) translateX(12px);
+      }
+      16% {
+        transform: scale(0.93) translateX(-8px);
+      }
+      24% {
+        opacity: 0.4;
+        transform: scale(0.95) translateX(6px);
+      }
+      32% {
+        transform: scale(0.96) translateX(-4px);
+        filter: blur(2px);
+      }
+      45% {
+        opacity: 0.7;
+        transform: scale(0.98) translateX(2px);
+      }
+      60% {
+        opacity: 0.85;
+        transform: scale(0.99) translateX(0);
+        filter: blur(1px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+        filter: blur(0px);
+      }
+    }
+
+    /* Shake animation for centered elements - preserves translateX(-50%) */
+    @keyframes shakeCentered {
+      0%, 100% {
+        transform: translateX(-50%) translateY(0);
+      }
+      10% {
+        transform: translateX(-50%) translateY(2px);
+      }
+      20% {
+        transform: translateX(-50%) translateY(-2px);
+      }
+      30% {
+        transform: translateX(-50%) translateY(1px);
+      }
+      40% {
+        transform: translateX(-50%) translateY(-1px);
+      }
+      50% {
+        transform: translateX(-50%) translateY(1px);
+      }
+      60% {
+        transform: translateX(-50%) translateY(-1px);
+      }
+      70% {
+        transform: translateX(-50%) translateY(0);
+      }
+      80% {
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    /* Shake for focus mode - preserves translate(-50%, -50%) */
+    @keyframes shakeFocusMode {
+      0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+      }
+      10% {
+        transform: translate(-50%, -50%) scale(1.01);
+      }
+      20% {
+        transform: translate(-50%, -50%) scale(0.99);
+      }
+      30% {
+        transform: translate(-50%, -50%) scale(1.01);
+      }
+      40% {
+        transform: translate(-50%, -50%) scale(0.99);
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    /* Shake for non-centered elements */
+    @keyframes shakeElements {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      10% {
+        transform: translateY(2px);
+      }
+      20% {
+        transform: translateY(-2px);
+      }
+      30% {
+        transform: translateY(1px);
+      }
+      40% {
+        transform: translateY(-1px);
+      }
+      50% {
+        transform: translateY(1px);
+      }
+      60% {
+        transform: translateY(-1px);
+      }
+      70% {
+        transform: translateY(0);
+      }
+    }
+
+    /* Glitch out animation */
+    @keyframes glitchOut {
+      0% {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0px);
+      }
+      40% {
+        opacity: 0.6;
+        transform: scale(0.98) translateX(3px);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0.96);
+        filter: blur(2px);
+      }
+    }
+
+    .overlay-container.show {
+      animation: glitchIn 650ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    .overlay-container.hide {
+      animation: glitchOut 350ms cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+    }
+
+    /* Apply shake to centered elements */
+    .overlay-container.show .status-pill,
+    .overlay-container.show .status-indicators,
+    .overlay-container.show .waveform-container {
+      animation: shakeCentered 650ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    /* Focus mode has different transform origin */
+    .overlay-container.show .focus-mode {
+      animation: shakeFocusMode 650ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    /* Non-centered elements */
+    .overlay-container.show .voice-commands-card {
+      animation: shakeElements 650ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    /* Hide scan line */
+    .scan-line {
+      display: none;
+    }
+
     /* Base shadow layer - grounding effect */
     .shadow-layer {
       position: absolute;
@@ -1301,15 +1476,20 @@
   </style>
 </head>
 <body>
-  <!-- Cyan base layers -->
-  <div class="shadow-layer"></div>
-  <div class="cloud-overlay"></div>
-  <div class="highlight-layer"></div>
-  <div class="gradient-animation"></div>
-  <div class="glow-spots"></div>
+  <!-- Overlay container with animations -->
+  <div class="overlay-container" id="overlay-container">
+    <!-- Scan line effect -->
+    <div class="scan-line"></div>
 
-  <!-- Cyan boost layer - intensifies with audio -->
-  <div class="cyan-boost"></div>
+    <!-- Cyan base layers -->
+    <div class="shadow-layer"></div>
+    <div class="cloud-overlay"></div>
+    <div class="highlight-layer"></div>
+    <div class="gradient-animation"></div>
+    <div class="glow-spots"></div>
+
+    <!-- Cyan boost layer - intensifies with audio -->
+    <div class="cyan-boost"></div>
 
   <!-- Magenta wave overlay (blends with cyan via screen mode) -->
   <div class="magenta-wave">
@@ -1439,5 +1619,118 @@
       </div>
     </div>
   </div>
+  </div> <!-- End overlay-container -->
+
+  <script>
+    // Sound effect generator using Web Audio API
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Power up sound with electricity crackle (futuristic rising tone)
+    function playPowerUpSound() {
+      const now = audioContext.currentTime;
+
+      // Main rising tone
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(200, now);
+      oscillator.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.25, now + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+      oscillator.start(now);
+      oscillator.stop(now + 0.15);
+
+      // Electricity crackle effect (white noise bursts)
+      const crackleCount = 8;
+      for (let i = 0; i < crackleCount; i++) {
+        const crackleTime = now + (i * 0.02);
+        const duration = 0.008 + Math.random() * 0.012;
+
+        const noise = audioContext.createBufferSource();
+        const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * duration, audioContext.sampleRate);
+        const noiseData = noiseBuffer.getChannelData(0);
+
+        // Generate white noise
+        for (let j = 0; j < noiseData.length; j++) {
+          noiseData[j] = Math.random() * 2 - 1;
+        }
+
+        noise.buffer = noiseBuffer;
+
+        const crackleGain = audioContext.createGain();
+        const crackleFilter = audioContext.createBiquadFilter();
+
+        // High-pass filter for crispy electric sound
+        crackleFilter.type = 'highpass';
+        crackleFilter.frequency.value = 2000 + Math.random() * 3000;
+
+        noise.connect(crackleFilter);
+        crackleFilter.connect(crackleGain);
+        crackleGain.connect(audioContext.destination);
+
+        // Random intensity for each crackle
+        const intensity = 0.05 + Math.random() * 0.1;
+        crackleGain.gain.setValueAtTime(intensity, crackleTime);
+        crackleGain.gain.exponentialRampToValueAtTime(0.01, crackleTime + duration);
+
+        noise.start(crackleTime);
+        noise.stop(crackleTime + duration);
+      }
+    }
+
+    // Power down sound (soft descending tone)
+    function playPowerDownSound() {
+      const now = audioContext.currentTime;
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      // Connect nodes
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      // Configure descending tone (600Hz to 150Hz)
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(600, now);
+      oscillator.frequency.exponentialRampToValueAtTime(150, now + 0.2);
+
+      // Envelope
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.25, now + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+      // Play
+      oscillator.start(now);
+      oscillator.stop(now + 0.2);
+    }
+
+    let isHiding = false;
+
+    // Trigger animations when overlay shows/hides
+    window.showOverlay = function() {
+      isHiding = false;
+      const container = document.getElementById('overlay-container');
+      container.classList.remove('hide');
+      container.classList.add('show');
+      playPowerUpSound();
+    };
+
+    window.hideOverlay = function() {
+      // Prevent duplicate calls
+      if (isHiding) return;
+      isHiding = true;
+
+      const container = document.getElementById('overlay-container');
+      container.classList.remove('show');
+      container.classList.add('hide');
+      playPowerDownSound();
+    };
+  </script>
 </body>
 </html>
