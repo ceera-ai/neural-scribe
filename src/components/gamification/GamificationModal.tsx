@@ -129,7 +129,6 @@ export function GamificationModal({
                 <AchievementBadge
                   key={achievement.id}
                   achievement={achievement}
-                  size="md"
                 />
               ))}
             </div>

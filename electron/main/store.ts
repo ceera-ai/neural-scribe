@@ -69,6 +69,9 @@ export interface LevelSystem {
   currentXP: number
   level: number
   rank: string
+  xpToNextLevel: number
+  xpForCurrentLevel: number
+  totalXPForNextLevel: number
 }
 
 export interface UnlockedAchievement {
@@ -114,6 +117,9 @@ const defaultGamificationData: GamificationData = {
     currentXP: 0,
     level: 1,
     rank: 'Initiate',
+    xpToNextLevel: 100,
+    xpForCurrentLevel: 0,
+    totalXPForNextLevel: 100,
   },
   achievements: {
     unlocked: {},
@@ -478,10 +484,17 @@ export function recordGamificationSession(words: number, durationMs: number): {
   const leveledUp = newLevel > oldLevel
   const rank = getRankForLevel(newLevel)
 
+  const xpForCurrentLevel = calculateXPForLevel(newLevel)
+  const totalXPForNextLevel = calculateXPForLevel(newLevel + 1)
+  const xpToNextLevel = totalXPForNextLevel - newXP
+
   const updatedLevel: LevelSystem = {
     currentXP: newXP,
     level: newLevel,
     rank: rank.name,
+    xpToNextLevel,
+    xpForCurrentLevel,
+    totalXPForNextLevel,
   }
 
   // Save everything
@@ -524,8 +537,26 @@ export function unlockGamificationAchievement(
   // Recalculate level
   const newLevel = calculateLevelFromXP(data.level.currentXP)
   if (newLevel > data.level.level) {
-    data.level.level = newLevel
-    data.level.rank = getRankForLevel(newLevel).name
+    const rank = getRankForLevel(newLevel)
+    const xpForCurrentLevel = calculateXPForLevel(newLevel)
+    const totalXPForNextLevel = calculateXPForLevel(newLevel + 1)
+    const xpToNextLevel = totalXPForNextLevel - data.level.currentXP
+
+    data.level = {
+      currentXP: data.level.currentXP,
+      level: newLevel,
+      rank: rank.name,
+      xpToNextLevel,
+      xpForCurrentLevel,
+      totalXPForNextLevel,
+    }
+  } else {
+    // Just update XP, recalculate xpToNextLevel
+    const xpForCurrentLevel = calculateXPForLevel(data.level.level)
+    const totalXPForNextLevel = calculateXPForLevel(data.level.level + 1)
+    const xpToNextLevel = totalXPForNextLevel - data.level.currentXP
+
+    data.level.xpToNextLevel = xpToNextLevel
   }
 
   saveGamificationData(data)
@@ -581,6 +612,9 @@ export function checkDailyLoginBonus(): {
   const newXP = data.level.currentXP + dailyBonus
   const newLevel = calculateLevelFromXP(newXP)
   const rank = getRankForLevel(newLevel)
+  const xpForCurrentLevel = calculateXPForLevel(newLevel)
+  const totalXPForNextLevel = calculateXPForLevel(newLevel + 1)
+  const xpToNextLevel = totalXPForNextLevel - newXP
 
   saveGamificationData({
     stats: updatedStats,
@@ -588,6 +622,9 @@ export function checkDailyLoginBonus(): {
       currentXP: newXP,
       level: newLevel,
       rank: rank.name,
+      xpToNextLevel,
+      xpForCurrentLevel,
+      totalXPForNextLevel,
     },
   })
 

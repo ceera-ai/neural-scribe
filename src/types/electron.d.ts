@@ -97,6 +97,9 @@ export interface LevelSystem {
   currentXP: number
   level: number
   rank: string
+  xpToNextLevel: number
+  xpForCurrentLevel: number
+  totalXPForNextLevel: number
 }
 
 export interface UnlockedAchievement {
