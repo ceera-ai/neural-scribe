@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { UserStats, LevelSystem, Achievement } from '../../types/gamification';
 import { XPBar } from './XPBar';
 import { AchievementBadge } from './AchievementBadge';
+import { AchievementDetailModal } from './AchievementDetailModal';
+import { downloadAchievementCard } from './AchievementShareCard';
 import './GamificationModal.css';
 
 interface GamificationModalProps {
@@ -22,6 +24,7 @@ export function GamificationModal({
   achievements,
 }: GamificationModalProps) {
   const [activeTab, setActiveTab] = useState<'stats' | 'achievements'>('stats');
+  const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
 
   if (!isOpen) return null;
 
@@ -129,11 +132,22 @@ export function GamificationModal({
                 <AchievementBadge
                   key={achievement.id}
                   achievement={achievement}
+                  onClick={() => setSelectedAchievement(achievement)}
                 />
               ))}
             </div>
           )}
         </div>
+
+        {/* Achievement Detail Modal */}
+        <AchievementDetailModal
+          achievement={selectedAchievement}
+          isOpen={selectedAchievement !== null}
+          onClose={() => setSelectedAchievement(null)}
+          onShare={downloadAchievementCard}
+          stats={stats}
+          level={level}
+        />
       </div>
     </div>
   );
