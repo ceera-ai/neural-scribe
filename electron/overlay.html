@@ -189,6 +189,172 @@
       mix-blend-mode: overlay;
     }
 
+    /* ========== MAGENTA WAVE LAYER ========== */
+    /* Container with gradient mask animation for soft blend */
+    .magenta-wave {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      /* Use mask with gradient for soft edge transition */
+      -webkit-mask: linear-gradient(to top,
+        rgba(0,0,0,1) 0%,
+        rgba(0,0,0,1) 20%,
+        rgba(0,0,0,0) 60%,
+        rgba(0,0,0,0) 100%);
+      mask: linear-gradient(to top,
+        rgba(0,0,0,1) 0%,
+        rgba(0,0,0,1) 20%,
+        rgba(0,0,0,0) 60%,
+        rgba(0,0,0,0) 100%);
+      -webkit-mask-size: 100% 300%;
+      mask-size: 100% 300%;
+      -webkit-mask-position: 0% 100%;
+      mask-position: 0% 100%;
+      animation: colorWaveMask 8s ease-in-out infinite;
+    }
+
+    /* Magenta cloud layer */
+    .magenta-clouds {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      background:
+        /* Layer 1: Far background - bell curve shape */
+        radial-gradient(ellipse 140% 50% at 5% 100%,
+          rgba(255, 0, 255, 0.06) 0%,
+          transparent 50%),
+        radial-gradient(ellipse 120% 55% at 95% 100%,
+          rgba(255, 0, 255, 0.06) 0%,
+          transparent 50%),
+        radial-gradient(ellipse 100% 90% at 50% 100%,
+          rgba(255, 0, 255, 0.08) 0%,
+          transparent 70%),
+
+        /* Layer 2: Mid-background - bell curve */
+        radial-gradient(ellipse 80% 60% at 15% 100%,
+          rgba(255, 0, 255, 0.1) 0%,
+          transparent 55%),
+        radial-gradient(ellipse 80% 60% at 85% 100%,
+          rgba(255, 0, 255, 0.1) 0%,
+          transparent 55%),
+        radial-gradient(ellipse 90% 110% at 50% 100%,
+          rgba(255, 0, 255, 0.12) 0%,
+          transparent 65%),
+
+        /* Layer 3: Middle clouds - bell curve */
+        radial-gradient(ellipse 60% 55% at 25% 100%,
+          rgba(255, 0, 255, 0.15) 0%,
+          transparent 55%),
+        radial-gradient(ellipse 60% 55% at 75% 100%,
+          rgba(255, 0, 255, 0.15) 0%,
+          transparent 55%),
+        radial-gradient(ellipse 70% 85% at 50% 100%,
+          rgba(255, 0, 255, 0.2) 0%,
+          transparent 65%),
+
+        /* Layer 4: Foreground - strong bell curve */
+        radial-gradient(ellipse 45% 60% at 20% 100%,
+          rgba(255, 0, 255, 0.18) 0%,
+          rgba(255, 0, 255, 0.08) 45%,
+          transparent 55%),
+        radial-gradient(ellipse 45% 60% at 80% 100%,
+          rgba(255, 0, 255, 0.18) 0%,
+          rgba(255, 0, 255, 0.08) 45%,
+          transparent 55%),
+        radial-gradient(ellipse 55% 95% at 50% 100%,
+          rgba(255, 0, 255, 0.28) 0%,
+          rgba(255, 0, 255, 0.12) 50%,
+          transparent 65%),
+
+        /* Layer 5: Accent peaks - tallest in center */
+        radial-gradient(ellipse 30% 45% at 10% 100%,
+          rgba(255, 0, 255, 0.15) 0%,
+          transparent 45%),
+        radial-gradient(ellipse 30% 45% at 90% 100%,
+          rgba(255, 0, 255, 0.15) 0%,
+          transparent 45%),
+        radial-gradient(ellipse 35% 70% at 35% 100%,
+          rgba(255, 0, 255, 0.25) 0%,
+          rgba(255, 0, 255, 0.1) 40%,
+          transparent 55%),
+        radial-gradient(ellipse 35% 70% at 65% 100%,
+          rgba(255, 0, 255, 0.25) 0%,
+          rgba(255, 0, 255, 0.1) 40%,
+          transparent 55%),
+        radial-gradient(ellipse 40% 100% at 50% 100%,
+          rgba(255, 0, 255, 0.38) 0%,
+          rgba(255, 0, 255, 0.18) 45%,
+          transparent 60%),
+
+        /* Base glow - stronger in center */
+        radial-gradient(ellipse 80% 40% at 50% 100%,
+          rgba(255, 0, 255, 0.2) 0%,
+          rgba(255, 0, 255, 0.08) 50%,
+          transparent 70%);
+
+      filter: blur(25px);
+      animation: breathe 3s ease-in-out infinite;
+      transform-origin: center bottom;
+    }
+
+    /* Magenta highlight layer */
+    .magenta-highlight {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      background:
+        /* Center peak highlight */
+        radial-gradient(ellipse 30% 60% at 50% 100%,
+          rgba(255, 150, 255, 0.2) 0%,
+          rgba(255, 200, 255, 0.1) 30%,
+          transparent 50%),
+        /* Left peak highlight */
+        radial-gradient(ellipse 25% 45% at 35% 100%,
+          rgba(255, 150, 255, 0.12) 0%,
+          transparent 40%),
+        /* Right peak highlight */
+        radial-gradient(ellipse 25% 45% at 65% 100%,
+          rgba(255, 150, 255, 0.12) 0%,
+          transparent 40%),
+        /* Rim light - top edges */
+        radial-gradient(ellipse 35% 50% at 50% 100%,
+          transparent 40%,
+          rgba(255, 200, 255, 0.08) 50%,
+          transparent 60%);
+      filter: blur(15px);
+      animation: highlightPulse 4s ease-in-out infinite;
+      transform-origin: center bottom;
+      mix-blend-mode: screen;
+    }
+
+    /* Magenta glow spots */
+    .magenta-glow {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      background:
+        radial-gradient(ellipse 15% 30% at 45% 100%,
+          rgba(255, 255, 255, 0.08) 0%,
+          transparent 50%),
+        radial-gradient(ellipse 12% 25% at 55% 100%,
+          rgba(255, 255, 255, 0.06) 0%,
+          transparent 45%),
+        radial-gradient(ellipse 10% 20% at 38% 100%,
+          rgba(255, 255, 255, 0.05) 0%,
+          transparent 40%);
+      filter: blur(10px);
+      animation: glowPulse 5s ease-in-out infinite;
+      mix-blend-mode: overlay;
+    }
+
     @keyframes breathe {
       0%, 100% {
         opacity: 1;
@@ -237,13 +403,32 @@
         opacity: 1;
       }
     }
+
+    @keyframes colorWaveMask {
+      0%, 100% {
+        -webkit-mask-position: 0% 100%;
+        mask-position: 0% 100%;
+      }
+      50% {
+        -webkit-mask-position: 0% 0%;
+        mask-position: 0% 0%;
+      }
+    }
   </style>
 </head>
 <body>
+  <!-- Cyan base layers -->
   <div class="shadow-layer"></div>
   <div class="cloud-overlay"></div>
   <div class="highlight-layer"></div>
   <div class="gradient-animation"></div>
   <div class="glow-spots"></div>
+
+  <!-- Magenta wave overlay (animated with clip-path) -->
+  <div class="magenta-wave">
+    <div class="magenta-clouds"></div>
+    <div class="magenta-highlight"></div>
+    <div class="magenta-glow"></div>
+  </div>
 </body>
 </html>
