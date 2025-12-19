@@ -82,6 +82,57 @@ export interface WordReplacement {
   enabled: boolean
 }
 
+// Gamification types
+export interface UserStats {
+  totalWordsTranscribed: number
+  totalRecordingTimeMs: number
+  totalSessions: number
+  currentStreak: number
+  longestStreak: number
+  lastActiveDate: string // YYYY-MM-DD
+  firstSessionDate: string // YYYY-MM-DD
+}
+
+export interface LevelSystem {
+  currentXP: number
+  level: number
+  rank: string
+}
+
+export interface UnlockedAchievement {
+  unlockedAt: number
+  xpAwarded: number
+}
+
+export interface GamificationData {
+  version: string
+  stats: UserStats
+  level: LevelSystem
+  achievements: {
+    unlocked: Record<string, UnlockedAchievement>
+  }
+  metadata: {
+    lastSaved: number
+    totalSaves: number
+    backupCount: number
+  }
+}
+
+export interface RecordSessionResult {
+  xpGained: number
+  newAchievements: string[]
+  leveledUp: boolean
+  oldLevel: number
+  newLevel: number
+}
+
+export interface DailyLoginResult {
+  bonusAwarded: boolean
+  xpGained: number
+  streakUpdated: boolean
+  currentStreak: number
+}
+
 export interface ElectronAPI {
   // Token management
   getScribeToken: () => Promise<string>
@@ -140,6 +191,16 @@ export interface ElectronAPI {
   checkClaudeCli: () => Promise<ClaudeCliStatus>
   generateTitle: (text: string) => Promise<{ success: boolean; title: string; error?: string }>
   reformatText: (text: string, customInstructions?: string) => Promise<{ success: boolean; formatted: string; error?: string }>
+
+  // Gamification operations
+  getGamificationData: () => Promise<GamificationData>
+  saveGamificationData: (data: Partial<GamificationData>) => Promise<boolean>
+  recordGamificationSession: (params: { words: number; durationMs: number }) => Promise<RecordSessionResult>
+  unlockGamificationAchievement: (params: { achievementId: string; xpReward: number }) => Promise<boolean>
+  checkGamificationDailyLogin: () => Promise<DailyLoginResult>
+  resetGamificationProgress: () => Promise<boolean>
+  onGamificationDataChanged: (callback: () => void) => void
+  onAchievementUnlocked: (callback: (achievementId: string) => void) => void
 
   // Events from main process
   onToggleRecording: (callback: () => void) => void

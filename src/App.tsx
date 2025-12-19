@@ -84,7 +84,14 @@ function App() {
     });
   }, []);
 
-  const handleRecordingStopped = useCallback(async (transcript: string, duration: number) => {
+  // CENTRALIZED RECORDING COMPLETION - Ensures gamification is ALWAYS triggered
+  const handleRecordingComplete = useCallback(async (
+    transcript: string,
+    duration: number,
+    source: 'stop_button' | 'voice_send' | 'voice_clear' | 'voice_cancel' | 'hotkey' | 'paste' | 'auto'
+  ) => {
+    console.log(`[App] Recording complete via: ${source}, duration: ${duration}s`);
+
     // Apply word replacements if enabled
     let processedTranscript = transcript;
     try {
@@ -96,19 +103,35 @@ function App() {
       console.error('Failed to apply replacements:', err);
     }
 
+    // CRITICAL: Always record session for gamification (except for cancel)
+    // This fixes the bug where voice commands weren't being tracked
+    if (source !== 'voice_cancel' && processedTranscript.trim()) {
+      const wordCount = processedTranscript.trim().split(/\s+/).length;
+      if (wordCount > 0) {
+        console.log(`[App] Recording gamification: ${wordCount} words, ${duration}s`);
+        await recordSession(wordCount, duration * 1000); // Convert to milliseconds
+      }
+    }
+
+    return processedTranscript;
+  }, [recordSession]);
+
+  const handleRecordingStopped = useCallback(async (transcript: string, duration: number) => {
+    // Determine source based on context
+    const source = pendingPasteRef.current ? 'voice_send' : 'auto';
+
+    // Always trigger gamification via centralized handler
+    const processedTranscript = await handleRecordingComplete(transcript, duration, source);
+
     // Only auto-save if there's no pending paste operation
     // If there's a pending paste, formatAndPaste will handle saving with formatting
     if (processedTranscript.trim() && !pendingPasteRef.current) {
       await saveTranscription(processedTranscript, duration);
-
-      // Record session for gamification
-      const wordCount = processedTranscript.trim().split(/\s+/).length;
-      recordSession(wordCount, duration * 1000); // Convert to milliseconds
     }
 
     // Return the processed transcript to update the UI
     return processedTranscript;
-  }, [saveTranscription, recordSession]);
+  }, [saveTranscription, handleRecordingComplete]);
 
   // Handle voice commands
   const handleVoiceCommand = useCallback(async (command: 'send' | 'clear' | 'cancel', transcript: string) => {

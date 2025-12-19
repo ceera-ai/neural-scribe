@@ -54,11 +54,75 @@ export interface AppSettings {
   historyLimit: number // 0 = no limit, otherwise max items to keep
 }
 
+// Gamification types
+export interface UserStats {
+  totalWordsTranscribed: number
+  totalRecordingTimeMs: number
+  totalSessions: number
+  currentStreak: number
+  longestStreak: number
+  lastActiveDate: string // YYYY-MM-DD
+  firstSessionDate: string // YYYY-MM-DD
+}
+
+export interface LevelSystem {
+  currentXP: number
+  level: number
+  rank: string
+}
+
+export interface UnlockedAchievement {
+  unlockedAt: number // Timestamp - NEVER regenerate
+  xpAwarded: number
+}
+
+export interface GamificationData {
+  version: string
+  stats: UserStats
+  level: LevelSystem
+  achievements: {
+    unlocked: Record<string, UnlockedAchievement>
+  }
+  metadata: {
+    lastSaved: number
+    totalSaves: number
+    backupCount: number
+  }
+}
+
 interface StoreSchema {
   settings: AppSettings
   history: TranscriptionRecord[]
   replacements: WordReplacement[]
   voiceCommandTriggers: VoiceCommandTrigger[]
+  gamification: GamificationData
+}
+
+// Default gamification data
+const defaultGamificationData: GamificationData = {
+  version: '2.0',
+  stats: {
+    totalWordsTranscribed: 0,
+    totalRecordingTimeMs: 0,
+    totalSessions: 0,
+    currentStreak: 0,
+    longestStreak: 0,
+    lastActiveDate: '',
+    firstSessionDate: new Date().toISOString().split('T')[0],
+  },
+  level: {
+    currentXP: 0,
+    level: 1,
+    rank: 'Initiate',
+  },
+  achievements: {
+    unlocked: {},
+  },
+  metadata: {
+    lastSaved: Date.now(),
+    totalSaves: 0,
+    backupCount: 0,
+  },
 }
 
 // Default voice command triggers
@@ -97,7 +161,8 @@ const defaults: StoreSchema = {
   },
   history: [],
   replacements: [],
-  voiceCommandTriggers: defaultVoiceCommandTriggers
+  voiceCommandTriggers: defaultVoiceCommandTriggers,
+  gamification: defaultGamificationData
 }
 
 export const store = new Store<StoreSchema>({
@@ -281,4 +346,259 @@ export function setPromptFormattingInstructions(instructions: string): void {
 
 export function setPromptFormattingModel(model: 'sonnet' | 'opus' | 'haiku'): void {
   setSettings({ promptFormattingModel: model })
+}
+
+// Gamification helpers
+export function getGamificationData(): GamificationData {
+  return store.get('gamification', defaultGamificationData)
+}
+
+export function saveGamificationData(data: Partial<GamificationData>): void {
+  const current = getGamificationData()
+  const updated: GamificationData = {
+    ...current,
+    ...data,
+    metadata: {
+      ...current.metadata,
+      ...(data.metadata || {}),
+      lastSaved: Date.now(),
+      totalSaves: current.metadata.totalSaves + 1,
+    },
+  }
+
+  store.set('gamification', updated)
+
+  // TODO: Create backup every 10 saves
+  // if (updated.metadata.totalSaves % 10 === 0) {
+  //   createBackup(updated);
+  // }
+}
+
+// Helper functions for XP and level calculations
+function calculateLevelFromXP(xp: number, baseXP = 100, growthRate = 1.5): number {
+  let level = 1
+  let xpRequired = 0
+  while (xp >= xpRequired + Math.floor(baseXP * Math.pow(growthRate, level - 1))) {
+    xpRequired += Math.floor(baseXP * Math.pow(growthRate, level - 1))
+    level++
+  }
+  return level
+}
+
+function calculateXPForLevel(level: number, baseXP = 100, growthRate = 1.5): number {
+  if (level <= 1) return 0
+  let total = 0
+  for (let i = 1; i < level; i++) {
+    total += Math.floor(baseXP * Math.pow(growthRate, i - 1))
+  }
+  return total
+}
+
+function getRankForLevel(level: number): { minLevel: number; name: string; icon: string } {
+  const ranks = [
+    { minLevel: 1, name: 'Initiate', icon: '🌱' },
+    { minLevel: 5, name: 'Apprentice', icon: '📝' },
+    { minLevel: 10, name: 'Scribe', icon: '✍️' },
+    { minLevel: 15, name: 'Transcriber', icon: '🎙️' },
+    { minLevel: 20, name: 'Linguist', icon: '🗣️' },
+    { minLevel: 30, name: 'Oracle', icon: '🔮' },
+    { minLevel: 40, name: 'Cyberscribe', icon: '⚡' },
+    { minLevel: 50, name: 'Neural Sage', icon: '🧠' },
+    { minLevel: 75, name: 'Transcendent', icon: '✨' },
+    { minLevel: 100, name: 'Singularity', icon: '🌌' },
+  ]
+  const sorted = [...ranks].sort((a, b) => b.minLevel - a.minLevel)
+  return sorted.find(r => level >= r.minLevel) || ranks[0]
+}
+
+export function recordGamificationSession(words: number, durationMs: number): {
+  xpGained: number
+  newAchievements: string[]
+  leveledUp: boolean
+  oldLevel: number
+  newLevel: number
+} {
+  const data = getGamificationData()
+
+  // Update stats
+  const updatedStats: UserStats = {
+    ...data.stats,
+    totalWordsTranscribed: data.stats.totalWordsTranscribed + words,
+    totalRecordingTimeMs: data.stats.totalRecordingTimeMs + durationMs,
+    totalSessions: data.stats.totalSessions + 1,
+  }
+
+  // Update streak
+  const today = new Date().toISOString().split('T')[0]
+  if (data.stats.lastActiveDate !== today) {
+    if (data.stats.lastActiveDate) {
+      const lastDate = new Date(data.stats.lastActiveDate)
+      const todayDate = new Date(today)
+      const diffDays = Math.floor(
+        (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+      )
+
+      if (diffDays === 1) {
+        // Consecutive day
+        updatedStats.currentStreak = data.stats.currentStreak + 1
+        updatedStats.longestStreak = Math.max(
+          updatedStats.currentStreak,
+          data.stats.longestStreak
+        )
+      } else if (diffDays > 1) {
+        // Streak broken
+        updatedStats.currentStreak = 1
+      }
+    } else {
+      // First session ever
+      updatedStats.currentStreak = 1
+      updatedStats.longestStreak = Math.max(1, data.stats.longestStreak)
+    }
+
+    updatedStats.lastActiveDate = today
+  }
+
+  // Calculate XP (from strategy doc)
+  const wordXP = words * 1
+  const timeXP = Math.floor(durationMs / 60000) * 10
+  const sessionXP = 25
+  let totalXP = wordXP + timeXP + sessionXP
+
+  const oldLevel = data.level.level
+  const oldXP = data.level.currentXP
+  let newXP = oldXP + totalXP
+
+  // Check achievements (will be implemented by importing from gamification.ts)
+  const newAchievements: string[] = []
+  // TODO: Import ACHIEVEMENTS and check which ones should unlock
+  // This will be done in the IPC handler which has access to the achievements
+
+  // Update level
+  const newLevel = calculateLevelFromXP(newXP)
+  const leveledUp = newLevel > oldLevel
+  const rank = getRankForLevel(newLevel)
+
+  const updatedLevel: LevelSystem = {
+    currentXP: newXP,
+    level: newLevel,
+    rank: rank.name,
+  }
+
+  // Save everything
+  saveGamificationData({
+    stats: updatedStats,
+    level: updatedLevel,
+  })
+
+  return {
+    xpGained: totalXP,
+    newAchievements,
+    leveledUp,
+    oldLevel,
+    newLevel,
+  }
+}
+
+export function unlockGamificationAchievement(
+  achievementId: string,
+  xpReward: number
+): void {
+  const data = getGamificationData()
+
+  // Don't unlock if already unlocked
+  if (data.achievements.unlocked[achievementId]) {
+    return
+  }
+
+  // Add to unlocked achievements with timestamp
+  const unlocked: UnlockedAchievement = {
+    unlockedAt: Date.now(), // This is set ONCE and never regenerated
+    xpAwarded: xpReward,
+  }
+
+  data.achievements.unlocked[achievementId] = unlocked
+
+  // Award XP
+  data.level.currentXP += xpReward
+
+  // Recalculate level
+  const newLevel = calculateLevelFromXP(data.level.currentXP)
+  if (newLevel > data.level.level) {
+    data.level.level = newLevel
+    data.level.rank = getRankForLevel(newLevel).name
+  }
+
+  saveGamificationData(data)
+}
+
+export function checkDailyLoginBonus(): {
+  bonusAwarded: boolean
+  xpGained: number
+  streakUpdated: boolean
+  currentStreak: number
+} {
+  const data = getGamificationData()
+  const today = new Date().toISOString().split('T')[0]
+
+  if (data.stats.lastActiveDate === today) {
+    // Already logged in today
+    return {
+      bonusAwarded: false,
+      xpGained: 0,
+      streakUpdated: false,
+      currentStreak: data.stats.currentStreak,
+    }
+  }
+
+  // Award daily bonus
+  const dailyBonus = 50
+  const updatedStats = { ...data.stats }
+
+  if (data.stats.lastActiveDate) {
+    const lastDate = new Date(data.stats.lastActiveDate)
+    const todayDate = new Date(today)
+    const diffDays = Math.floor(
+      (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+    )
+
+    if (diffDays === 1) {
+      updatedStats.currentStreak = data.stats.currentStreak + 1
+      updatedStats.longestStreak = Math.max(
+        updatedStats.currentStreak,
+        data.stats.longestStreak
+      )
+    } else if (diffDays > 1) {
+      updatedStats.currentStreak = 1
+    }
+  } else {
+    updatedStats.currentStreak = 1
+    updatedStats.longestStreak = Math.max(1, data.stats.longestStreak)
+  }
+
+  updatedStats.lastActiveDate = today
+
+  // Add XP
+  const newXP = data.level.currentXP + dailyBonus
+  const newLevel = calculateLevelFromXP(newXP)
+  const rank = getRankForLevel(newLevel)
+
+  saveGamificationData({
+    stats: updatedStats,
+    level: {
+      currentXP: newXP,
+      level: newLevel,
+      rank: rank.name,
+    },
+  })
+
+  return {
+    bonusAwarded: true,
+    xpGained: dailyBonus,
+    streakUpdated: true,
+    currentStreak: updatedStats.currentStreak,
+  }
+}
+
+export function resetGamificationProgress(): void {
+  store.set('gamification', defaultGamificationData)
 }

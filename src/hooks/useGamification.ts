@@ -16,8 +16,6 @@ import {
   getRankForLevel,
 } from '../types/gamification';
 
-const STORAGE_KEY = 'neural_scribe_gamification';
-
 interface UseGamificationReturn {
   stats: UserStats;
   level: LevelSystem;
@@ -27,30 +25,10 @@ interface UseGamificationReturn {
   xpProgress: number; // 0-1, progress to next level
 
   // Actions
-  recordSession: (words: number, durationMs: number) => void;
+  recordSession: (words: number, durationMs: number) => Promise<void>;
   checkDailyLogin: () => void;
   clearRecentUnlocks: () => void;
   resetProgress: () => void;
-}
-
-function loadState(): GamificationState | null {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (e) {
-    console.error('Failed to load gamification state:', e);
-  }
-  return null;
-}
-
-function saveState(state: GamificationState): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch (e) {
-    console.error('Failed to save gamification state:', e);
-  }
 }
 
 export function useGamification(): UseGamificationReturn {
@@ -60,54 +38,76 @@ export function useGamification(): UseGamificationReturn {
   const [recentUnlocks, setRecentUnlocks] = useState<Achievement[]>([]);
 
   const isInitialized = useRef(false);
+  const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined;
 
-  // Load saved state on mount
+  // Load saved state from Electron store on mount
   useEffect(() => {
-    const saved = loadState();
-    if (saved) {
-      setStats(saved.stats);
-      setLevel(saved.level);
-      setUnlockedIds(new Set(saved.unlockedAchievementIds));
+    if (!isElectron) return;
+
+    async function loadFromElectronStore() {
+      try {
+        const data = await window.electronAPI.getGamificationData();
+
+        setStats(data.stats);
+        setLevel(data.level);
+        setUnlockedIds(new Set(Object.keys(data.achievements.unlocked)));
+
+        console.log('[Gamification] Loaded data from Electron store:', data);
+      } catch (err) {
+        console.error('[Gamification] Failed to load data:', err);
+      }
     }
+
+    loadFromElectronStore();
     isInitialized.current = true;
-  }, []);
+  }, [isElectron]);
 
-  // Save state when it changes
+  // Listen for gamification data changes from other windows or main process
   useEffect(() => {
-    if (!isInitialized.current) return;
+    if (!isElectron) return;
 
-    const state: GamificationState = {
-      stats,
-      level,
-      achievements: ACHIEVEMENTS,
-      unlockedAchievementIds: Array.from(unlockedIds),
-      recentUnlocks,
+    const handleDataChanged = async () => {
+      try {
+        const data = await window.electronAPI.getGamificationData();
+        setStats(data.stats);
+        setLevel(data.level);
+        setUnlockedIds(new Set(Object.keys(data.achievements.unlocked)));
+        console.log('[Gamification] Data updated from external change');
+      } catch (err) {
+        console.error('[Gamification] Failed to refresh data:', err);
+      }
     };
-    saveState(state);
-  }, [stats, level, unlockedIds, recentUnlocks]);
 
-  // Add XP and handle level ups
-  const addXP = useCallback((xp: number) => {
-    setLevel(prev => {
-      const newXP = prev.currentXP + xp;
-      const newLevel = calculateLevelFromXP(newXP);
-      const xpForCurrentLevel = calculateXPForLevel(newLevel);
-      const xpForNextLevel = calculateXPForLevel(newLevel + 1);
-      const rank = getRankForLevel(newLevel);
+    window.electronAPI.onGamificationDataChanged(handleDataChanged);
 
-      return {
-        currentXP: newXP,
-        level: newLevel,
-        rank: rank.name,
-        xpForCurrentLevel,
-        totalXPForNextLevel: xpForNextLevel,
-        xpToNextLevel: xpForNextLevel - newXP,
-      };
-    });
-  }, []);
+    return () => {
+      window.electronAPI.removeAllListeners('gamification-data-changed');
+    };
+  }, [isElectron]);
 
-  // Check and unlock achievements
-  const checkAchievements = useCallback((currentStats: UserStats, currentLevel: number) => {
+  // Listen for achievement unlocks
+  useEffect(() => {
+    if (!isElectron) return;
+
+    const handleAchievementUnlocked = (achievementId: string) => {
+      const achievement = ACHIEVEMENTS.find(a => a.id === achievementId);
+      if (achievement && !recentUnlocks.find(a => a.id === achievementId)) {
+        setRecentUnlocks(prev => [...prev, { ...achievement, unlockedAt: Date.now() }]);
+        console.log('[Gamification] Achievement unlocked:', achievementId);
+      }
+    };
+
+    window.electronAPI.onAchievementUnlocked(handleAchievementUnlocked);
+
+    return () => {
+      window.electronAPI.removeAllListeners('achievement-unlocked');
+    };
+  }, [isElectron, recentUnlocks]);
+
+  // Check and unlock achievements (client-side checking, server-side unlocking)
+  const checkAchievements = useCallback(async (currentStats: UserStats, currentLevel: number) => {
+    if (!isElectron) return;
+
     const newUnlocks: Achievement[] = [];
 
     for (const achievement of ACHIEVEMENTS) {
@@ -143,101 +143,88 @@ export function useGamification(): UseGamificationReturn {
     }
 
     if (newUnlocks.length > 0) {
-      // Update unlocked IDs
+      console.log('[Gamification] Unlocking achievements:', newUnlocks.map(a => a.id));
+
+      // Unlock achievements via Electron store
+      for (const achievement of newUnlocks) {
+        try {
+          await window.electronAPI.unlockGamificationAchievement({
+            achievementId: achievement.id,
+            xpReward: achievement.xpReward,
+          });
+        } catch (err) {
+          console.error(`[Gamification] Failed to unlock achievement ${achievement.id}:`, err);
+        }
+      }
+
+      // Update local state
       setUnlockedIds(prev => {
         const newSet = new Set(prev);
         newUnlocks.forEach(a => newSet.add(a.id));
         return newSet;
       });
 
-      // Add to recent unlocks
+      // Add to recent unlocks for popup display
       setRecentUnlocks(prev => [...prev, ...newUnlocks]);
-
-      // Award XP for achievements
-      const totalXP = newUnlocks.reduce((sum, a) => sum + a.xpReward, 0);
-      if (totalXP > 0) {
-        addXP(totalXP);
-      }
     }
-  }, [unlockedIds, addXP]);
-
-  // Update streak based on date
-  const updateStreak = useCallback((currentStats: UserStats): UserStats => {
-    const today = new Date().toISOString().split('T')[0];
-    const lastActive = currentStats.lastActiveDate;
-
-    if (!lastActive) {
-      // First session ever
-      return {
-        ...currentStats,
-        currentStreak: 1,
-        longestStreak: Math.max(1, currentStats.longestStreak),
-        lastActiveDate: today,
-      };
-    }
-
-    if (lastActive === today) {
-      // Already active today
-      return currentStats;
-    }
-
-    const lastDate = new Date(lastActive);
-    const todayDate = new Date(today);
-    const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 1) {
-      // Consecutive day - extend streak
-      const newStreak = currentStats.currentStreak + 1;
-      return {
-        ...currentStats,
-        currentStreak: newStreak,
-        longestStreak: Math.max(newStreak, currentStats.longestStreak),
-        lastActiveDate: today,
-      };
-    } else {
-      // Streak broken - reset
-      return {
-        ...currentStats,
-        currentStreak: 1,
-        lastActiveDate: today,
-      };
-    }
-  }, []);
+  }, [unlockedIds, isElectron]);
 
   // Record a completed session
-  const recordSession = useCallback((words: number, durationMs: number) => {
-    setStats(prev => {
-      const updated = updateStreak({
-        ...prev,
-        totalWordsTranscribed: prev.totalWordsTranscribed + words,
-        totalRecordingTimeMs: prev.totalRecordingTimeMs + durationMs,
-        totalSessions: prev.totalSessions + 1,
+  const recordSession = useCallback(async (words: number, durationMs: number) => {
+    if (!isElectron) {
+      console.warn('[Gamification] Not in Electron environment, skipping');
+      return;
+    }
+
+    try {
+      // Record session via Electron store
+      const result = await window.electronAPI.recordGamificationSession({
+        words,
+        durationMs,
       });
 
-      // Schedule achievement check after state update
-      setTimeout(() => {
-        checkAchievements(updated, level.level);
-      }, 0);
+      console.log('[Gamification] Session recorded:', result);
 
-      return updated;
-    });
+      // Reload data from store to get updated stats and level
+      const data = await window.electronAPI.getGamificationData();
+      setStats(data.stats);
+      setLevel(data.level);
 
-    // Calculate and add XP
-    const wordXP = words * DEFAULT_XP_CONFIG.perWord;
-    const timeXP = Math.floor(durationMs / 60000) * DEFAULT_XP_CONFIG.perMinute;
-    const sessionXP = DEFAULT_XP_CONFIG.perSession;
-    addXP(wordXP + timeXP + sessionXP);
-  }, [updateStreak, checkAchievements, addXP, level.level]);
+      // Check for new achievements
+      await checkAchievements(data.stats, data.level.level);
+
+      // Show level up notification if applicable
+      if (result.leveledUp) {
+        console.log(`[Gamification] LEVEL UP! ${result.oldLevel} → ${result.newLevel}`);
+        // TODO: Could show a level up notification here
+      }
+    } catch (err) {
+      console.error('[Gamification] Failed to record session:', err);
+    }
+  }, [isElectron, checkAchievements]);
 
   // Check daily login bonus
-  const checkDailyLogin = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0];
+  const checkDailyLogin = useCallback(async () => {
+    if (!isElectron) return;
 
-    if (stats.lastActiveDate !== today) {
-      setStats(prev => updateStreak(prev));
-      addXP(DEFAULT_XP_CONFIG.dailyLoginBonus);
+    try {
+      const result = await window.electronAPI.checkGamificationDailyLogin();
+
+      if (result.bonusAwarded) {
+        console.log('[Gamification] Daily bonus awarded:', result);
+
+        // Reload data from store
+        const data = await window.electronAPI.getGamificationData();
+        setStats(data.stats);
+        setLevel(data.level);
+
+        // Check for streak-based achievements
+        await checkAchievements(data.stats, data.level.level);
+      }
+    } catch (err) {
+      console.error('[Gamification] Failed to check daily login:', err);
     }
-  }, [stats.lastActiveDate, updateStreak, addXP]);
+  }, [isElectron, checkAchievements]);
 
   // Clear recent unlock notifications
   const clearRecentUnlocks = useCallback(() => {
@@ -245,19 +232,32 @@ export function useGamification(): UseGamificationReturn {
   }, []);
 
   // Reset all progress
-  const resetProgress = useCallback(() => {
+  const resetProgress = useCallback(async () => {
+    if (!isElectron) return;
+
     if (window.confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
-      setStats(getDefaultStats());
-      setLevel(getDefaultLevelSystem());
-      setUnlockedIds(new Set());
-      setRecentUnlocks([]);
-      localStorage.removeItem(STORAGE_KEY);
+      try {
+        await window.electronAPI.resetGamificationProgress();
+
+        // Reload default state
+        const data = await window.electronAPI.getGamificationData();
+        setStats(data.stats);
+        setLevel(data.level);
+        setUnlockedIds(new Set());
+        setRecentUnlocks([]);
+
+        console.log('[Gamification] Progress reset');
+      } catch (err) {
+        console.error('[Gamification] Failed to reset progress:', err);
+      }
     }
-  }, []);
+  }, [isElectron]);
 
   // Calculate XP progress (0-1)
-  const xpProgress = level.totalXPForNextLevel > level.xpForCurrentLevel
-    ? (level.currentXP - level.xpForCurrentLevel) / (level.totalXPForNextLevel - level.xpForCurrentLevel)
+  const xpForCurrentLevel = calculateXPForLevel(level.level);
+  const xpForNextLevel = calculateXPForLevel(level.level + 1);
+  const xpProgress = xpForNextLevel > xpForCurrentLevel
+    ? (level.currentXP - xpForCurrentLevel) / (xpForNextLevel - xpForCurrentLevel)
     : 0;
 
   // Map achievements with progress and unlock status
@@ -291,7 +291,8 @@ export function useGamification(): UseGamificationReturn {
     return {
       ...achievement,
       progress,
-      unlockedAt: isUnlocked ? Date.now() : undefined,
+      // NOTE: unlockedAt is NOT set here to avoid regenerating timestamps
+      // It's loaded from Electron store when needed for display
     };
   });
 

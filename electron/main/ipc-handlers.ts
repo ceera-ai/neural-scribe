@@ -25,10 +25,17 @@ import {
   setPromptFormattingEnabled,
   setPromptFormattingInstructions,
   setPromptFormattingModel,
+  getGamificationData,
+  saveGamificationData,
+  recordGamificationSession,
+  unlockGamificationAchievement,
+  checkDailyLoginBonus,
+  resetGamificationProgress,
   TranscriptionRecord,
   AppSettings,
   WordReplacement,
-  VoiceCommandTrigger
+  VoiceCommandTrigger,
+  GamificationData
 } from './store'
 import {
   formatPrompt,
@@ -319,5 +326,57 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     const instructions = customInstructions || settings.instructions || undefined
     const result = await formatPrompt(text, instructions, settings.model)
     return result
+  })
+
+  // Gamification operations
+  ipcMain.handle('get-gamification-data', () => {
+    return getGamificationData()
+  })
+
+  ipcMain.handle('save-gamification-data', (_, data: Partial<GamificationData>) => {
+    saveGamificationData(data)
+    // Notify all windows that gamification data changed
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('gamification-data-changed')
+    })
+    return true
+  })
+
+  ipcMain.handle('record-gamification-session', (_, params: { words: number; durationMs: number }) => {
+    const result = recordGamificationSession(params.words, params.durationMs)
+    // Notify all windows that gamification data changed
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('gamification-data-changed')
+    })
+    return result
+  })
+
+  ipcMain.handle('unlock-gamification-achievement', (_, params: { achievementId: string; xpReward: number }) => {
+    unlockGamificationAchievement(params.achievementId, params.xpReward)
+    // Notify all windows that an achievement was unlocked
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('achievement-unlocked', params.achievementId)
+    })
+    return true
+  })
+
+  ipcMain.handle('check-gamification-daily-login', () => {
+    const result = checkDailyLoginBonus()
+    if (result.bonusAwarded) {
+      // Notify all windows that gamification data changed
+      BrowserWindow.getAllWindows().forEach(win => {
+        win.webContents.send('gamification-data-changed')
+      })
+    }
+    return result
+  })
+
+  ipcMain.handle('reset-gamification-progress', () => {
+    resetGamificationProgress()
+    // Notify all windows that gamification was reset
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('gamification-data-changed')
+    })
+    return true
   })
 }

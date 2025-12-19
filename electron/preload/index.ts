@@ -178,6 +178,22 @@ const electronAPI = {
   reformatText: (text: string, customInstructions?: string): Promise<{ success: boolean; formatted: string; error?: string }> =>
     ipcRenderer.invoke('reformat-text', text, customInstructions),
 
+  // Gamification operations
+  getGamificationData: () => ipcRenderer.invoke('get-gamification-data'),
+  saveGamificationData: (data: any) => ipcRenderer.invoke('save-gamification-data', data),
+  recordGamificationSession: (params: { words: number; durationMs: number }) =>
+    ipcRenderer.invoke('record-gamification-session', params),
+  unlockGamificationAchievement: (params: { achievementId: string; xpReward: number }) =>
+    ipcRenderer.invoke('unlock-gamification-achievement', params),
+  checkGamificationDailyLogin: () => ipcRenderer.invoke('check-gamification-daily-login'),
+  resetGamificationProgress: () => ipcRenderer.invoke('reset-gamification-progress'),
+  onGamificationDataChanged: (callback: () => void): void => {
+    ipcRenderer.on('gamification-data-changed', () => callback())
+  },
+  onAchievementUnlocked: (callback: (achievementId: string) => void): void => {
+    ipcRenderer.on('achievement-unlocked', (_, achievementId: string) => callback(achievementId))
+  },
+
   // Events from main process
   onToggleRecording: (callback: RecordingToggleCallback): void => {
     ipcRenderer.on('toggle-recording', () => callback())
