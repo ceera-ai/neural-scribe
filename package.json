@@ -26,7 +26,8 @@
     "@elevenlabs/client": "^0.11.3",
     "electron-store": "^10.0.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@axe-core/react": "^4.11.0",
