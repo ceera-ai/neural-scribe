@@ -269,6 +269,11 @@ const electronAPI = {
   sendOverlayStatus: (status: { connected: boolean; formattingEnabled: boolean }): void => {
     ipcRenderer.send('overlay-status', status)
   },
+
+  // Error logging
+  logError: (error: { message: string; stack: string; componentStack?: string }): void => {
+    ipcRenderer.send('log-error', error)
+  },
 }
 
 // Expose API to renderer

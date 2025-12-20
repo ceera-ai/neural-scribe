@@ -401,4 +401,15 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     })
     return true
   })
+
+  // Error logging
+  ipcMain.on('log-error', (_, error: { message: string; stack: string; componentStack?: string }) => {
+    console.error('[ErrorBoundary] Renderer error:', error.message)
+    if (error.stack) {
+      console.error('[ErrorBoundary] Stack:', error.stack)
+    }
+    if (error.componentStack) {
+      console.error('[ErrorBoundary] Component stack:', error.componentStack)
+    }
+  })
 }
