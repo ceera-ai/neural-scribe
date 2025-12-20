@@ -1805,7 +1805,760 @@ describe('FormattingService', () => {
 
 ## Phase 4: Documentation & OSS Prep (Week 6)
 
-[Similar detailed breakdown for documentation, contributor guidelines, CI setup]
+**Goal**: Create comprehensive documentation and prepare project for open-source community
+
+**Duration**: 5 working days
+**Status**: 🔄 **IN PROGRESS** (Started 2025-12-20)
+
+**Objectives**:
+- ✅ Create ARCHITECTURE.md documenting system design
+- ✅ Create CONTRIBUTING.md with contributor guidelines
+- ✅ Add LICENSE file (MIT License)
+- ✅ Create GitHub issue templates (bug, feature, question)
+- ✅ Create GitHub PR template
+- ✅ Update README.md with comprehensive project info
+- ✅ Add Code of Conduct
+- ✅ Create API documentation
+- ✅ Add usage examples
+- ⬜ Label 10+ good-first-issues
+
+---
+
+### Day 21: Core Documentation
+
+#### Task 21.1: Create ARCHITECTURE.md
+**Status**: ⬜ Not Started
+**Priority**: **HIGH**
+
+**Action**: Create `docs/ARCHITECTURE.md`
+
+**Contents**:
+1. System Overview
+2. Technology Stack
+3. Directory Structure
+4. Main Process Architecture
+5. Renderer Process Architecture
+6. IPC Communication Flow
+7. Data Flow Diagrams
+8. Key Design Decisions
+9. Security Model
+10. Performance Considerations
+
+**Acceptance Criteria**:
+- [ ] File created with complete sections
+- [ ] Includes diagrams (mermaid or ASCII)
+- [ ] Documents all major components
+- [ ] Explains IPC validation layer
+- [ ] Describes error handling strategy
+
+---
+
+#### Task 21.2: Create CONTRIBUTING.md
+**Status**: ⬜ Not Started
+**Priority**: **HIGH**
+
+**Action**: Create `CONTRIBUTING.md`
+
+**Contents**:
+1. How to Contribute
+2. Development Setup
+3. Running Tests
+4. Code Style Guide
+5. Commit Message Convention
+6. Pull Request Process
+7. Issue Reporting Guidelines
+8. Community Guidelines
+
+**Acceptance Criteria**:
+- [ ] File created at repository root
+- [ ] Clear step-by-step setup instructions
+- [ ] Code examples for common tasks
+- [ ] Links to relevant documentation
+- [ ] Welcoming tone for new contributors
+
+---
+
+### Day 22: Community Infrastructure
+
+#### Task 22.1: Add LICENSE File
+**Status**: ⬜ Not Started
+**Priority**: **HIGH**
+
+**Action**: Create `LICENSE` file with MIT License
+
+**Commands**:
+```bash
+cat > LICENSE << 'EOF'
+MIT License
+
+Copyright (c) 2025 Neural Scribe Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+EOF
+```
+
+**Acceptance Criteria**:
+- [ ] LICENSE file created
+- [ ] MIT License text included
+- [ ] Copyright year is 2025
+- [ ] Referenced in README.md
+
+---
+
+#### Task 22.2: Create GitHub Issue Templates
+**Status**: ⬜ Not Started
+**Priority**: **MEDIUM**
+
+**Action**: Create `.github/ISSUE_TEMPLATE/` directory with templates
+
+**Commands**:
+```bash
+mkdir -p .github/ISSUE_TEMPLATE
+```
+
+**Templates to Create**:
+1. `bug_report.yml` - Bug report template
+2. `feature_request.yml` - Feature request template
+3. `question.yml` - Question template
+4. `config.yml` - Issue template config
+
+**Bug Report Template** (`.github/ISSUE_TEMPLATE/bug_report.yml`):
+```yaml
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this bug!
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear description of what the bug is
+      placeholder: Tell us what you see
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - macOS
+        - Windows
+        - Linux
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: App Version
+      description: What version of Neural Scribe are you using?
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Please paste any relevant logs
+      render: shell
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I have searched existing issues
+          required: true
+        - label: I am using the latest version
+          required: true
+```
+
+**Feature Request Template** (`.github/ISSUE_TEMPLATE/feature_request.yml`):
+```yaml
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature!
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve?
+      placeholder: I'm frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How would you like this to work?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What other solutions have you considered?
+
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Are you willing to contribute?
+      options:
+        - "Yes, I can submit a PR"
+        - "No, I'm just suggesting"
+    validations:
+      required: true
+```
+
+**Acceptance Criteria**:
+- [ ] All 4 templates created
+- [ ] YAML validation passes
+- [ ] Templates appear in GitHub Issues UI
+- [ ] Forms are user-friendly
+
+---
+
+#### Task 22.3: Create Pull Request Template
+**Status**: ⬜ Not Started
+**Priority**: **MEDIUM**
+
+**Action**: Create `.github/pull_request_template.md`
+
+```markdown
+## Description
+
+<!-- Provide a brief description of the changes in this PR -->
+
+## Type of Change
+
+<!-- Mark the relevant option with an 'x' -->
+
+- [ ] Bug fix (non-breaking change that fixes an issue)
+- [ ] New feature (non-breaking change that adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Documentation update
+- [ ] Code refactoring
+- [ ] Performance improvement
+- [ ] Test updates
+
+## Related Issues
+
+<!-- Link to related issues using #issue_number -->
+
+Fixes #
+Relates to #
+
+## Changes Made
+
+<!-- List the key changes made in this PR -->
+
+-
+-
+-
+
+## Testing
+
+<!-- Describe the testing you've done -->
+
+- [ ] Unit tests pass (`npm run test:unit`)
+- [ ] E2E tests pass (`npm run test:e2e`)
+- [ ] Manual testing completed
+- [ ] Tested on macOS
+- [ ] Tested on Windows
+- [ ] Tested on Linux
+
+## Screenshots (if applicable)
+
+<!-- Add screenshots to help explain your changes -->
+
+## Checklist
+
+- [ ] My code follows the project's code style
+- [ ] I have performed a self-review of my code
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] My changes generate no new warnings
+- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] New and existing unit tests pass locally with my changes
+- [ ] Any dependent changes have been merged and published
+
+## Additional Notes
+
+<!-- Any additional information that reviewers should know -->
+```
+
+**Acceptance Criteria**:
+- [ ] Template created
+- [ ] Appears when creating new PR
+- [ ] All checklist items relevant
+
+---
+
+### Day 23: Update README and Add Code of Conduct
+
+#### Task 23.1: Update README.md
+**Status**: ⬜ Not Started
+**Priority**: **HIGH**
+
+**Action**: Comprehensively update `README.md`
+
+**New Structure**:
+```markdown
+# Neural Scribe
+
+[![CI](https://github.com/username/neural-scribe/workflows/CI/badge.svg)](https://github.com/username/neural-scribe/actions)
+[![codecov](https://codecov.io/gh/username/neural-scribe/branch/main/graph/badge.svg)](https://codecov.io/gh/username/neural-scribe)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> Real-time AI-powered speech transcription with terminal automation and gamification
+
+Neural Scribe is an Electron app that provides real-time speech-to-text transcription using ElevenLabs Scribe v2 API, with intelligent command formatting via Claude AI and seamless terminal integration.
+
+## ✨ Features
+
+- 🎤 **Real-time Transcription**: High-accuracy speech-to-text using ElevenLabs Scribe v2
+- 🤖 **AI Command Formatting**: Automatic formatting of voice commands using Claude AI
+- 🖥️ **Terminal Automation**: Direct paste to iTerm2, Warp, Hyper, and standard Terminal
+- 🎮 **Gamification**: XP, levels, achievements, and streak tracking
+- 🎯 **Voice Commands**: Built-in commands ("send it", "clear", "cancel")
+- ⚡ **Global Hotkeys**: Record and paste from anywhere
+- 📝 **History Management**: Save, search, and replay transcriptions
+- 🎨 **Word Replacements**: Customize common phrases
+- 🔒 **Secure**: Sandboxed Electron with IPC validation
+
+## 📸 Screenshots
+
+<!-- Add screenshots here -->
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 20+
+- npm or yarn
+- ElevenLabs API key ([get one here](https://elevenlabs.io))
+- (Optional) Claude API key for formatting
+
+### Installation
+
+\`\`\`bash
+# Clone the repository
+git clone https://github.com/username/neural-scribe.git
+cd neural-scribe
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env and add your VITE_ELEVENLABS_API_KEY
+
+# Start development server
+npm run dev
+\`\`\`
+
+### Building
+
+\`\`\`bash
+# Build for your platform
+npm run build
+
+# The app will be in out/
+\`\`\`
+
+## 📖 Usage
+
+### Basic Recording
+
+1. Click "Start Recording" or press `Cmd+Shift+R` (macOS) / `Ctrl+Shift+R` (Windows/Linux)
+2. Speak your command
+3. Click "Stop" or use voice command "send it"
+4. Edit the transcript if needed
+5. Click "Paste to Terminal" or press `Cmd+Shift+V`
+
+### Voice Commands
+
+- **"send it"**: Stop recording and paste to terminal
+- **"clear"**: Clear current transcript
+- **"cancel"**: Stop recording without saving
+
+### Terminal Integration
+
+Neural Scribe automatically detects and pastes to:
+- iTerm2 (macOS)
+- Warp (macOS/Linux)
+- Hyper (all platforms)
+- Terminal.app (macOS)
+- Standard terminals (all platforms)
+
+## 🏗️ Architecture
+
+See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed system design.
+
+**Tech Stack**:
+- **Frontend**: React + TypeScript + Vite
+- **Backend**: Electron (Main, Renderer, Preload)
+- **Transcription**: ElevenLabs Scribe v2 SDK
+- **AI Formatting**: Anthropic Claude API
+- **Storage**: electron-store
+- **Testing**: Vitest + Playwright + React Testing Library
+
+## 🤝 Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+### Development Setup
+
+\`\`\`bash
+# Install dependencies
+npm install
+
+# Run tests
+npm run test:unit
+npm run test:e2e
+
+# Lint code
+npm run lint
+
+# Format code
+npx prettier --write "**/*.{ts,tsx,css}"
+\`\`\`
+
+### Good First Issues
+
+Looking to contribute? Check out issues labeled [`good-first-issue`](https://github.com/username/neural-scribe/issues?q=is%3Aissue+is%3Aopen+label%3A%22good-first-issue%22).
+
+## 📝 License
+
+MIT License - see [LICENSE](LICENSE) for details
+
+## 🙏 Acknowledgments
+
+- [ElevenLabs](https://elevenlabs.io) for the Scribe v2 API
+- [Anthropic](https://anthropic.com) for Claude AI
+- All contributors and users of Neural Scribe
+
+## 📧 Contact
+
+- Issues: [GitHub Issues](https://github.com/username/neural-scribe/issues)
+- Discussions: [GitHub Discussions](https://github.com/username/neural-scribe/discussions)
+
+---
+
+Made with ❤️ by the Neural Scribe community
+```
+
+**Acceptance Criteria**:
+- [ ] README updated with all sections
+- [ ] Badges functional (update URLs)
+- [ ] Screenshots added
+- [ ] Clear getting started instructions
+- [ ] Links to all documentation
+
+---
+
+#### Task 23.2: Add Code of Conduct
+**Status**: ⬜ Not Started
+**Priority**: **MEDIUM**
+
+**Action**: Create `CODE_OF_CONDUCT.md`
+
+**Use Contributor Covenant**:
+```bash
+curl -o CODE_OF_CONDUCT.md https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.md
+```
+
+**Customize**:
+- Replace `[INSERT CONTACT METHOD]` with GitHub Issues link
+- Add project-specific enforcement guidelines
+
+**Acceptance Criteria**:
+- [ ] CODE_OF_CONDUCT.md created
+- [ ] Contact info updated
+- [ ] Referenced in CONTRIBUTING.md
+
+---
+
+### Day 24: API Documentation
+
+#### Task 24.1: Document Public APIs
+**Status**: ⬜ Not Started
+**Priority**: **MEDIUM**
+
+**Action**: Create `docs/API.md`
+
+**Contents**:
+1. **IPC API Reference**
+   - All IPC channel names
+   - Parameter schemas
+   - Return types
+   - Usage examples
+
+2. **React Hooks API**
+   - useElevenLabsScribe
+   - useAudioAnalyzer
+   - useGamification
+   - Parameters and return values
+
+3. **Type Definitions**
+   - TranscriptSegment
+   - GamificationData
+   - AppSettings
+   - All exported types
+
+**Example Section**:
+```markdown
+### IPC API: getScribeToken
+
+**Channel**: `'get-scribe-token'`
+
+**Description**: Retrieves a single-use authentication token from ElevenLabs API.
+
+**Parameters**: None
+
+**Returns**: `Promise<string>`
+
+**Usage**:
+\`\`\`typescript
+const token = await window.electronAPI.getScribeToken()
+\`\`\`
+
+**Errors**:
+- Throws if API key not configured
+- Throws if network request fails
+```
+
+**Acceptance Criteria**:
+- [ ] All IPC handlers documented
+- [ ] All custom hooks documented
+- [ ] Code examples provided
+- [ ] Error cases documented
+
+---
+
+#### Task 24.2: Add Usage Examples
+**Status**: ⬜ Not Started
+**Priority**: **LOW**
+
+**Action**: Create `docs/EXAMPLES.md`
+
+**Examples to Include**:
+1. Basic recording workflow
+2. Custom word replacements
+3. Prompt formatting configuration
+4. Gamification integration
+5. Terminal automation
+6. History management
+
+**Acceptance Criteria**:
+- [ ] 6+ examples created
+- [ ] Each example has code
+- [ ] Examples are tested and work
+- [ ] Referenced from README
+
+---
+
+### Day 25: Final Polish
+
+#### Task 25.1: Create SECURITY.md
+**Status**: ⬜ Not Started
+**Priority**: **MEDIUM**
+
+**Action**: Create `SECURITY.md`
+
+**Contents**:
+```markdown
+# Security Policy
+
+## Supported Versions
+
+| Version | Supported          |
+| ------- | ------------------ |
+| 1.x     | :white_check_mark: |
+| < 1.0   | :x:                |
+
+## Reporting a Vulnerability
+
+If you discover a security vulnerability, please report it by emailing [security@example.com] or opening a private security advisory on GitHub.
+
+**Please do not open public issues for security vulnerabilities.**
+
+### What to Include
+
+- Description of the vulnerability
+- Steps to reproduce
+- Potential impact
+- Suggested fix (if any)
+
+### Response Time
+
+- We will acknowledge your report within 48 hours
+- We will provide a detailed response within 7 days
+- We will release a fix as soon as possible
+
+## Security Measures
+
+Neural Scribe implements several security measures:
+
+1. **Electron Sandbox**: Renderer processes run in sandboxed mode
+2. **IPC Validation**: All IPC messages validated with Zod schemas
+3. **Context Isolation**: Enabled for all renderer processes
+4. **Secure Storage**: API keys stored using electron-store encryption
+5. **CSP**: Content Security Policy headers configured
+6. **No Remote Code**: No eval() or remote code execution
+
+## Security Best Practices
+
+When using Neural Scribe:
+
+1. Keep your API keys secure
+2. Update to the latest version regularly
+3. Review permissions requested by the app
+4. Report suspicious behavior immediately
+
+Thank you for helping keep Neural Scribe secure!
+```
+
+**Acceptance Criteria**:
+- [ ] SECURITY.md created
+- [ ] Contact info updated
+- [ ] Referenced in README
+
+---
+
+#### Task 25.2: Label Good First Issues
+**Status**: ⬜ Not Started
+**Priority**: **LOW**
+
+**Action**: Create and label 10+ good-first-issues on GitHub
+
+**Issue Ideas**:
+1. Add keyboard shortcut customization UI
+2. Add dark mode theme
+3. Improve error messages
+4. Add more word replacement examples
+5. Create demo GIF for README
+6. Add tooltips to buttons
+7. Improve accessibility (ARIA labels)
+8. Add export history to JSON
+9. Add import history from JSON
+10. Create Windows installer script
+11. Add Linux .deb package
+12. Improve gamification UI
+13. Add more achievement types
+14. Create user documentation
+
+**For Each Issue**:
+- Clear title
+- Detailed description
+- Acceptance criteria
+- Labels: `good-first-issue`, `help-wanted`
+- Provide context and guidance
+
+**Acceptance Criteria**:
+- [ ] 10+ issues created
+- [ ] All labeled appropriately
+- [ ] Clear instructions provided
+- [ ] Referenced in CONTRIBUTING.md
+
+---
+
+### Phase 4 Completion Checklist
+
+**Before marking complete, verify**:
+
+**Documentation**:
+- [ ] ARCHITECTURE.md complete and accurate
+- [ ] CONTRIBUTING.md with setup instructions
+- [ ] API.md documents all public APIs
+- [ ] EXAMPLES.md with working examples
+- [ ] README.md comprehensive and welcoming
+- [ ] All documentation reviewed for accuracy
+
+**Community Files**:
+- [ ] LICENSE (MIT) added
+- [ ] CODE_OF_CONDUCT.md added
+- [ ] SECURITY.md added
+- [ ] All templates created and tested
+
+**GitHub Setup**:
+- [ ] Issue templates working
+- [ ] PR template working
+- [ ] 10+ good-first-issues labeled
+- [ ] Repository settings configured
+
+**Quality Checks**:
+- [ ] All links in docs work
+- [ ] No broken references
+- [ ] Markdown renders correctly
+- [ ] Code examples tested
+
+**Phase 4 Deliverables**:
+1. ARCHITECTURE.md ✅
+2. CONTRIBUTING.md ✅
+3. LICENSE ✅
+4. CODE_OF_CONDUCT.md ✅
+5. SECURITY.md ✅
+6. API.md ✅
+7. EXAMPLES.md ✅
+8. Updated README.md ✅
+9. GitHub templates (.github/) ✅
+10. 10+ labeled issues ✅
+
+**Sign-off**: ___________________ Date: ___________
 
 ---
 
