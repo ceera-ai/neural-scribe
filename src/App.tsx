@@ -5,6 +5,7 @@ import { useTranscriptionHistory } from './hooks/useTranscriptionHistory'
 import { useGamification } from './hooks/useGamification'
 import { useAudioAnalyzer } from './hooks/useAudioAnalyzer'
 import { useAppInitialization } from './hooks/useAppInitialization'
+import { usePasteToTerminal } from './hooks/usePasteToTerminal'
 import { HistoryPanel } from './components/HistoryPanel'
 import { ApiKeySetup } from './components/ApiKeySetup'
 import { AIOrb } from './components/orb/AIOrb'
@@ -39,10 +40,6 @@ function App() {
   const [showGamification, setShowGamification] = useState(false)
   const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true)
   const [lastVoiceCommand, setLastVoiceCommand] = useState<string | null>(null)
-  const [pasteStatus, setPasteStatus] = useState<
-    'idle' | 'success' | 'permission' | 'no-terminal' | 'error' | 'formatting'
-  >('idle')
-  const [historySaved, setHistorySaved] = useState<string | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; text: string } | null>(
     null
   )
@@ -52,7 +49,6 @@ function App() {
   const transcriptEndRef = useRef<HTMLDivElement>(null)
   const transcriptInputRef = useRef<HTMLTextAreaElement>(null)
   const pendingPasteRef = useRef<string | null>(null)
-  const isPastingRef = useRef<boolean>(false) // Lock to prevent multiple simultaneous pastes
 
   const { selectedDeviceId } = useMicrophoneDevices()
   const { saveTranscription, saveTranscriptionWithFormatting } = useTranscriptionHistory()
@@ -66,6 +62,12 @@ function App() {
     checkDailyLogin,
     clearRecentUnlocks,
   } = useGamification()
+
+  // Paste to terminal with formatting
+  const { pasteStatus, historySaved, formatAndPaste, handlePasteToTerminal: pasteToTerminal } = usePasteToTerminal({
+    formattingEnabled,
+    saveTranscriptionWithFormatting,
+  })
 
   // Check daily login on mount
   useEffect(() => {
@@ -359,99 +361,6 @@ function App() {
     setEditedTranscript(text)
   }
 
-  // Helper function to format and paste text
-  const formatAndPaste = async (
-    text: string,
-    shouldSaveToHistory: boolean = true,
-    duration: number = 0
-  ): Promise<void> => {
-    // Prevent multiple simultaneous paste operations
-    if (isPastingRef.current) {
-      console.log('[App] Paste already in progress, skipping...')
-      return
-    }
-
-    isPastingRef.current = true
-    console.log('[App] Starting paste operation...')
-
-    try {
-      let textToPaste = text
-      let formattedText: string | undefined
-      let title: string | undefined
-      const originalText = text
-
-      // Format with Claude if enabled
-      if (formattingEnabled) {
-        setPasteStatus('formatting')
-        console.log('[App] Formatting text with Claude...')
-        const formatResult = await window.electronAPI.formatPrompt(text)
-
-        if (formatResult.success && !formatResult.skipped) {
-          textToPaste = formatResult.formatted
-          formattedText = formatResult.formatted
-          console.log('[App] Formatted text:', textToPaste)
-        } else if (formatResult.error) {
-          console.warn('[App] Formatting failed, using original text:', formatResult.error)
-        }
-      }
-
-      // Paste to terminal first
-      const result = await window.electronAPI.pasteToLastActiveTerminal(textToPaste)
-      console.log('[App] Paste result:', result)
-
-      // Show notification IMMEDIATELY after paste
-      if (result.success) {
-        setPasteStatus('success')
-        setTimeout(() => setPasteStatus('idle'), 2000)
-      } else if (!result.targetApp) {
-        setPasteStatus('no-terminal')
-        setTimeout(() => setPasteStatus('idle'), 3000)
-      } else if (result.needsPermission) {
-        setPasteStatus('permission')
-      } else {
-        setPasteStatus('permission')
-      }
-
-      // Save to history in background (don't block UI)
-      if (shouldSaveToHistory && (result.success || result.copied)) {
-        // Run title generation and saving in background
-        ;(async () => {
-          const textForTitle = formattedText || originalText
-          if (textForTitle) {
-            try {
-              console.log('[App] Generating title in background...')
-              const titleResult = await window.electronAPI.generateTitle(textForTitle)
-              if (titleResult.success && titleResult.title) {
-                title = titleResult.title
-                console.log('[App] Generated title:', title)
-              }
-            } catch (err) {
-              console.warn('[App] Title generation failed:', err)
-            }
-          }
-
-          await saveTranscriptionWithFormatting({
-            originalText,
-            formattedText,
-            title,
-            duration,
-          })
-
-          // Show notification that history was saved
-          setHistorySaved(title || 'Transcription')
-          setTimeout(() => setHistorySaved(null), 3000)
-        })()
-      }
-    } catch (err) {
-      console.error('[App] Format/paste error:', err)
-      setPasteStatus('error')
-      setTimeout(() => setPasteStatus('idle'), 3000)
-    } finally {
-      isPastingRef.current = false
-      console.log('[App] Paste operation completed')
-    }
-  }
-
   // Handle right-click on transcript textarea
   const handleTranscriptContextMenu = (e: React.MouseEvent<HTMLTextAreaElement>) => {
     const textarea = e.currentTarget
@@ -485,27 +394,6 @@ function App() {
       setReplacementInitialText(contextMenu.text)
       setShowReplacements(true)
       setContextMenu(null)
-    }
-  }
-
-  const handlePasteToTerminal = async () => {
-    // Clear any pending voice command paste to prevent duplicate
-    pendingPasteRef.current = null
-
-    // Capture the recording time before stopping
-    const currentDuration = recordingTime
-
-    // Stop recording first if active
-    if (isRecording) {
-      stopRecording()
-      // Small delay to ensure transcript is finalized
-      await new Promise((resolve) => setTimeout(resolve, 200))
-    }
-
-    const text = getCurrentTranscript()
-    if (text) {
-      console.log('[App] Attempting to paste to terminal...')
-      await formatAndPaste(text, true, currentDuration)
     }
   }
 
@@ -598,7 +486,9 @@ function App() {
           <PasteButton
             hasTranscript={hasTranscript}
             pasteStatus={pasteStatus}
-            onPaste={handlePasteToTerminal}
+            onPaste={() =>
+              pasteToTerminal(getCurrentTranscript, isRecording, stopRecording, recordingTime, pendingPasteRef)
+            }
           />
 
           {/* Toast Notifications */}
