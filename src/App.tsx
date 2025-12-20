@@ -4,6 +4,7 @@ import { useMicrophoneDevices } from './hooks/useMicrophoneDevices'
 import { useTranscriptionHistory } from './hooks/useTranscriptionHistory'
 import { useGamification } from './hooks/useGamification'
 import { useAudioAnalyzer } from './hooks/useAudioAnalyzer'
+import { useAppInitialization } from './hooks/useAppInitialization'
 import { HistoryPanel } from './components/HistoryPanel'
 import { ApiKeySetup } from './components/ApiKeySetup'
 import { AIOrb } from './components/orb/AIOrb'
@@ -20,13 +21,18 @@ import { HotkeyFooter } from './components/footer/HotkeyFooter'
 import { ModalsContainer } from './components/modals/ModalsContainer'
 import './App.css'
 
-// Check if running in Electron
-const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
-
 function App() {
-  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null)
+  // App initialization (API key, settings, hotkeys)
+  const {
+    hasApiKey,
+    initError,
+    formattingEnabled,
+    recordHotkey,
+    pasteHotkey,
+    setFormattingEnabled,
+  } = useAppInitialization()
+
   const [showHistory, setShowHistory] = useState(false)
-  const [initError, setInitError] = useState<string | null>(null)
   const [recordingTime, setRecordingTime] = useState(0)
   const [showReplacements, setShowReplacements] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -43,9 +49,6 @@ function App() {
   const [replacementInitialText, setReplacementInitialText] = useState<string | undefined>(
     undefined
   )
-  const [formattingEnabled, setFormattingEnabled] = useState(true)
-  const [recordHotkey, setRecordHotkey] = useState('CommandOrControl+Shift+R')
-  const [pasteHotkey, setPasteHotkey] = useState('CommandOrControl+Shift+V')
   const transcriptEndRef = useRef<HTMLDivElement>(null)
   const transcriptInputRef = useRef<HTMLTextAreaElement>(null)
   const pendingPasteRef = useRef<string | null>(null)
@@ -68,39 +71,6 @@ function App() {
   useEffect(() => {
     checkDailyLogin()
   }, [checkDailyLogin])
-
-  // Check if API key is configured on mount
-  useEffect(() => {
-    if (!isElectron) {
-      setInitError('This app requires Electron. The preload script may not have loaded correctly.')
-      return
-    }
-    window.electronAPI
-      .hasApiKey()
-      .then(setHasApiKey)
-      .catch((err) => {
-        console.error('Failed to check API key:', err)
-        setInitError('Failed to initialize: ' + err.message)
-      })
-    // Load formatting setting and shortcuts
-    window.electronAPI
-      .getPromptFormattingSettings()
-      .then((settings) => {
-        setFormattingEnabled(settings.enabled)
-      })
-      .catch((err) => {
-        console.error('Failed to load formatting settings:', err)
-      })
-    window.electronAPI
-      .getSettings()
-      .then((settings) => {
-        if (settings.recordHotkey) setRecordHotkey(settings.recordHotkey)
-        if (settings.pasteHotkey) setPasteHotkey(settings.pasteHotkey)
-      })
-      .catch((err) => {
-        console.error('Failed to load shortcut settings:', err)
-      })
-  }, [])
 
   // CENTRALIZED RECORDING COMPLETION - Ensures gamification is ALWAYS triggered
   const handleRecordingComplete = useCallback(
