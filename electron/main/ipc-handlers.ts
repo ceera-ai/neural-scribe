@@ -8,6 +8,25 @@ import {
   updateOverlayStatus,
 } from './overlay'
 import {
+  validateIPC,
+  AppSettingsSchema,
+  ApiKeySchema,
+  TranscriptionRecordSchema,
+  PasteToTerminalSchema,
+  PasteToTerminalWindowSchema,
+  GamificationSessionSchema,
+  GamificationAchievementSchema,
+  WordReplacementSchema,
+  WordReplacementUpdateSchema,
+  VoiceCommandTriggerSchema,
+  VoiceCommandTriggerUpdateSchema,
+  FormatPromptSchema,
+  ReformatTextSchema,
+  GenerateTitleSchema,
+  PromptFormattingSettingsSchema,
+  ErrorLogSchema,
+} from './validation'
+import {
   getSettings,
   setSettings,
   getApiKey,
@@ -98,8 +117,9 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return getSettings()
   })
 
-  ipcMain.handle('set-settings', (_, settings: Partial<AppSettings>) => {
-    setSettings(settings)
+  ipcMain.handle('set-settings', (_, settings: unknown) => {
+    const validated = validateIPC(AppSettingsSchema, settings, 'Invalid settings')
+    setSettings(validated)
     return getSettings()
   })
 
@@ -107,8 +127,9 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return getApiKey()
   })
 
-  ipcMain.handle('set-api-key', (_, apiKey: string) => {
-    setApiKey(apiKey)
+  ipcMain.handle('set-api-key', (_, apiKey: unknown) => {
+    const validated = validateIPC(ApiKeySchema, apiKey, 'Invalid API key')
+    setApiKey(validated)
     return true
   })
 
@@ -121,8 +142,9 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return getHistory()
   })
 
-  ipcMain.handle('save-transcription', (_, record: TranscriptionRecord) => {
-    saveTranscription(record)
+  ipcMain.handle('save-transcription', (_, record: unknown) => {
+    const validated = validateIPC(TranscriptionRecordSchema, record, 'Invalid transcription record')
+    saveTranscription(validated as TranscriptionRecord)
     // Notify all renderer windows that history changed
     BrowserWindow.getAllWindows().forEach((win) => {
       win.webContents.send('history-changed')
@@ -211,8 +233,13 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return SUPPORTED_TERMINALS
   })
 
-  ipcMain.handle('paste-to-terminal', async (_, text: string, bundleId: string) => {
-    return pasteToTerminal(text, bundleId)
+  ipcMain.handle('paste-to-terminal', async (_, text: unknown, bundleId: unknown) => {
+    const validated = validateIPC(
+      PasteToTerminalSchema,
+      { text, bundleId },
+      'Invalid paste to terminal params'
+    )
+    return pasteToTerminal(validated.text, validated.bundleId)
   })
 
   // Terminal window operations
@@ -222,8 +249,13 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
 
   ipcMain.handle(
     'paste-to-terminal-window',
-    async (_, text: string, bundleId: string, windowName: string) => {
-      return pasteToTerminalWindow(text, bundleId, windowName)
+    async (_, text: unknown, bundleId: unknown, windowName: unknown) => {
+      const validated = validateIPC(
+        PasteToTerminalWindowSchema,
+        { text, bundleId, windowName },
+        'Invalid paste to terminal window params'
+      )
+      return pasteToTerminalWindow(validated.text, validated.bundleId, validated.windowName)
     }
   )
 
@@ -236,13 +268,26 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return getReplacements()
   })
 
-  ipcMain.handle('add-replacement', (_, replacement: WordReplacement) => {
-    addReplacement(replacement)
+  ipcMain.handle('add-replacement', (_, replacement: unknown) => {
+    const validated = validateIPC(
+      WordReplacementSchema,
+      replacement,
+      'Invalid word replacement'
+    )
+    addReplacement(validated)
     return true
   })
 
-  ipcMain.handle('update-replacement', (_, id: string, updates: Partial<WordReplacement>) => {
-    updateReplacement(id, updates)
+  ipcMain.handle('update-replacement', (_, id: unknown, updates: unknown) => {
+    if (typeof id !== 'string' || !id) {
+      throw new Error('Invalid replacement ID')
+    }
+    const validated = validateIPC(
+      WordReplacementUpdateSchema,
+      updates,
+      'Invalid word replacement updates'
+    )
+    updateReplacement(id, validated)
     return true
   })
 
@@ -262,14 +307,27 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
 
   ipcMain.handle(
     'update-voice-command-trigger',
-    (_, id: string, updates: Partial<VoiceCommandTrigger>) => {
-      updateVoiceCommandTrigger(id, updates)
+    (_, id: unknown, updates: unknown) => {
+      if (typeof id !== 'string' || !id) {
+        throw new Error('Invalid voice command trigger ID')
+      }
+      const validated = validateIPC(
+        VoiceCommandTriggerUpdateSchema,
+        updates,
+        'Invalid voice command trigger updates'
+      )
+      updateVoiceCommandTrigger(id, validated)
       return true
     }
   )
 
-  ipcMain.handle('add-voice-command-trigger', (_, trigger: VoiceCommandTrigger) => {
-    addVoiceCommandTrigger(trigger)
+  ipcMain.handle('add-voice-command-trigger', (_, trigger: unknown) => {
+    const validated = validateIPC(
+      VoiceCommandTriggerSchema,
+      trigger,
+      'Invalid voice command trigger'
+    )
+    addVoiceCommandTrigger(validated)
     return true
   })
 
@@ -293,12 +351,13 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   })
 
   // Prompt formatting operations
-  ipcMain.handle('format-prompt', async (_, text: string) => {
+  ipcMain.handle('format-prompt', async (_, text: unknown) => {
+    const validated = validateIPC(FormatPromptSchema, { text }, 'Invalid format prompt params')
     const settings = getPromptFormattingSettings()
     if (!settings.enabled) {
-      return { success: true, formatted: text, skipped: true }
+      return { success: true, formatted: validated.text, skipped: true }
     }
-    const result = await formatPrompt(text, settings.instructions || undefined, settings.model)
+    const result = await formatPrompt(validated.text, settings.instructions || undefined, settings.model)
     return result
   })
 
@@ -331,16 +390,22 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return { available, version }
   })
 
-  ipcMain.handle('generate-title', async (_, text: string) => {
-    return generateTitle(text)
+  ipcMain.handle('generate-title', async (_, text: unknown) => {
+    const validated = validateIPC(GenerateTitleSchema, { text }, 'Invalid generate title params')
+    return generateTitle(validated.text)
   })
 
   // Reformat text with optional custom instructions (for reformat dialog)
-  ipcMain.handle('reformat-text', async (_, text: string, customInstructions?: string) => {
+  ipcMain.handle('reformat-text', async (_, text: unknown, customInstructions?: unknown) => {
+    const validated = validateIPC(
+      ReformatTextSchema,
+      { text, customInstructions },
+      'Invalid reformat text params'
+    )
     const settings = getPromptFormattingSettings()
     // Use custom instructions if provided, otherwise use default settings
-    const instructions = customInstructions || settings.instructions || undefined
-    const result = await formatPrompt(text, instructions, settings.model)
+    const instructions = validated.customInstructions || settings.instructions || undefined
+    const result = await formatPrompt(validated.text, instructions, settings.model)
     return result
   })
 
@@ -360,8 +425,13 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
 
   ipcMain.handle(
     'record-gamification-session',
-    (_, params: { words: number; durationMs: number }) => {
-      const result = recordGamificationSession(params.words, params.durationMs)
+    (_, params: unknown) => {
+      const validated = validateIPC(
+        GamificationSessionSchema,
+        params,
+        'Invalid gamification session params'
+      )
+      const result = recordGamificationSession(validated.words, validated.durationMs)
       // Notify all windows that gamification data changed
       BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send('gamification-data-changed')
@@ -372,11 +442,16 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
 
   ipcMain.handle(
     'unlock-gamification-achievement',
-    (_, params: { achievementId: string; xpReward: number }) => {
-      unlockGamificationAchievement(params.achievementId, params.xpReward)
+    (_, params: unknown) => {
+      const validated = validateIPC(
+        GamificationAchievementSchema,
+        params,
+        'Invalid gamification achievement params'
+      )
+      unlockGamificationAchievement(validated.achievementId, validated.xpReward)
       // Notify all windows that an achievement was unlocked
       BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send('achievement-unlocked', params.achievementId)
+        win.webContents.send('achievement-unlocked', validated.achievementId)
       })
       return true
     }
@@ -403,13 +478,14 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   })
 
   // Error logging
-  ipcMain.on('log-error', (_, error: { message: string; stack: string; componentStack?: string }) => {
-    console.error('[ErrorBoundary] Renderer error:', error.message)
-    if (error.stack) {
-      console.error('[ErrorBoundary] Stack:', error.stack)
+  ipcMain.on('log-error', (_, error: unknown) => {
+    const validated = validateIPC(ErrorLogSchema, error, 'Invalid error log data')
+    console.error('[ErrorBoundary] Renderer error:', validated.message)
+    if (validated.stack) {
+      console.error('[ErrorBoundary] Stack:', validated.stack)
     }
-    if (error.componentStack) {
-      console.error('[ErrorBoundary] Component stack:', error.componentStack)
+    if (validated.componentStack) {
+      console.error('[ErrorBoundary] Component stack:', validated.componentStack)
     }
   })
 }
