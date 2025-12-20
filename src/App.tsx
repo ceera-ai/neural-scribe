@@ -4,23 +4,20 @@ import { useMicrophoneDevices } from './hooks/useMicrophoneDevices'
 import { useTranscriptionHistory } from './hooks/useTranscriptionHistory'
 import { useGamification } from './hooks/useGamification'
 import { useAudioAnalyzer } from './hooks/useAudioAnalyzer'
-import { MicrophoneSelector } from './components/MicrophoneSelector'
 import { HistoryPanel } from './components/HistoryPanel'
 import { ApiKeySetup } from './components/ApiKeySetup'
-import { ReplacementsModal } from './components/ReplacementsModal'
-import { SettingsModal } from './components/SettingsModal'
 import { AIOrb } from './components/orb/AIOrb'
 import type { OrbState } from './components/orb/AIOrb'
 import { ScanLines } from './components/cyberpunk/ScanLines'
 import { GlitchText } from './components/cyberpunk/GlitchText'
 import { AchievementPopup } from './components/gamification/AchievementPopup'
-import { GamificationModal } from './components/gamification/GamificationModal'
 import { RecordingControls } from './components/controls/RecordingControls'
 import { TranscriptDisplay } from './components/transcript/TranscriptDisplay'
 import { AppHeader } from './components/header/AppHeader'
 import { PasteButton } from './components/paste/PasteButton'
 import { ToastNotifications } from './components/notifications/ToastNotifications'
 import { HotkeyFooter } from './components/footer/HotkeyFooter'
+import { ModalsContainer } from './components/modals/ModalsContainer'
 import './App.css'
 
 // Check if running in Electron
@@ -664,52 +661,26 @@ function App() {
         )}
       </div>
 
-      {/* Context Menu */}
-      {contextMenu && (
-        <div
-          className="context-menu"
-          style={{
-            position: 'fixed',
-            top: contextMenu.y,
-            left: contextMenu.x,
-          }}
-        >
-          <button onClick={handleAddToReplacements} className="context-menu-item">
-            Add "
-            {contextMenu.text.length > 20
-              ? contextMenu.text.slice(0, 20) + '...'
-              : contextMenu.text}
-            " to replacements
-          </button>
-        </div>
-      )}
-
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
+      {/* Modals */}
+      <ModalsContainer
+        contextMenu={contextMenu}
+        onAddToReplacements={handleAddToReplacements}
+        showSettings={showSettings}
+        onCloseSettings={() => setShowSettings(false)}
         onOpenReplacements={() => {
           setShowSettings(false)
           setShowReplacements(true)
         }}
         voiceCommandsEnabled={voiceCommandsEnabled}
         onVoiceCommandsEnabledChange={setVoiceCommandsEnabled}
-      />
-
-      {/* Replacements Modal */}
-      <ReplacementsModal
-        isOpen={showReplacements}
-        onClose={() => {
+        showReplacements={showReplacements}
+        onCloseReplacements={() => {
           setShowReplacements(false)
           setReplacementInitialText(undefined)
         }}
-        initialFromText={replacementInitialText}
-      />
-
-      {/* Gamification Stats Modal */}
-      <GamificationModal
-        isOpen={showGamification}
-        onClose={() => setShowGamification(false)}
+        replacementInitialText={replacementInitialText}
+        showGamification={showGamification}
+        onCloseGamification={() => setShowGamification(false)}
         stats={stats}
         level={level}
         xpProgress={xpProgress}
