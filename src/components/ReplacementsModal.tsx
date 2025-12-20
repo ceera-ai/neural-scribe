@@ -1,43 +1,43 @@
-import { useState, useEffect } from 'react';
-import type { WordReplacement } from '../types/electron';
-import './ReplacementsModal.css';
+import { useState, useEffect } from 'react'
+import type { WordReplacement } from '../types/electron'
+import './ReplacementsModal.css'
 
 interface ReplacementsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  initialFromText?: string;
+  isOpen: boolean
+  onClose: () => void
+  initialFromText?: string
 }
 
 export function ReplacementsModal({ isOpen, onClose, initialFromText }: ReplacementsModalProps) {
-  const [replacements, setReplacements] = useState<WordReplacement[]>([]);
-  const [newFrom, setNewFrom] = useState('');
-  const [newTo, setNewTo] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [replacements, setReplacements] = useState<WordReplacement[]>([])
+  const [newFrom, setNewFrom] = useState('')
+  const [newTo, setNewTo] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     if (isOpen) {
-      loadReplacements();
-      setNewFrom(initialFromText || '');
-      setNewTo('');
-      setSearchQuery('');
+      loadReplacements()
+      setNewFrom(initialFromText || '')
+      setNewTo('')
+      setSearchQuery('')
     }
-  }, [isOpen, initialFromText]);
+  }, [isOpen, initialFromText])
 
   const loadReplacements = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const data = await window.electronAPI.getReplacements();
-      setReplacements(data);
+      const data = await window.electronAPI.getReplacements()
+      setReplacements(data)
     } catch (err) {
-      console.error('Failed to load replacements:', err);
+      console.error('Failed to load replacements:', err)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleAdd = async () => {
-    if (!newFrom.trim() || !newTo.trim()) return;
+    if (!newFrom.trim() || !newTo.trim()) return
 
     const replacement: WordReplacement = {
       id: Date.now().toString(),
@@ -45,48 +45,55 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
       to: newTo.trim(),
       caseSensitive: false,
       wholeWord: true,
-      enabled: true
-    };
+      enabled: true,
+    }
 
-    await window.electronAPI.addReplacement(replacement);
-    setReplacements([...replacements, replacement]);
-    setNewFrom('');
-    setNewTo('');
-  };
+    await window.electronAPI.addReplacement(replacement)
+    setReplacements([...replacements, replacement])
+    setNewFrom('')
+    setNewTo('')
+  }
 
   const handleToggle = async (id: string, enabled: boolean) => {
-    await window.electronAPI.updateReplacement(id, { enabled });
-    setReplacements(replacements.map(r =>
-      r.id === id ? { ...r, enabled } : r
-    ));
-  };
+    await window.electronAPI.updateReplacement(id, { enabled })
+    setReplacements(replacements.map((r) => (r.id === id ? { ...r, enabled } : r)))
+  }
 
   const handleDelete = async (id: string) => {
-    await window.electronAPI.deleteReplacement(id);
-    setReplacements(replacements.filter(r => r.id !== id));
-  };
+    await window.electronAPI.deleteReplacement(id)
+    setReplacements(replacements.filter((r) => r.id !== id))
+  }
 
-  const filteredReplacements = replacements.filter(r => {
-    if (!searchQuery.trim()) return true;
-    const query = searchQuery.toLowerCase();
-    return r.from.toLowerCase().includes(query) || r.to.toLowerCase().includes(query);
-  });
+  const filteredReplacements = replacements.filter((r) => {
+    if (!searchQuery.trim()) return true
+    const query = searchQuery.toLowerCase()
+    return r.from.toLowerCase().includes(query) || r.to.toLowerCase().includes(query)
+  })
 
-  const enabledCount = replacements.filter(r => r.enabled).length;
+  const enabledCount = replacements.filter((r) => r.enabled).length
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
     <div className="cyber-modal-overlay" onClick={onClose}>
-      <div className="cyber-replacements-modal" onClick={e => e.stopPropagation()}>
+      <div className="cyber-replacements-modal" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="cyber-modal-header">
           <div className="modal-title-section">
             <h2>Word Replacements</h2>
-            <span className="replacements-count">{enabledCount}/{replacements.length} active</span>
+            <span className="replacements-count">
+              {enabledCount}/{replacements.length} active
+            </span>
           </div>
           <button className="cyber-close-btn" onClick={onClose}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
@@ -94,9 +101,7 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
 
         {/* Add New Section */}
         <div className="replacements-add-section">
-          <p className="section-description">
-            Auto-correct misheard words after recording stops
-          </p>
+          <p className="section-description">Auto-correct misheard words after recording stops</p>
           <div className="add-replacement-row">
             <div className="input-group">
               <label className="input-label">Misheard</label>
@@ -104,13 +109,20 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
                 type="text"
                 placeholder="e.g., claude"
                 value={newFrom}
-                onChange={e => setNewFrom(e.target.value)}
+                onChange={(e) => setNewFrom(e.target.value)}
                 className="cyber-input"
-                onKeyDown={e => e.key === 'Enter' && handleAdd()}
+                onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
               />
             </div>
             <div className="arrow-divider">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </div>
@@ -120,9 +132,9 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
                 type="text"
                 placeholder="e.g., Claude"
                 value={newTo}
-                onChange={e => setNewTo(e.target.value)}
+                onChange={(e) => setNewTo(e.target.value)}
                 className="cyber-input"
-                onKeyDown={e => e.key === 'Enter' && handleAdd()}
+                onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
               />
             </div>
             <button
@@ -130,7 +142,14 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
               disabled={!newFrom.trim() || !newTo.trim()}
               className="cyber-add-btn"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
                 <path d="M12 5v14M5 12h14" />
               </svg>
               Add
@@ -141,7 +160,15 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
         {/* Search */}
         {replacements.length > 5 && (
           <div className="replacements-search">
-            <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              className="search-icon"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <circle cx="11" cy="11" r="8" />
               <path d="M21 21l-4.35-4.35" />
             </svg>
@@ -149,7 +176,7 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
               type="text"
               placeholder="Search replacements..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="cyber-search-input"
             />
           </div>
@@ -179,7 +206,7 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
             </div>
           ) : (
             <div className="replacements-list">
-              {filteredReplacements.map(replacement => (
+              {filteredReplacements.map((replacement) => (
                 <div
                   key={replacement.id}
                   className={`replacement-card ${!replacement.enabled ? 'disabled' : ''}`}
@@ -188,7 +215,7 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
                     <input
                       type="checkbox"
                       checked={replacement.enabled}
-                      onChange={e => handleToggle(replacement.id, e.target.checked)}
+                      onChange={(e) => handleToggle(replacement.id, e.target.checked)}
                     />
                     <span className="toggle-track">
                       <span className="toggle-thumb" />
@@ -197,7 +224,15 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
 
                   <div className="replacement-content">
                     <span className="replacement-from">{replacement.from}</span>
-                    <svg className="replacement-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg
+                      className="replacement-arrow"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
                       <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
                     <span className="replacement-to">{replacement.to}</span>
@@ -208,7 +243,14 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
                     className="replacement-delete-btn"
                     title="Delete replacement"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
                       <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" />
                     </svg>
                   </button>
@@ -220,11 +262,9 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
 
         {/* Footer */}
         <div className="replacements-footer">
-          <span className="footer-tip">
-            Tip: Use whole words for best results
-          </span>
+          <span className="footer-tip">Tip: Use whole words for best results</span>
         </div>
       </div>
     </div>
-  );
+  )
 }

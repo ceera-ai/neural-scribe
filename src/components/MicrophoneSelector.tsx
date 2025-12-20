@@ -1,8 +1,8 @@
-import { useMicrophoneDevices } from '../hooks/useMicrophoneDevices';
-import './MicrophoneSelector.css';
+import { useMicrophoneDevices } from '../hooks/useMicrophoneDevices'
+import './MicrophoneSelector.css'
 
 interface MicrophoneSelectorProps {
-  disabled?: boolean;
+  disabled?: boolean
 }
 
 export function MicrophoneSelector({ disabled }: MicrophoneSelectorProps) {
@@ -12,8 +12,8 @@ export function MicrophoneSelector({ disabled }: MicrophoneSelectorProps) {
     setSelectedDeviceId,
     permissionGranted,
     permissionError,
-    refreshDevices
-  } = useMicrophoneDevices();
+    refreshDevices,
+  } = useMicrophoneDevices()
 
   if (permissionError) {
     return (
@@ -24,7 +24,7 @@ export function MicrophoneSelector({ disabled }: MicrophoneSelectorProps) {
           Retry
         </button>
       </div>
-    );
+    )
   }
 
   if (!permissionGranted) {
@@ -33,12 +33,14 @@ export function MicrophoneSelector({ disabled }: MicrophoneSelectorProps) {
         <label className="mic-label">Microphone</label>
         <div className="mic-loading">Requesting microphone access...</div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="mic-selector-container">
-      <label className="mic-label" htmlFor="mic-select">Microphone</label>
+      <label className="mic-label" htmlFor="mic-select">
+        Microphone
+      </label>
       <select
         id="mic-select"
         value={selectedDeviceId || ''}
@@ -54,5 +56,5 @@ export function MicrophoneSelector({ disabled }: MicrophoneSelectorProps) {
         ))}
       </select>
     </div>
-  );
+  )
 }

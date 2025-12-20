@@ -53,18 +53,15 @@
   position: absolute;
   inset: -20%;
   border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    var(--orb-color-primary) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle, var(--orb-color-primary) 0%, transparent 70%);
   opacity: 0.3;
   filter: blur(20px);
   animation: orb-glow-pulse 4s ease-in-out infinite;
 }
 
 @keyframes orb-glow-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.2;
     transform: scale(1);
   }
@@ -108,18 +105,30 @@
 }
 
 @keyframes ring-rotate-1 {
-  from { transform: rotateX(70deg) rotateY(20deg) rotateZ(0deg); }
-  to { transform: rotateX(70deg) rotateY(20deg) rotateZ(360deg); }
+  from {
+    transform: rotateX(70deg) rotateY(20deg) rotateZ(0deg);
+  }
+  to {
+    transform: rotateX(70deg) rotateY(20deg) rotateZ(360deg);
+  }
 }
 
 @keyframes ring-rotate-2 {
-  from { transform: rotateX(60deg) rotateY(-30deg) rotateZ(0deg); }
-  to { transform: rotateX(60deg) rotateY(-30deg) rotateZ(360deg); }
+  from {
+    transform: rotateX(60deg) rotateY(-30deg) rotateZ(0deg);
+  }
+  to {
+    transform: rotateX(60deg) rotateY(-30deg) rotateZ(360deg);
+  }
 }
 
 @keyframes ring-rotate-3 {
-  from { transform: rotateX(80deg) rotateY(45deg) rotateZ(0deg); }
-  to { transform: rotateX(80deg) rotateY(45deg) rotateZ(360deg); }
+  from {
+    transform: rotateX(80deg) rotateY(45deg) rotateZ(0deg);
+  }
+  to {
+    transform: rotateX(80deg) rotateY(45deg) rotateZ(360deg);
+  }
 }
 
 /* ==================== PARTICLES ==================== */
@@ -153,7 +162,8 @@
     opacity: 0.4;
   }
   100% {
-    transform: rotate(calc(var(--particle-angle) + 360deg)) translateX(var(--particle-distance)) scale(1);
+    transform: rotate(calc(var(--particle-angle) + 360deg)) translateX(var(--particle-distance))
+      scale(1);
     opacity: 0.8;
   }
 }
@@ -200,17 +210,14 @@
   left: 20%;
   width: 25%;
   height: 20%;
-  background: radial-gradient(
-    ellipse,
-    rgba(255, 255, 255, 0.8) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(ellipse, rgba(255, 255, 255, 0.8) 0%, transparent 70%);
   border-radius: 50%;
   filter: blur(2px);
 }
 
 @keyframes core-breathe {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {
@@ -219,7 +226,8 @@
 }
 
 @keyframes core-inner-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.6;
     transform: scale(1);
   }
@@ -266,7 +274,9 @@
   /* Subtle glow driven by audio level */
   opacity: calc(0.15 + var(--audio-level, 0) * 0.2);
   transform: scale(calc(1 + var(--audio-level, 0) * 0.1));
-  transition: opacity 0.1s ease-out, transform 0.1s ease-out;
+  transition:
+    opacity 0.1s ease-out,
+    transform 0.1s ease-out;
   animation: none;
 }
 
@@ -288,7 +298,8 @@
 }
 
 @keyframes recording-glow-pulse {
-  0%, 100% {
+  0%,
+  100% {
     filter: blur(20px);
   }
   50% {
@@ -297,7 +308,8 @@
 }
 
 @keyframes recording-core-pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {
@@ -334,13 +346,7 @@
   box-shadow: 0 0 3px var(--orb-color-primary);
   transition: height 0.05s ease-out;
   /* Create arc shape by adjusting vertical position */
-  transform: translateY(
-    calc(
-      -1 * (
-        25px * (1 - pow(abs(var(--bar-index) - 11.5) / 12, 2))
-      )
-    )
-  );
+  transform: translateY(calc(-1 * (25px * (1 - pow(abs(var(--bar-index) - 11.5) / 12, 2)))));
 }
 
 /* Fallback arc shape using nth-child for browsers without pow() */
@@ -450,7 +456,9 @@
 }
 
 @keyframes spinner-rotate {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ==================== STATE: SUCCESS ==================== */
@@ -472,9 +480,15 @@
 }
 
 @keyframes success-pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes success-burst {
@@ -509,14 +523,33 @@
 }
 
 @keyframes error-shake {
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-  20%, 40%, 60%, 80% { transform: translateX(5px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-5px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(5px);
+  }
 }
 
 @keyframes error-flash {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* ==================== REDUCED MOTION ==================== */

@@ -155,7 +155,8 @@
 }
 
 @keyframes button-glow-cyan {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow:
       0 0 10px rgba(0, 255, 255, 0.3),
       inset 0 0 20px rgba(0, 255, 255, 0.1);
@@ -169,7 +170,8 @@
 }
 
 @keyframes button-glow-magenta {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow:
       0 0 10px rgba(255, 0, 255, 0.2),
       inset 0 0 20px rgba(255, 0, 255, 0.05);
@@ -204,7 +206,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Hover Glitch Effect */
@@ -213,7 +217,8 @@
 }
 
 @keyframes button-glitch {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
     transform: translate(0);
   }

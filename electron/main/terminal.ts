@@ -63,7 +63,10 @@ export async function getRunningTerminals(): Promise<TerminalApp[]> {
     }
   }
 
-  console.log(`[Terminal] Found ${running.length} running terminals:`, running.map(t => t.name))
+  console.log(
+    `[Terminal] Found ${running.length} running terminals:`,
+    running.map((t) => t.name)
+  )
   return running
 }
 
@@ -89,7 +92,7 @@ end tell
     if (!trimmed || trimmed === '') return []
 
     // AppleScript returns comma-separated list
-    return trimmed.split(', ').filter(n => n.length > 0 && n !== 'missing value')
+    return trimmed.split(', ').filter((n) => n.length > 0 && n !== 'missing value')
   } catch {
     return []
   }
@@ -121,7 +124,7 @@ export async function getTerminalWindows(): Promise<TerminalWindow[]> {
           bundleId: terminal.bundleId,
           windowName: name,
           windowIndex: index + 1,
-          displayName: `${terminal.displayName}: ${shortName}`
+          displayName: `${terminal.displayName}: ${shortName}`,
         })
       })
     } catch (err) {
@@ -149,7 +152,7 @@ export async function pasteToTerminalWindow(
 
   try {
     // Get the app name from bundle ID
-    const terminal = SUPPORTED_TERMINALS.find(t => t.bundleId === bundleId)
+    const terminal = SUPPORTED_TERMINALS.find((t) => t.bundleId === bundleId)
     const appName = terminal?.name || 'Terminal'
 
     console.log(`[Paste] Attempting to paste to ${appName} window: "${windowName}"`)
@@ -208,9 +211,11 @@ end tell
       return { success: true, needsPermission: false, copied: true }
     } catch (pasteError: any) {
       console.error('[Paste] Keystroke error:', pasteError.stderr || pasteError.message)
-      if (pasteError.stderr?.includes('not allowed to send keystrokes') ||
-          pasteError.stderr?.includes('1002') ||
-          pasteError.stderr?.includes('not allowed assistive access')) {
+      if (
+        pasteError.stderr?.includes('not allowed to send keystrokes') ||
+        pasteError.stderr?.includes('1002') ||
+        pasteError.stderr?.includes('not allowed assistive access')
+      ) {
         return { success: false, needsPermission: true, copied: true }
       }
       // Even if keystroke failed, text is in clipboard
@@ -229,7 +234,10 @@ end tell
  * Paste text into a specific terminal application
  * Returns: { success: boolean, needsPermission: boolean, copied: boolean }
  */
-export async function pasteToTerminal(text: string, bundleId: string): Promise<{ success: boolean; needsPermission: boolean; copied: boolean }> {
+export async function pasteToTerminal(
+  text: string,
+  bundleId: string
+): Promise<{ success: boolean; needsPermission: boolean; copied: boolean }> {
   // Try to acquire paste lock
   if (!acquirePasteLock(text)) {
     return { success: false, needsPermission: false, copied: false }
@@ -249,7 +257,7 @@ export async function pasteToTerminal(text: string, bundleId: string): Promise<{
     await execAsync(`osascript -e '${copyScript}'`)
 
     // Small delay to ensure clipboard is set
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 100))
 
     // Try to activate the app and paste
     try {
@@ -266,8 +274,10 @@ end tell
       return { success: true, needsPermission: false, copied: true }
     } catch (pasteError: any) {
       // Check if it's a permission error
-      if (pasteError.stderr?.includes('not allowed to send keystrokes') ||
-          pasteError.stderr?.includes('1002')) {
+      if (
+        pasteError.stderr?.includes('not allowed to send keystrokes') ||
+        pasteError.stderr?.includes('1002')
+      ) {
         // At least activate the window
         try {
           await execAsync(`osascript -e 'tell application id "${bundleId}" to activate'`)
@@ -349,7 +359,12 @@ function releasePasteLock(): void {
  */
 export async function pasteToLastActiveTerminal(
   text: string
-): Promise<{ success: boolean; needsPermission: boolean; copied: boolean; targetApp: string | null }> {
+): Promise<{
+  success: boolean
+  needsPermission: boolean
+  copied: boolean
+  targetApp: string | null
+}> {
   // Try to acquire paste lock
   if (!acquirePasteLock(text)) {
     return { success: false, needsPermission: false, copied: false, targetApp: null }
@@ -404,9 +419,11 @@ end tell
       return { success: true, needsPermission: false, copied: true, targetApp: appName }
     } catch (pasteError: any) {
       console.error('[Paste] Keystroke error:', pasteError.stderr || pasteError.message)
-      if (pasteError.stderr?.includes('not allowed to send keystrokes') ||
-          pasteError.stderr?.includes('1002') ||
-          pasteError.stderr?.includes('not allowed assistive access')) {
+      if (
+        pasteError.stderr?.includes('not allowed to send keystrokes') ||
+        pasteError.stderr?.includes('1002') ||
+        pasteError.stderr?.includes('not allowed assistive access')
+      ) {
         return { success: false, needsPermission: true, copied: true, targetApp: appName }
       }
       return { success: false, needsPermission: true, copied: true, targetApp: appName }

@@ -80,7 +80,8 @@
 }
 
 @keyframes stat-pulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: none;
   }
   50% {

@@ -1,5 +1,12 @@
 import { ipcMain, clipboard, BrowserWindow } from 'electron'
-import { updateAudioLevel, updateFrequencyData, updateRecordingTime, updateVoiceCommands, updateTranscriptPreview, updateOverlayStatus } from './overlay'
+import {
+  updateAudioLevel,
+  updateFrequencyData,
+  updateRecordingTime,
+  updateVoiceCommands,
+  updateTranscriptPreview,
+  updateOverlayStatus,
+} from './overlay'
 import {
   getSettings,
   setSettings,
@@ -35,31 +42,35 @@ import {
   AppSettings,
   WordReplacement,
   VoiceCommandTrigger,
-  GamificationData
+  GamificationData,
 } from './store'
 import {
   formatPrompt,
   generateTitle,
   isClaudeCliAvailable,
   getClaudeCliVersion,
-  DEFAULT_FORMATTING_INSTRUCTIONS
+  DEFAULT_FORMATTING_INSTRUCTIONS,
 } from './prompt-formatter'
-import { getRunningTerminals, getTerminalWindows, pasteToTerminal, pasteToTerminalWindow, pasteToLastActiveTerminal, SUPPORTED_TERMINALS } from './terminal'
+import {
+  getRunningTerminals,
+  getTerminalWindows,
+  pasteToTerminal,
+  pasteToTerminalWindow,
+  pasteToLastActiveTerminal,
+  SUPPORTED_TERMINALS,
+} from './terminal'
 import { updateHotkey } from './hotkeys'
 
 let onRecordingStateChange: ((isRecording: boolean) => void) | null = null
 
 async function fetchScribeToken(apiKey: string): Promise<string> {
-  const response = await fetch(
-    'https://api.elevenlabs.io/v1/single-use-token/realtime_scribe',
-    {
-      method: 'POST',
-      headers: {
-        'xi-api-key': apiKey,
-        'Content-Type': 'application/json'
-      }
-    }
-  )
+  const response = await fetch('https://api.elevenlabs.io/v1/single-use-token/realtime_scribe', {
+    method: 'POST',
+    headers: {
+      'xi-api-key': apiKey,
+      'Content-Type': 'application/json',
+    },
+  })
 
   if (!response.ok) {
     const errorText = await response.text()
@@ -113,7 +124,7 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   ipcMain.handle('save-transcription', (_, record: TranscriptionRecord) => {
     saveTranscription(record)
     // Notify all renderer windows that history changed
-    BrowserWindow.getAllWindows().forEach(win => {
+    BrowserWindow.getAllWindows().forEach((win) => {
       win.webContents.send('history-changed')
     })
     return true
@@ -122,7 +133,7 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   ipcMain.handle('delete-transcription', (_, id: string) => {
     deleteTranscription(id)
     // Notify all renderer windows that history changed
-    BrowserWindow.getAllWindows().forEach(win => {
+    BrowserWindow.getAllWindows().forEach((win) => {
       win.webContents.send('history-changed')
     })
     return true
@@ -131,7 +142,7 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   ipcMain.handle('clear-history', () => {
     clearHistory()
     // Notify all renderer windows that history changed
-    BrowserWindow.getAllWindows().forEach(win => {
+    BrowserWindow.getAllWindows().forEach((win) => {
       win.webContents.send('history-changed')
     })
     return true
@@ -174,17 +185,20 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   })
 
   // Voice commands from renderer (for overlay display)
-  ipcMain.on('voice-commands-update', (_, commands: { send: string[], clear: string[], cancel: string[] }) => {
-    updateVoiceCommands(commands)
-  })
+  ipcMain.on(
+    'voice-commands-update',
+    (_, commands: { send: string[]; clear: string[]; cancel: string[] }) => {
+      updateVoiceCommands(commands)
+    }
+  )
 
   // Transcript preview from renderer (for overlay display)
-  ipcMain.on('transcript-preview', (_, data: { text: string, wordCount: number }) => {
+  ipcMain.on('transcript-preview', (_, data: { text: string; wordCount: number }) => {
     updateTranscriptPreview(data.text, data.wordCount)
   })
 
   // Overlay status from renderer
-  ipcMain.on('overlay-status', (_, status: { connected: boolean, formattingEnabled: boolean }) => {
+  ipcMain.on('overlay-status', (_, status: { connected: boolean; formattingEnabled: boolean }) => {
     updateOverlayStatus(status)
   })
 
@@ -206,9 +220,12 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return getTerminalWindows()
   })
 
-  ipcMain.handle('paste-to-terminal-window', async (_, text: string, bundleId: string, windowName: string) => {
-    return pasteToTerminalWindow(text, bundleId, windowName)
-  })
+  ipcMain.handle(
+    'paste-to-terminal-window',
+    async (_, text: string, bundleId: string, windowName: string) => {
+      return pasteToTerminalWindow(text, bundleId, windowName)
+    }
+  )
 
   ipcMain.handle('paste-to-last-active-terminal', async (_, text: string) => {
     return pasteToLastActiveTerminal(text)
@@ -243,10 +260,13 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return getVoiceCommandTriggers()
   })
 
-  ipcMain.handle('update-voice-command-trigger', (_, id: string, updates: Partial<VoiceCommandTrigger>) => {
-    updateVoiceCommandTrigger(id, updates)
-    return true
-  })
+  ipcMain.handle(
+    'update-voice-command-trigger',
+    (_, id: string, updates: Partial<VoiceCommandTrigger>) => {
+      updateVoiceCommandTrigger(id, updates)
+      return true
+    }
+  )
 
   ipcMain.handle('add-voice-command-trigger', (_, trigger: VoiceCommandTrigger) => {
     addVoiceCommandTrigger(trigger)
@@ -278,11 +298,7 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     if (!settings.enabled) {
       return { success: true, formatted: text, skipped: true }
     }
-    const result = await formatPrompt(
-      text,
-      settings.instructions || undefined,
-      settings.model
-    )
+    const result = await formatPrompt(text, settings.instructions || undefined, settings.model)
     return result
   })
 
@@ -336,35 +352,41 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   ipcMain.handle('save-gamification-data', (_, data: Partial<GamificationData>) => {
     saveGamificationData(data)
     // Notify all windows that gamification data changed
-    BrowserWindow.getAllWindows().forEach(win => {
+    BrowserWindow.getAllWindows().forEach((win) => {
       win.webContents.send('gamification-data-changed')
     })
     return true
   })
 
-  ipcMain.handle('record-gamification-session', (_, params: { words: number; durationMs: number }) => {
-    const result = recordGamificationSession(params.words, params.durationMs)
-    // Notify all windows that gamification data changed
-    BrowserWindow.getAllWindows().forEach(win => {
-      win.webContents.send('gamification-data-changed')
-    })
-    return result
-  })
+  ipcMain.handle(
+    'record-gamification-session',
+    (_, params: { words: number; durationMs: number }) => {
+      const result = recordGamificationSession(params.words, params.durationMs)
+      // Notify all windows that gamification data changed
+      BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send('gamification-data-changed')
+      })
+      return result
+    }
+  )
 
-  ipcMain.handle('unlock-gamification-achievement', (_, params: { achievementId: string; xpReward: number }) => {
-    unlockGamificationAchievement(params.achievementId, params.xpReward)
-    // Notify all windows that an achievement was unlocked
-    BrowserWindow.getAllWindows().forEach(win => {
-      win.webContents.send('achievement-unlocked', params.achievementId)
-    })
-    return true
-  })
+  ipcMain.handle(
+    'unlock-gamification-achievement',
+    (_, params: { achievementId: string; xpReward: number }) => {
+      unlockGamificationAchievement(params.achievementId, params.xpReward)
+      // Notify all windows that an achievement was unlocked
+      BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send('achievement-unlocked', params.achievementId)
+      })
+      return true
+    }
+  )
 
   ipcMain.handle('check-gamification-daily-login', () => {
     const result = checkDailyLoginBonus()
     if (result.bonusAwarded) {
       // Notify all windows that gamification data changed
-      BrowserWindow.getAllWindows().forEach(win => {
+      BrowserWindow.getAllWindows().forEach((win) => {
         win.webContents.send('gamification-data-changed')
       })
     }
@@ -374,7 +396,7 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   ipcMain.handle('reset-gamification-progress', () => {
     resetGamificationProgress()
     // Notify all windows that gamification was reset
-    BrowserWindow.getAllWindows().forEach(win => {
+    BrowserWindow.getAllWindows().forEach((win) => {
       win.webContents.send('gamification-data-changed')
     })
     return true

@@ -1,18 +1,18 @@
-import { useState } from 'react';
-import type { UserStats, LevelSystem, Achievement } from '../../types/gamification';
-import { XPBar } from './XPBar';
-import { AchievementBadge } from './AchievementBadge';
-import { AchievementDetailModal } from './AchievementDetailModal';
-import { downloadAchievementCard } from './AchievementShareCard';
-import './GamificationModal.css';
+import { useState } from 'react'
+import type { UserStats, LevelSystem, Achievement } from '../../types/gamification'
+import { XPBar } from './XPBar'
+import { AchievementBadge } from './AchievementBadge'
+import { AchievementDetailModal } from './AchievementDetailModal'
+import { downloadAchievementCard } from './AchievementShareCard'
+import './GamificationModal.css'
 
 interface GamificationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  stats: UserStats;
-  level: LevelSystem;
-  xpProgress: number;
-  achievements: Achievement[];
+  isOpen: boolean
+  onClose: () => void
+  stats: UserStats
+  level: LevelSystem
+  xpProgress: number
+  achievements: Achievement[]
 }
 
 export function GamificationModal({
@@ -23,19 +23,19 @@ export function GamificationModal({
   xpProgress,
   achievements,
 }: GamificationModalProps) {
-  const [activeTab, setActiveTab] = useState<'stats' | 'achievements'>('stats');
-  const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
+  const [activeTab, setActiveTab] = useState<'stats' | 'achievements'>('stats')
+  const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null)
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   const formatTime = (ms: number) => {
-    const hours = Math.floor(ms / 3600000);
-    const minutes = Math.floor((ms % 3600000) / 60000);
-    if (hours > 0) return `${hours}h ${minutes}m`;
-    return `${minutes}m`;
-  };
+    const hours = Math.floor(ms / 3600000)
+    const minutes = Math.floor((ms % 3600000) / 60000)
+    if (hours > 0) return `${hours}h ${minutes}m`
+    return `${minutes}m`
+  }
 
-  const unlockedCount = achievements.filter(a => a.unlockedAt).length;
+  const unlockedCount = achievements.filter((a) => a.unlockedAt).length
 
   return (
     <div className="gamification-modal-overlay" onClick={onClose}>
@@ -43,7 +43,14 @@ export function GamificationModal({
         <div className="gamification-modal-header">
           <h2>Your Progress</h2>
           <button className="modal-close-btn" onClick={onClose}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
@@ -80,7 +87,9 @@ export function GamificationModal({
                   </div>
                 </div>
                 <XPBar level={level} progress={xpProgress} />
-                <p className="xp-to-next">{level.xpToNextLevel.toLocaleString()} XP to next level</p>
+                <p className="xp-to-next">
+                  {level.xpToNextLevel.toLocaleString()} XP to next level
+                </p>
               </div>
 
               {/* Stats Grid */}
@@ -89,7 +98,9 @@ export function GamificationModal({
                 <div className="stats-grid">
                   <div className="stat-card">
                     <span className="stat-icon">📝</span>
-                    <span className="stat-value">{stats.totalWordsTranscribed.toLocaleString()}</span>
+                    <span className="stat-value">
+                      {stats.totalWordsTranscribed.toLocaleString()}
+                    </span>
                     <span className="stat-label">Words Transcribed</span>
                   </div>
                   <div className="stat-card">
@@ -119,7 +130,9 @@ export function GamificationModal({
                 <div className="streak-info">
                   <span className="streak-label">Last Active</span>
                   <span className="streak-value">
-                    {stats.lastActiveDate ? new Date(stats.lastActiveDate).toLocaleDateString() : 'Never'}
+                    {stats.lastActiveDate
+                      ? new Date(stats.lastActiveDate).toLocaleDateString()
+                      : 'Never'}
                   </span>
                 </div>
               </div>
@@ -150,5 +163,5 @@ export function GamificationModal({
         />
       </div>
     </div>
-  );
+  )
 }

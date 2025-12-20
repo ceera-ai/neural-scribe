@@ -1,90 +1,90 @@
-import { useMemo, useState } from 'react';
-import { useTranscriptionHistory } from '../hooks/useTranscriptionHistory';
-import { HistoryDetailModal } from './HistoryDetailModal';
-import { ReformatDialog } from './ReformatDialog';
-import type { TranscriptionRecord, FormattedVersion } from '../types/electron';
-import './HistoryPanel.css';
+import { useMemo, useState } from 'react'
+import { useTranscriptionHistory } from '../hooks/useTranscriptionHistory'
+import { HistoryDetailModal } from './HistoryDetailModal'
+import { ReformatDialog } from './ReformatDialog'
+import type { TranscriptionRecord, FormattedVersion } from '../types/electron'
+import './HistoryPanel.css'
 
 interface HistoryPanelProps {
-  onSelectTranscription?: (text: string) => void;
+  onSelectTranscription?: (text: string) => void
 }
 
 interface DayGroup {
-  dateKey: string;
-  displayDate: string;
-  records: TranscriptionRecord[];
-  totalWords: number;
-  totalDuration: number;
+  dateKey: string
+  displayDate: string
+  records: TranscriptionRecord[]
+  totalWords: number
+  totalDuration: number
 }
 
 function getDateKey(timestamp: number): string {
-  const date = new Date(timestamp);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const date = new Date(timestamp)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 function getDisplayDate(timestamp: number): string {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterday = new Date(today.getTime() - 86400000);
-  const recordDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const date = new Date(timestamp)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterday = new Date(today.getTime() - 86400000)
+  const recordDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
 
   if (recordDate.getTime() === today.getTime()) {
-    return 'Today';
+    return 'Today'
   }
   if (recordDate.getTime() === yesterday.getTime()) {
-    return 'Yesterday';
+    return 'Yesterday'
   }
   if (date.getFullYear() === now.getFullYear()) {
-    return date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
   }
-  return date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+  return date.toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
 }
 
 function formatTime(timestamp: number): string {
-  const date = new Date(timestamp);
-  return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  const date = new Date(timestamp)
+  return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
 }
 
 function formatDuration(seconds: number): string {
   if (seconds < 60) {
-    return `${seconds}s`;
+    return `${seconds}s`
   }
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
   if (secs === 0) {
-    return `${mins}m`;
+    return `${mins}m`
   }
-  return `${mins}m ${secs}s`;
+  return `${mins}m ${secs}s`
 }
 
 function truncateText(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength).trim() + '...';
+  if (text.length <= maxLength) return text
+  return text.slice(0, maxLength).trim() + '...'
 }
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 10
 
 export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
-  const {
-    history,
-    deleteTranscription,
-    copyTranscription,
-    clearHistory,
-    updateTranscription,
-  } = useTranscriptionHistory();
+  const { history, deleteTranscription, copyTranscription, clearHistory, updateTranscription } =
+    useTranscriptionHistory()
 
-  const [showingOriginal, setShowingOriginal] = useState<Set<string>>(new Set());
-  const [selectedRecord, setSelectedRecord] = useState<TranscriptionRecord | null>(null);
-  const [reformatRecord, setReformatRecord] = useState<TranscriptionRecord | null>(null);
-  const [displayLimit, setDisplayLimit] = useState(ITEMS_PER_PAGE);
+  const [showingOriginal, setShowingOriginal] = useState<Set<string>>(new Set())
+  const [selectedRecord, setSelectedRecord] = useState<TranscriptionRecord | null>(null)
+  const [reformatRecord, setReformatRecord] = useState<TranscriptionRecord | null>(null)
+  const [displayLimit, setDisplayLimit] = useState(ITEMS_PER_PAGE)
 
   const { groupedHistory, totalItems, hasMore } = useMemo(() => {
-    const groups = new Map<string, DayGroup>();
-    let itemCount = 0;
+    const groups = new Map<string, DayGroup>()
+    let itemCount = 0
 
     for (const record of history) {
-      const dateKey = getDateKey(record.timestamp);
+      const dateKey = getDateKey(record.timestamp)
 
       if (!groups.has(dateKey)) {
         groups.set(dateKey, {
@@ -93,111 +93,111 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
           records: [],
           totalWords: 0,
           totalDuration: 0,
-        });
+        })
       }
 
-      const group = groups.get(dateKey)!;
+      const group = groups.get(dateKey)!
 
       // Only add records up to the display limit
       if (itemCount < displayLimit) {
-        group.records.push(record);
-        group.totalWords += record.wordCount;
-        group.totalDuration += record.duration || 0;
+        group.records.push(record)
+        group.totalWords += record.wordCount
+        group.totalDuration += record.duration || 0
       }
-      itemCount++;
+      itemCount++
     }
 
     // Filter out empty groups
-    const filteredGroups = Array.from(groups.values()).filter(g => g.records.length > 0);
+    const filteredGroups = Array.from(groups.values()).filter((g) => g.records.length > 0)
 
     return {
       groupedHistory: filteredGroups,
       totalItems: history.length,
       hasMore: displayLimit < history.length,
-    };
-  }, [history, displayLimit]);
+    }
+  }, [history, displayLimit])
 
   const getDisplayText = (record: TranscriptionRecord): string => {
-    const isShowingOriginal = showingOriginal.has(record.id);
+    const isShowingOriginal = showingOriginal.has(record.id)
     if (isShowingOriginal && record.originalText) {
-      return record.originalText;
+      return record.originalText
     }
-    return record.text;
-  };
+    return record.text
+  }
 
   const toggleVersion = (recordId: string) => {
-    setShowingOriginal(prev => {
-      const newSet = new Set(prev);
+    setShowingOriginal((prev) => {
+      const newSet = new Set(prev)
       if (newSet.has(recordId)) {
-        newSet.delete(recordId);
+        newSet.delete(recordId)
       } else {
-        newSet.add(recordId);
+        newSet.add(recordId)
       }
-      return newSet;
-    });
-  };
+      return newSet
+    })
+  }
 
   const handleCopy = async (record: TranscriptionRecord) => {
-    await copyTranscription(getDisplayText(record));
-  };
+    await copyTranscription(getDisplayText(record))
+  }
 
   const handleSelect = (record: TranscriptionRecord) => {
-    setSelectedRecord(record);
-  };
+    setSelectedRecord(record)
+  }
 
   const handleLoadToEditor = (text: string) => {
     if (onSelectTranscription) {
-      onSelectTranscription(text);
+      onSelectTranscription(text)
     }
-  };
+  }
 
   const handleDelete = async (record: TranscriptionRecord) => {
-    await deleteTranscription(record.id);
-  };
+    await deleteTranscription(record.id)
+  }
 
   const handleDeleteFromModal = async () => {
     if (selectedRecord) {
-      await deleteTranscription(selectedRecord.id);
-      setSelectedRecord(null);
+      await deleteTranscription(selectedRecord.id)
+      setSelectedRecord(null)
     }
-  };
+  }
 
   const handleCopyText = async (text: string) => {
-    await copyTranscription(text);
-  };
+    await copyTranscription(text)
+  }
 
   const handleClearAll = async () => {
     if (window.confirm('Are you sure you want to clear all history?')) {
-      await clearHistory();
+      await clearHistory()
     }
-  };
+  }
 
   const handleStartReformat = (record: TranscriptionRecord) => {
-    setSelectedRecord(null);
-    setReformatRecord(record);
-  };
+    setSelectedRecord(null)
+    setReformatRecord(record)
+  }
 
   const handleLoadMore = () => {
-    setDisplayLimit(prev => prev + ITEMS_PER_PAGE);
-  };
+    setDisplayLimit((prev) => prev + ITEMS_PER_PAGE)
+  }
 
   const handleDoReformat = async (sourceVersionId: string, customInstructions?: string) => {
-    if (!reformatRecord) return;
+    if (!reformatRecord) return
 
-    let sourceText: string;
+    let sourceText: string
     if (sourceVersionId === 'original') {
-      sourceText = reformatRecord.originalText || reformatRecord.text;
+      sourceText = reformatRecord.originalText || reformatRecord.text
     } else if (sourceVersionId === 'formatted-legacy') {
-      sourceText = reformatRecord.formattedText || reformatRecord.text;
+      sourceText = reformatRecord.formattedText || reformatRecord.text
     } else {
-      const version = reformatRecord.formattedVersions?.find(v => v.id === sourceVersionId);
-      sourceText = version?.text || reformatRecord.text;
+      const version = reformatRecord.formattedVersions?.find((v) => v.id === sourceVersionId)
+      sourceText = version?.text || reformatRecord.text
     }
 
-    const result = await window.electronAPI.reformatText(sourceText, customInstructions);
+    const result = await window.electronAPI.reformatText(sourceText, customInstructions)
 
     if (!result.success) {
-      throw new Error(result.error || 'Formatting failed');
+      throw new Error(result.error || 'Formatting failed')
     }
 
     const newVersion: FormattedVersion = {
@@ -206,17 +206,14 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
       timestamp: Date.now(),
       sourceVersion: sourceVersionId,
       customInstructions: customInstructions,
-    };
+    }
 
     const updatedRecord: TranscriptionRecord = {
       ...reformatRecord,
       text: result.formatted,
-      formattedVersions: [
-        ...(reformatRecord.formattedVersions || []),
-        newVersion,
-      ],
+      formattedVersions: [...(reformatRecord.formattedVersions || []), newVersion],
       wasFormatted: true,
-    };
+    }
 
     if (!reformatRecord.formattedVersions && reformatRecord.formattedText) {
       updatedRecord.formattedVersions = [
@@ -227,19 +224,26 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
           sourceVersion: 'original',
         },
         newVersion,
-      ];
+      ]
     }
 
-    await updateTranscription(updatedRecord);
-    setReformatRecord(null);
-  };
+    await updateTranscription(updatedRecord)
+    setReformatRecord(null)
+  }
 
   if (history.length === 0) {
     return (
       <div className="cyber-history-panel">
         <div className="history-header">
           <h3>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
@@ -248,7 +252,14 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
         </div>
         <div className="history-empty">
           <div className="empty-orb">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
               <path d="M12 2a10 10 0 1 0 10 10" />
               <path d="M12 6v6l4 2" />
               <path d="M22 2L12 12" />
@@ -258,14 +269,21 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
           <p className="empty-hint">Your recordings will appear here</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="cyber-history-panel">
       <div className="history-header">
         <h3>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
           </svg>
@@ -273,7 +291,14 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
           <span className="history-count">{history.length}</span>
         </h3>
         <button onClick={handleClearAll} className="clear-all-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" />
           </svg>
           Clear All
@@ -293,8 +318,8 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
 
             <div className="day-items">
               {group.records.map((record) => {
-                const hasVersions = record.wasFormatted && record.originalText;
-                const isShowingOriginal = showingOriginal.has(record.id);
+                const hasVersions = record.wasFormatted && record.originalText
+                const isShowingOriginal = showingOriginal.has(record.id)
 
                 return (
                   <div
@@ -312,7 +337,14 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
                       )}
                       <div className="card-meta">
                         <span className="meta-time">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
                             <circle cx="12" cy="12" r="10" />
                             <polyline points="12 6 12 12 16 14" />
                           </svg>
@@ -323,21 +355,30 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
                           <span className="meta-duration">{formatDuration(record.duration)}</span>
                         )}
                         {hasVersions && (
-                          <span className={`version-badge ${isShowingOriginal ? 'original' : 'formatted'}`}>
+                          <span
+                            className={`version-badge ${isShowingOriginal ? 'original' : 'formatted'}`}
+                          >
                             {isShowingOriginal ? 'Original' : 'Formatted'}
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="card-actions" onClick={e => e.stopPropagation()}>
+                    <div className="card-actions" onClick={(e) => e.stopPropagation()}>
                       {hasVersions && (
                         <button
                           onClick={() => toggleVersion(record.id)}
                           className="action-btn toggle-btn"
                           title={isShowingOriginal ? 'Show formatted' : 'Show original'}
                         >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
                             <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
                           </svg>
                         </button>
@@ -347,7 +388,14 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
                         className="action-btn copy-btn"
                         title="Copy to clipboard"
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
                           <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                           <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
                         </svg>
@@ -357,13 +405,20 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
                         className="action-btn delete-btn"
                         title="Delete"
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
                           <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" />
                         </svg>
                       </button>
                     </div>
                   </div>
-                );
+                )
               })}
             </div>
           </div>
@@ -371,7 +426,14 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
 
         {hasMore && (
           <button className="load-more-btn" onClick={handleLoadMore}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <polyline points="6 9 12 15 18 9" />
             </svg>
             Load More ({totalItems - displayLimit} remaining)
@@ -400,5 +462,5 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
         />
       )}
     </div>
-  );
+  )
 }

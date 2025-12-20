@@ -50,7 +50,9 @@
 
 /* Subtle Glitch */
 @keyframes glitch-subtle {
-  0%, 95%, 100% {
+  0%,
+  95%,
+  100% {
     opacity: 0;
     transform: translate(0);
   }
@@ -73,7 +75,9 @@
 
 /* Medium Glitch */
 @keyframes glitch-medium {
-  0%, 90%, 100% {
+  0%,
+  90%,
+  100% {
     opacity: 0;
     transform: translate(0);
     clip-path: inset(0 0 0 0);
@@ -108,7 +112,8 @@
 
 /* Strong Glitch */
 @keyframes glitch-strong {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
     transform: translate(0);
   }
@@ -160,7 +165,8 @@
 }
 
 @keyframes glitch-hover {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
     transform: translate(0);
   }

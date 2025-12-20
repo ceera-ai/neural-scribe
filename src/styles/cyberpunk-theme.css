@@ -103,18 +103,24 @@ body {
 
 .neon-text-pink {
   color: var(--neon-pink);
-  text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
+  text-shadow:
+    0 0 10px var(--neon-pink),
+    0 0 20px var(--neon-pink);
 }
 
 /* Neon Border Utility Classes */
 .neon-border-cyan {
   border: 1px solid var(--neon-cyan);
-  box-shadow: var(--glow-cyan), inset 0 0 20px rgba(0, 255, 255, 0.1);
+  box-shadow:
+    var(--glow-cyan),
+    inset 0 0 20px rgba(0, 255, 255, 0.1);
 }
 
 .neon-border-magenta {
   border: 1px solid var(--neon-magenta);
-  box-shadow: var(--glow-magenta), inset 0 0 20px rgba(255, 0, 255, 0.1);
+  box-shadow:
+    var(--glow-magenta),
+    inset 0 0 20px rgba(255, 0, 255, 0.1);
 }
 
 /* Gradient Utilities */
@@ -146,7 +152,8 @@ body {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg,
+  background: linear-gradient(
+    90deg,
     transparent 0%,
     var(--neon-cyan) 20%,
     var(--neon-magenta) 80%,
@@ -181,8 +188,12 @@ body {
 }
 
 @keyframes holographic-sweep {
-  0% { transform: translateX(-50%) translateY(-50%) rotate(0deg); }
-  100% { transform: translateX(-50%) translateY(-50%) rotate(360deg); }
+  0% {
+    transform: translateX(-50%) translateY(-50%) rotate(0deg);
+  }
+  100% {
+    transform: translateX(-50%) translateY(-50%) rotate(360deg);
+  }
 }
 
 /* Scrollbar Styling */

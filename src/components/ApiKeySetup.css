@@ -88,7 +88,9 @@
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
 }
 
 .api-key-submit:hover:not(:disabled) {

@@ -86,7 +86,8 @@
   left: 0;
   height: 100%;
   width: var(--progress, 0%);
-  background: linear-gradient(90deg,
+  background: linear-gradient(
+    90deg,
     var(--neon-cyan, #00ffff) 0%,
     var(--neon-blue, #00aaff) 50%,
     var(--neon-magenta, #ff00ff) 100%
@@ -102,7 +103,8 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg,
+  background: linear-gradient(
+    90deg,
     transparent 0%,
     rgba(255, 255, 255, 0.2) 50%,
     transparent 100%
@@ -111,8 +113,12 @@
 }
 
 @keyframes xp-shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* Compact Variant */

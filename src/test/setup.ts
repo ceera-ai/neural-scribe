@@ -23,7 +23,7 @@ const mockElectronAPI = {
     pasteHotkey: 'CommandOrControl+Shift+V',
     enableAI: true,
     enableHistory: true,
-    theme: 'dark'
+    theme: 'dark',
   }),
   setSettings: vi.fn().mockResolvedValue(true),
 
@@ -34,7 +34,7 @@ const mockElectronAPI = {
     totalSessions: 0,
     currentStreak: 0,
     longestStreak: 0,
-    lastActivityDate: Date.now()
+    lastActivityDate: Date.now(),
   }),
   updateGamificationStats: vi.fn().mockResolvedValue(true),
 
@@ -50,19 +50,19 @@ const mockElectronAPI = {
   // Overlay
   showOverlay: vi.fn(),
   hideOverlay: vi.fn(),
-  updateOverlayStatus: vi.fn()
+  updateOverlayStatus: vi.fn(),
 }
 
 // Mock window.electronAPI
 global.window = {
   ...global.window,
-  electronAPI: mockElectronAPI
+  electronAPI: mockElectronAPI,
 } as any
 
 // Mock matchMedia for responsive tests
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -70,8 +70,8 @@ Object.defineProperty(window, 'matchMedia', {
     removeListener: vi.fn(),
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn()
-  }))
+    dispatchEvent: vi.fn(),
+  })),
 })
 
 // Mock IntersectionObserver

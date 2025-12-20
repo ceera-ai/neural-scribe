@@ -1,15 +1,15 @@
-import type { LevelSystem } from '../../types/gamification';
-import './XPBar.css';
+import type { LevelSystem } from '../../types/gamification'
+import './XPBar.css'
 
 interface XPBarProps {
-  level: LevelSystem;
-  progress: number; // 0-1
-  compact?: boolean;
+  level: LevelSystem
+  progress: number // 0-1
+  compact?: boolean
 }
 
 export function XPBar({ level, progress, compact = false }: XPBarProps) {
-  const xpInCurrentLevel = level.currentXP - level.xpForCurrentLevel;
-  const xpNeededForLevel = level.totalXPForNextLevel - level.xpForCurrentLevel;
+  const xpInCurrentLevel = level.currentXP - level.xpForCurrentLevel
+  const xpNeededForLevel = level.totalXPForNextLevel - level.xpForCurrentLevel
 
   return (
     <div className={`xp-bar ${compact ? 'xp-bar--compact' : ''}`}>
@@ -34,5 +34,5 @@ export function XPBar({ level, progress, compact = false }: XPBarProps) {
         <div className="xp-bar__glow" />
       </div>
     </div>
-  );
+  )
 }

@@ -163,17 +163,17 @@ const defaults: StoreSchema = {
     promptFormattingEnabled: true,
     promptFormattingInstructions: '', // Empty = use default instructions
     promptFormattingModel: 'sonnet',
-    historyLimit: 500 // Default to 500 items, 0 = no limit
+    historyLimit: 500, // Default to 500 items, 0 = no limit
   },
   history: [],
   replacements: [],
   voiceCommandTriggers: defaultVoiceCommandTriggers,
-  gamification: defaultGamificationData
+  gamification: defaultGamificationData,
 }
 
 export const store = new Store<StoreSchema>({
   defaults,
-  encryptionKey: 'elevenlabs-transcription-secure-key'
+  encryptionKey: 'elevenlabs-transcription-secure-key',
 })
 
 // Settings helpers
@@ -206,7 +206,7 @@ export function getHistoryLimit(): number {
 export function saveTranscription(record: TranscriptionRecord): void {
   const history = store.get('history')
   // Check if this is an update to an existing record
-  const existingIndex = history.findIndex(r => r.id === record.id)
+  const existingIndex = history.findIndex((r) => r.id === record.id)
   let updated: TranscriptionRecord[]
   if (existingIndex >= 0) {
     // Update existing record in place
@@ -224,7 +224,10 @@ export function saveTranscription(record: TranscriptionRecord): void {
 
 export function deleteTranscription(id: string): void {
   const history = store.get('history')
-  store.set('history', history.filter(r => r.id !== id))
+  store.set(
+    'history',
+    history.filter((r) => r.id !== id)
+  )
 }
 
 export function clearHistory(): void {
@@ -248,14 +251,18 @@ export function addReplacement(replacement: WordReplacement): void {
 
 export function updateReplacement(id: string, updates: Partial<WordReplacement>): void {
   const replacements = store.get('replacements') || []
-  store.set('replacements', replacements.map(r =>
-    r.id === id ? { ...r, ...updates } : r
-  ))
+  store.set(
+    'replacements',
+    replacements.map((r) => (r.id === id ? { ...r, ...updates } : r))
+  )
 }
 
 export function deleteReplacement(id: string): void {
   const replacements = store.get('replacements') || []
-  store.set('replacements', replacements.filter(r => r.id !== id))
+  store.set(
+    'replacements',
+    replacements.filter((r) => r.id !== id)
+  )
 }
 
 export function applyReplacements(text: string): string {
@@ -299,9 +306,10 @@ export function getVoiceCommandTriggers(): VoiceCommandTrigger[] {
 
 export function updateVoiceCommandTrigger(id: string, updates: Partial<VoiceCommandTrigger>): void {
   const triggers = store.get('voiceCommandTriggers') || []
-  store.set('voiceCommandTriggers', triggers.map(t =>
-    t.id === id ? { ...t, ...updates } : t
-  ))
+  store.set(
+    'voiceCommandTriggers',
+    triggers.map((t) => (t.id === id ? { ...t, ...updates } : t))
+  )
 }
 
 export function addVoiceCommandTrigger(trigger: VoiceCommandTrigger): void {
@@ -311,7 +319,10 @@ export function addVoiceCommandTrigger(trigger: VoiceCommandTrigger): void {
 
 export function deleteVoiceCommandTrigger(id: string): void {
   const triggers = store.get('voiceCommandTriggers') || []
-  store.set('voiceCommandTriggers', triggers.filter(t => t.id !== id))
+  store.set(
+    'voiceCommandTriggers',
+    triggers.filter((t) => t.id !== id)
+  )
 }
 
 export function resetVoiceCommandTriggers(): void {
@@ -319,12 +330,12 @@ export function resetVoiceCommandTriggers(): void {
 }
 
 // Get enabled triggers grouped by command type
-export function getEnabledVoiceCommands(): { send: string[], clear: string[], cancel: string[] } {
+export function getEnabledVoiceCommands(): { send: string[]; clear: string[]; cancel: string[] } {
   const triggers = getVoiceCommandTriggers()
   return {
-    send: triggers.filter(t => t.command === 'send' && t.enabled).map(t => t.phrase),
-    clear: triggers.filter(t => t.command === 'clear' && t.enabled).map(t => t.phrase),
-    cancel: triggers.filter(t => t.command === 'cancel' && t.enabled).map(t => t.phrase),
+    send: triggers.filter((t) => t.command === 'send' && t.enabled).map((t) => t.phrase),
+    clear: triggers.filter((t) => t.command === 'clear' && t.enabled).map((t) => t.phrase),
+    cancel: triggers.filter((t) => t.command === 'cancel' && t.enabled).map((t) => t.phrase),
   }
 }
 
@@ -338,7 +349,7 @@ export function getPromptFormattingSettings(): {
   return {
     enabled: settings.promptFormattingEnabled ?? true,
     instructions: settings.promptFormattingInstructions ?? '',
-    model: settings.promptFormattingModel ?? 'sonnet'
+    model: settings.promptFormattingModel ?? 'sonnet',
   }
 }
 
@@ -414,10 +425,13 @@ function getRankForLevel(level: number): { minLevel: number; name: string; icon:
     { minLevel: 100, name: 'Singularity', icon: '🌌' },
   ]
   const sorted = [...ranks].sort((a, b) => b.minLevel - a.minLevel)
-  return sorted.find(r => level >= r.minLevel) || ranks[0]
+  return sorted.find((r) => level >= r.minLevel) || ranks[0]
 }
 
-export function recordGamificationSession(words: number, durationMs: number): {
+export function recordGamificationSession(
+  words: number,
+  durationMs: number
+): {
   xpGained: number
   newAchievements: string[]
   leveledUp: boolean
@@ -447,10 +461,7 @@ export function recordGamificationSession(words: number, durationMs: number): {
       if (diffDays === 1) {
         // Consecutive day
         updatedStats.currentStreak = data.stats.currentStreak + 1
-        updatedStats.longestStreak = Math.max(
-          updatedStats.currentStreak,
-          data.stats.longestStreak
-        )
+        updatedStats.longestStreak = Math.max(updatedStats.currentStreak, data.stats.longestStreak)
       } else if (diffDays > 1) {
         // Streak broken
         updatedStats.currentStreak = 1
@@ -512,10 +523,7 @@ export function recordGamificationSession(words: number, durationMs: number): {
   }
 }
 
-export function unlockGamificationAchievement(
-  achievementId: string,
-  xpReward: number
-): void {
+export function unlockGamificationAchievement(achievementId: string, xpReward: number): void {
   const data = getGamificationData()
 
   // Don't unlock if already unlocked
@@ -588,16 +596,11 @@ export function checkDailyLoginBonus(): {
   if (data.stats.lastActiveDate) {
     const lastDate = new Date(data.stats.lastActiveDate)
     const todayDate = new Date(today)
-    const diffDays = Math.floor(
-      (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
-    )
+    const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
 
     if (diffDays === 1) {
       updatedStats.currentStreak = data.stats.currentStreak + 1
-      updatedStats.longestStreak = Math.max(
-        updatedStats.currentStreak,
-        data.stats.longestStreak
-      )
+      updatedStats.longestStreak = Math.max(updatedStats.currentStreak, data.stats.longestStreak)
     } else if (diffDays > 1) {
       updatedStats.currentStreak = 1
     }

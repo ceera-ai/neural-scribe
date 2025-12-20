@@ -111,7 +111,7 @@ export async function formatPrompt(
     const { stdout, stderr } = await execAsync(command, {
       timeout: 60000, // 60 second timeout
       maxBuffer: 1024 * 1024, // 1MB buffer
-      env: { ...process.env, FORCE_COLOR: '0' } // Disable color output
+      env: { ...process.env, FORCE_COLOR: '0' }, // Disable color output
     })
 
     const elapsed = Date.now() - startTime
@@ -149,7 +149,9 @@ export async function formatPrompt(
  * Generate a short title for a transcription
  * Uses haiku for speed since this is just a short summary
  */
-export async function generateTitle(text: string): Promise<{ success: boolean; title: string; error?: string }> {
+export async function generateTitle(
+  text: string
+): Promise<{ success: boolean; title: string; error?: string }> {
   try {
     if (!text.trim()) {
       return { success: false, title: '', error: 'Empty text' }
@@ -172,7 +174,7 @@ export async function generateTitle(text: string): Promise<{ success: boolean; t
     const { stdout, stderr } = await execAsync(command, {
       timeout: 15000, // 15 second timeout for title generation
       maxBuffer: 1024 * 1024,
-      env: { ...process.env, FORCE_COLOR: '0' }
+      env: { ...process.env, FORCE_COLOR: '0' },
     })
 
     const elapsed = Date.now() - startTime

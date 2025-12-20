@@ -1,17 +1,21 @@
-import type { Achievement } from '../../types/gamification';
-import { getRarityColor } from '../../types/gamification';
-import './AchievementBadge.css';
+import type { Achievement } from '../../types/gamification'
+import { getRarityColor } from '../../types/gamification'
+import './AchievementBadge.css'
 
 interface AchievementBadgeProps {
-  achievement: Achievement;
-  showProgress?: boolean;
-  onClick?: () => void;
+  achievement: Achievement
+  showProgress?: boolean
+  onClick?: () => void
 }
 
-export function AchievementBadge({ achievement, showProgress = true, onClick }: AchievementBadgeProps) {
-  const isUnlocked = achievement.unlockedAt !== undefined || achievement.progress === 1;
-  const progress = achievement.progress || 0;
-  const rarityColor = getRarityColor(achievement.rarity);
+export function AchievementBadge({
+  achievement,
+  showProgress = true,
+  onClick,
+}: AchievementBadgeProps) {
+  const isUnlocked = achievement.unlockedAt !== undefined || achievement.progress === 1
+  const progress = achievement.progress || 0
+  const rarityColor = getRarityColor(achievement.rarity)
 
   return (
     <button
@@ -20,9 +24,7 @@ export function AchievementBadge({ achievement, showProgress = true, onClick }: 
       onClick={onClick}
       title={`${achievement.name}: ${achievement.description}`}
     >
-      <div className="achievement-badge__icon">
-        {isUnlocked ? achievement.icon : '🔒'}
-      </div>
+      <div className="achievement-badge__icon">{isUnlocked ? achievement.icon : '🔒'}</div>
 
       {showProgress && !isUnlocked && (
         <div className="achievement-badge__progress">
@@ -40,5 +42,5 @@ export function AchievementBadge({ achievement, showProgress = true, onClick }: 
 
       {isUnlocked && <div className="achievement-badge__glow" />}
     </button>
-  );
+  )
 }

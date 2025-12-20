@@ -1,30 +1,30 @@
-import type { UserStats } from '../../types/gamification';
-import './StatsPanel.css';
+import type { UserStats } from '../../types/gamification'
+import './StatsPanel.css'
 
 interface StatsPanelProps {
-  stats: UserStats;
-  compact?: boolean;
+  stats: UserStats
+  compact?: boolean
 }
 
 function formatDuration(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const totalSeconds = Math.floor(ms / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
 
   if (hours > 0) {
-    return `${hours}h ${minutes}m`;
+    return `${hours}h ${minutes}m`
   }
-  return `${minutes}m`;
+  return `${minutes}m`
 }
 
 function formatNumber(num: number): string {
   if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M';
+    return (num / 1000000).toFixed(1) + 'M'
   }
   if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K';
+    return (num / 1000).toFixed(1) + 'K'
   }
-  return num.toLocaleString();
+  return num.toLocaleString()
 }
 
 export function StatsPanel({ stats, compact = false }: StatsPanelProps) {
@@ -54,7 +54,7 @@ export function StatsPanel({ stats, compact = false }: StatsPanelProps) {
       color: stats.currentStreak >= 7 ? 'orange' : 'green',
       highlight: stats.currentStreak >= 3,
     },
-  ];
+  ]
 
   return (
     <div className={`stats-panel ${compact ? 'stats-panel--compact' : ''}`}>
@@ -71,5 +71,5 @@ export function StatsPanel({ stats, compact = false }: StatsPanelProps) {
         </div>
       ))}
     </div>
-  );
+  )
 }

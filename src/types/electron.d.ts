@@ -161,10 +161,24 @@ export interface ElectronAPI {
   // Terminal operations
   getRunningTerminals: () => Promise<TerminalApp[]>
   getSupportedTerminals: () => Promise<TerminalApp[]>
-  pasteToTerminal: (text: string, bundleId: string) => Promise<{ success: boolean; needsPermission: boolean; copied: boolean }>
+  pasteToTerminal: (
+    text: string,
+    bundleId: string
+  ) => Promise<{ success: boolean; needsPermission: boolean; copied: boolean }>
   getTerminalWindows: () => Promise<TerminalWindow[]>
-  pasteToTerminalWindow: (text: string, bundleId: string, windowName: string) => Promise<{ success: boolean; needsPermission: boolean; copied: boolean }>
-  pasteToLastActiveTerminal: (text: string) => Promise<{ success: boolean; needsPermission: boolean; copied: boolean; targetApp: string | null }>
+  pasteToTerminalWindow: (
+    text: string,
+    bundleId: string,
+    windowName: string
+  ) => Promise<{ success: boolean; needsPermission: boolean; copied: boolean }>
+  pasteToLastActiveTerminal: (
+    text: string
+  ) => Promise<{
+    success: boolean
+    needsPermission: boolean
+    copied: boolean
+    targetApp: string | null
+  }>
 
   // Word replacement operations
   getReplacements: () => Promise<WordReplacement[]>
@@ -179,10 +193,13 @@ export interface ElectronAPI {
   addVoiceCommandTrigger: (trigger: VoiceCommandTrigger) => Promise<boolean>
   deleteVoiceCommandTrigger: (id: string) => Promise<boolean>
   resetVoiceCommandTriggers: () => Promise<boolean>
-  getEnabledVoiceCommands: () => Promise<{ send: string[], clear: string[], cancel: string[] }>
+  getEnabledVoiceCommands: () => Promise<{ send: string[]; clear: string[]; cancel: string[] }>
 
   // Hotkey operations
-  updateHotkey: (type: 'paste' | 'record', newHotkey: string) => Promise<{ success: boolean; error?: string }>
+  updateHotkey: (
+    type: 'paste' | 'record',
+    newHotkey: string
+  ) => Promise<{ success: boolean; error?: string }>
 
   // Prompt formatting operations
   formatPrompt: (text: string) => Promise<FormatResult>
@@ -193,13 +210,22 @@ export interface ElectronAPI {
   getDefaultFormattingInstructions: () => Promise<string>
   checkClaudeCli: () => Promise<ClaudeCliStatus>
   generateTitle: (text: string) => Promise<{ success: boolean; title: string; error?: string }>
-  reformatText: (text: string, customInstructions?: string) => Promise<{ success: boolean; formatted: string; error?: string }>
+  reformatText: (
+    text: string,
+    customInstructions?: string
+  ) => Promise<{ success: boolean; formatted: string; error?: string }>
 
   // Gamification operations
   getGamificationData: () => Promise<GamificationData>
   saveGamificationData: (data: Partial<GamificationData>) => Promise<boolean>
-  recordGamificationSession: (params: { words: number; durationMs: number }) => Promise<RecordSessionResult>
-  unlockGamificationAchievement: (params: { achievementId: string; xpReward: number }) => Promise<boolean>
+  recordGamificationSession: (params: {
+    words: number
+    durationMs: number
+  }) => Promise<RecordSessionResult>
+  unlockGamificationAchievement: (params: {
+    achievementId: string
+    xpReward: number
+  }) => Promise<boolean>
   checkGamificationDailyLogin: () => Promise<DailyLoginResult>
   resetGamificationProgress: () => Promise<boolean>
   onGamificationDataChanged: (callback: () => void) => void
@@ -227,13 +253,13 @@ export interface ElectronAPI {
   sendRecordingTime: (seconds: number) => void
 
   // Send voice commands to main process (for overlay display)
-  sendVoiceCommands: (commands: { send: string[], clear: string[], cancel: string[] }) => void
+  sendVoiceCommands: (commands: { send: string[]; clear: string[]; cancel: string[] }) => void
 
   // Send live transcript preview to main process (for overlay display)
   sendTranscriptPreview: (text: string, wordCount: number) => void
 
   // Send overlay status info to main process
-  sendOverlayStatus: (status: { connected: boolean, formattingEnabled: boolean }) => void
+  sendOverlayStatus: (status: { connected: boolean; formattingEnabled: boolean }) => void
 }
 
 declare global {

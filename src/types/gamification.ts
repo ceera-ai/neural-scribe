@@ -1,73 +1,73 @@
 // Gamification System Types
 
 export interface UserStats {
-  totalWordsTranscribed: number;
-  totalRecordingTimeMs: number;
-  totalSessions: number;
-  currentStreak: number;
-  longestStreak: number;
-  lastActiveDate: string; // ISO date string (YYYY-MM-DD)
-  firstSessionDate: string; // ISO date string
+  totalWordsTranscribed: number
+  totalRecordingTimeMs: number
+  totalSessions: number
+  currentStreak: number
+  longestStreak: number
+  lastActiveDate: string // ISO date string (YYYY-MM-DD)
+  firstSessionDate: string // ISO date string
 }
 
 export interface LevelSystem {
-  currentXP: number;
-  level: number;
-  rank: string;
-  xpToNextLevel: number;
-  xpForCurrentLevel: number;
-  totalXPForNextLevel: number;
+  currentXP: number
+  level: number
+  rank: string
+  xpToNextLevel: number
+  xpForCurrentLevel: number
+  totalXPForNextLevel: number
 }
 
-export type AchievementRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+export type AchievementRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
 
-export type AchievementCategory = 'words' | 'time' | 'sessions' | 'streaks' | 'special';
+export type AchievementCategory = 'words' | 'time' | 'sessions' | 'streaks' | 'special'
 
 export interface AchievementRequirement {
-  type: 'words' | 'time_minutes' | 'sessions' | 'streak_days' | 'level' | 'special';
-  value: number;
+  type: 'words' | 'time_minutes' | 'sessions' | 'streak_days' | 'level' | 'special'
+  value: number
 }
 
 export interface Achievement {
-  id: string;
-  name: string;
-  description: string;
-  icon: string; // Emoji or icon identifier
-  category: AchievementCategory;
-  requirement: AchievementRequirement;
-  xpReward: number;
-  rarity: AchievementRarity;
-  unlockedAt?: number; // Timestamp when unlocked
-  progress?: number; // Current progress toward achievement
+  id: string
+  name: string
+  description: string
+  icon: string // Emoji or icon identifier
+  category: AchievementCategory
+  requirement: AchievementRequirement
+  xpReward: number
+  rarity: AchievementRarity
+  unlockedAt?: number // Timestamp when unlocked
+  progress?: number // Current progress toward achievement
 }
 
 export interface GamificationState {
-  stats: UserStats;
-  level: LevelSystem;
-  achievements: Achievement[];
-  unlockedAchievementIds: string[];
-  recentUnlocks: Achievement[]; // Achievements unlocked in current session
+  stats: UserStats
+  level: LevelSystem
+  achievements: Achievement[]
+  unlockedAchievementIds: string[]
+  recentUnlocks: Achievement[] // Achievements unlocked in current session
 }
 
 // XP Reward configuration
 export interface XPConfig {
-  perWord: number;
-  perMinute: number;
-  perSession: number;
-  dailyLoginBonus: number;
+  perWord: number
+  perMinute: number
+  perSession: number
+  dailyLoginBonus: number
 }
 
 // Level configuration
 export interface LevelConfig {
-  baseXP: number;
-  growthRate: number;
-  ranks: RankInfo[];
+  baseXP: number
+  growthRate: number
+  ranks: RankInfo[]
 }
 
 export interface RankInfo {
-  minLevel: number;
-  name: string;
-  icon: string;
+  minLevel: number
+  name: string
+  icon: string
 }
 
 // Event types for gamification updates
@@ -76,7 +76,7 @@ export type GamificationEvent =
   | { type: 'SESSION_END'; words: number; durationMs: number }
   | { type: 'WORDS_TRANSCRIBED'; count: number }
   | { type: 'DAILY_LOGIN' }
-  | { type: 'ACHIEVEMENT_UNLOCKED'; achievement: Achievement };
+  | { type: 'ACHIEVEMENT_UNLOCKED'; achievement: Achievement }
 
 // Default configurations
 export const DEFAULT_XP_CONFIG: XPConfig = {
@@ -84,7 +84,7 @@ export const DEFAULT_XP_CONFIG: XPConfig = {
   perMinute: 10,
   perSession: 25,
   dailyLoginBonus: 50,
-};
+}
 
 export const DEFAULT_LEVEL_CONFIG: LevelConfig = {
   baseXP: 100,
@@ -101,7 +101,7 @@ export const DEFAULT_LEVEL_CONFIG: LevelConfig = {
     { minLevel: 75, name: 'Transcendant', icon: '✨' },
     { minLevel: 100, name: 'Singularity', icon: '🌌' },
   ],
-};
+}
 
 // Achievement definitions
 export const ACHIEVEMENTS: Achievement[] = [
@@ -456,11 +456,11 @@ export const ACHIEVEMENTS: Achievement[] = [
     xpReward: 5000,
     rarity: 'legendary',
   },
-];
+]
 
 // Helper functions
 export function getDefaultStats(): UserStats {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0]
   return {
     totalWordsTranscribed: 0,
     totalRecordingTimeMs: 0,
@@ -469,7 +469,7 @@ export function getDefaultStats(): UserStats {
     longestStreak: 0,
     lastActiveDate: '',
     firstSessionDate: today,
-  };
+  }
 }
 
 export function getDefaultLevelSystem(): LevelSystem {
@@ -480,16 +480,16 @@ export function getDefaultLevelSystem(): LevelSystem {
     xpToNextLevel: DEFAULT_LEVEL_CONFIG.baseXP,
     xpForCurrentLevel: 0,
     totalXPForNextLevel: DEFAULT_LEVEL_CONFIG.baseXP,
-  };
+  }
 }
 
 export function calculateXPForLevel(level: number, config = DEFAULT_LEVEL_CONFIG): number {
-  if (level <= 1) return 0;
-  let total = 0;
+  if (level <= 1) return 0
+  let total = 0
   for (let i = 1; i < level; i++) {
-    total += Math.floor(config.baseXP * Math.pow(config.growthRate, i - 1));
+    total += Math.floor(config.baseXP * Math.pow(config.growthRate, i - 1))
   }
-  return total;
+  return total
 }
 
 /**
@@ -522,27 +522,33 @@ export function calculateXPForLevel(level: number, config = DEFAULT_LEVEL_CONFIG
  * ```
  */
 export function calculateLevelFromXP(xp: number, config = DEFAULT_LEVEL_CONFIG): number {
-  let level = 1;
-  let xpRequired = 0;
+  let level = 1
+  let xpRequired = 0
   while (xp >= xpRequired + Math.floor(config.baseXP * Math.pow(config.growthRate, level - 1))) {
-    xpRequired += Math.floor(config.baseXP * Math.pow(config.growthRate, level - 1));
-    level++;
+    xpRequired += Math.floor(config.baseXP * Math.pow(config.growthRate, level - 1))
+    level++
   }
-  return level;
+  return level
 }
 
 export function getRankForLevel(level: number, config = DEFAULT_LEVEL_CONFIG): RankInfo {
-  const ranks = [...config.ranks].sort((a, b) => b.minLevel - a.minLevel);
-  return ranks.find(r => level >= r.minLevel) || config.ranks[0];
+  const ranks = [...config.ranks].sort((a, b) => b.minLevel - a.minLevel)
+  return ranks.find((r) => level >= r.minLevel) || config.ranks[0]
 }
 
 export function getRarityColor(rarity: AchievementRarity): string {
   switch (rarity) {
-    case 'common': return '#a0a0a0';
-    case 'uncommon': return '#00ff88';
-    case 'rare': return '#00aaff';
-    case 'epic': return '#aa00ff';
-    case 'legendary': return '#ffaa00';
-    default: return '#ffffff';
+    case 'common':
+      return '#a0a0a0'
+    case 'uncommon':
+      return '#00ff88'
+    case 'rare':
+      return '#00aaff'
+    case 'epic':
+      return '#aa00ff'
+    case 'legendary':
+      return '#ffaa00'
+    default:
+      return '#ffffff'
   }
 }

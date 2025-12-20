@@ -1,14 +1,14 @@
-import type { Achievement, UserStats, LevelSystem } from '../../types/gamification';
-import { getRarityColor } from '../../types/gamification';
-import './AchievementDetailModal.css';
+import type { Achievement, UserStats, LevelSystem } from '../../types/gamification'
+import { getRarityColor } from '../../types/gamification'
+import './AchievementDetailModal.css'
 
 interface AchievementDetailModalProps {
-  achievement: Achievement | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onShare?: (achievement: Achievement) => void;
-  stats: UserStats;
-  level: LevelSystem;
+  achievement: Achievement | null
+  isOpen: boolean
+  onClose: () => void
+  onShare?: (achievement: Achievement) => void
+  stats: UserStats
+  level: LevelSystem
 }
 
 export function AchievementDetailModal({
@@ -19,57 +19,57 @@ export function AchievementDetailModal({
   stats,
   level,
 }: AchievementDetailModalProps) {
-  if (!isOpen || !achievement) return null;
+  if (!isOpen || !achievement) return null
 
-  const isUnlocked = achievement.unlockedAt !== undefined || achievement.progress === 1;
-  const rarityColor = getRarityColor(achievement.rarity);
+  const isUnlocked = achievement.unlockedAt !== undefined || achievement.progress === 1
+  const rarityColor = getRarityColor(achievement.rarity)
 
   // Calculate current progress toward requirement
   const getProgressInfo = () => {
-    const { type, value } = achievement.requirement;
-    let current = 0;
-    let target = value;
-    let unit = '';
-    let description = '';
+    const { type, value } = achievement.requirement
+    let current = 0
+    let target = value
+    let unit = ''
+    let description = ''
 
     switch (type) {
       case 'words':
-        current = stats.totalWordsTranscribed;
-        target = value;
-        unit = current === 1 ? 'word' : 'words';
-        description = `Transcribe ${value.toLocaleString()} ${value === 1 ? 'word' : 'words'}`;
-        break;
+        current = stats.totalWordsTranscribed
+        target = value
+        unit = current === 1 ? 'word' : 'words'
+        description = `Transcribe ${value.toLocaleString()} ${value === 1 ? 'word' : 'words'}`
+        break
       case 'time_minutes':
-        current = Math.floor(stats.totalRecordingTimeMs / 60000);
-        target = value;
-        unit = value === 1 ? 'minute' : 'minutes';
-        description = `Record for ${value} ${unit} total`;
-        break;
+        current = Math.floor(stats.totalRecordingTimeMs / 60000)
+        target = value
+        unit = value === 1 ? 'minute' : 'minutes'
+        description = `Record for ${value} ${unit} total`
+        break
       case 'sessions':
-        current = stats.totalSessions;
-        target = value;
-        unit = value === 1 ? 'session' : 'sessions';
-        description = `Complete ${value} ${unit}`;
-        break;
+        current = stats.totalSessions
+        target = value
+        unit = value === 1 ? 'session' : 'sessions'
+        description = `Complete ${value} ${unit}`
+        break
       case 'streak_days':
-        current = stats.currentStreak;
-        target = value;
-        unit = 'days';
-        description = `Maintain a ${value}-day streak`;
-        break;
+        current = stats.currentStreak
+        target = value
+        unit = 'days'
+        description = `Maintain a ${value}-day streak`
+        break
       case 'level':
-        current = level.level;
-        target = value;
-        unit = '';
-        description = `Reach level ${value}`;
-        break;
+        current = level.level
+        target = value
+        unit = ''
+        description = `Reach level ${value}`
+        break
     }
 
-    return { current, target, unit, description };
-  };
+    return { current, target, unit, description }
+  }
 
-  const progressInfo = getProgressInfo();
-  const progress = achievement.progress || 0;
+  const progressInfo = getProgressInfo()
+  const progress = achievement.progress || 0
 
   return (
     <div className="achievement-detail-overlay" onClick={onClose}>
@@ -80,15 +80,20 @@ export function AchievementDetailModal({
       >
         {/* Close button */}
         <button className="achievement-detail-close-btn" onClick={onClose}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
 
         {/* Icon */}
-        <div className="achievement-detail-icon">
-          {isUnlocked ? achievement.icon : '🔒'}
-        </div>
+        <div className="achievement-detail-icon">{isUnlocked ? achievement.icon : '🔒'}</div>
 
         {/* Name */}
         <h2 className="achievement-detail-name">
@@ -97,11 +102,15 @@ export function AchievementDetailModal({
 
         {/* Description */}
         <p className="achievement-detail-description">
-          {isUnlocked ? achievement.description : 'Complete the requirements to reveal this achievement'}
+          {isUnlocked
+            ? achievement.description
+            : 'Complete the requirements to reveal this achievement'}
         </p>
 
         {/* Rarity Badge */}
-        <div className={`achievement-detail-rarity achievement-detail-rarity--${achievement.rarity}`}>
+        <div
+          className={`achievement-detail-rarity achievement-detail-rarity--${achievement.rarity}`}
+        >
           {achievement.rarity.charAt(0).toUpperCase() + achievement.rarity.slice(1)}
         </div>
 
@@ -125,9 +134,7 @@ export function AchievementDetailModal({
         <div className="achievement-detail-requirements">
           <h3>{isUnlocked ? 'Requirement' : 'Requirements'}</h3>
           <div className="achievement-detail-requirement-item">
-            <span className="achievement-detail-requirement-icon">
-              {isUnlocked ? '✅' : '🎯'}
-            </span>
+            <span className="achievement-detail-requirement-icon">{isUnlocked ? '✅' : '🎯'}</span>
             <div className="achievement-detail-requirement-info">
               <p className="achievement-detail-requirement-description">
                 {progressInfo.description}
@@ -165,9 +172,7 @@ export function AchievementDetailModal({
         {/* XP Reward */}
         <div className="achievement-detail-xp-reward">
           <span className="achievement-detail-xp-icon">⭐</span>
-          <span className="achievement-detail-xp-text">
-            +{achievement.xpReward} XP
-          </span>
+          <span className="achievement-detail-xp-text">+{achievement.xpReward} XP</span>
         </div>
 
         {/* Action Buttons */}
@@ -177,7 +182,14 @@ export function AchievementDetailModal({
               className="btn achievement-detail-btn achievement-detail-btn--share"
               onClick={() => onShare(achievement)}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
                 <polyline points="16 6 12 2 8 6" />
                 <line x1="12" y1="2" x2="12" y2="15" />
@@ -194,5 +206,5 @@ export function AchievementDetailModal({
         </div>
       </div>
     </div>
-  );
+  )
 }

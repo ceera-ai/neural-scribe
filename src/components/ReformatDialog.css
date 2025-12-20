@@ -208,7 +208,8 @@
 }
 
 @keyframes dictatingPulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 5px rgba(255, 0, 80, 0.2);
   }
   50% {
@@ -304,7 +305,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Scrollbar */

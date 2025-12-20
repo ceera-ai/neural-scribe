@@ -86,7 +86,8 @@
 }
 
 @keyframes iconFloat {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -163,7 +164,8 @@
 }
 
 @keyframes rarityGlow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 10px rgba(255, 170, 0, 0.3);
   }
   50% {

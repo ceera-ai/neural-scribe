@@ -10,7 +10,7 @@ function formatHotkeyForDisplay(hotkey: string): string {
   const isMac = process.platform === 'darwin'
 
   // Split by + and format each part
-  const parts = hotkey.split('+').map(part => {
+  const parts = hotkey.split('+').map((part) => {
     const p = part.trim().toLowerCase()
 
     if (p === 'commandorcontrol' || p === 'cmdorctrl') {
@@ -100,7 +100,7 @@ function getBestDisplay(): Display {
     const windowBounds = mainWindowRef.getBounds()
     const windowCenter = {
       x: windowBounds.x + windowBounds.width / 2,
-      y: windowBounds.y + windowBounds.height / 2
+      y: windowBounds.y + windowBounds.height / 2,
     }
     const mainWindowDisplay = screen.getDisplayNearestPoint(windowCenter)
 
@@ -160,8 +160,8 @@ export function createOverlayWindow(mainWindow?: BrowserWindow): void {
     show: false,
     webPreferences: {
       contextIsolation: true,
-      nodeIntegration: false
-    }
+      nodeIntegration: false,
+    },
   })
 
   // Make click-through
@@ -198,17 +198,25 @@ export function showOverlay(): void {
       // Update the hotkey display from current settings
       const settings = getSettings()
       const hotkeyText = formatHotkeyForDisplay(settings.recordHotkey)
-      overlayWindow.webContents.executeJavaScript(`
+      overlayWindow.webContents
+        .executeJavaScript(
+          `
         const hotkeyEl = document.getElementById('hotkey-display');
         if (hotkeyEl) hotkeyEl.textContent = '${hotkeyText}';
-      `).catch(() => {})
+      `
+        )
+        .catch(() => {})
 
       overlayWindow.show()
 
       // Trigger animation and sound
-      overlayWindow.webContents.executeJavaScript(`
+      overlayWindow.webContents
+        .executeJavaScript(
+          `
         if (window.showOverlay) window.showOverlay();
-      `).catch(() => {})
+      `
+        )
+        .catch(() => {})
 
       console.log('[Overlay] Shown on display:', targetDisplay.id, 'with hotkey:', hotkeyText)
     }
@@ -222,9 +230,13 @@ export function hideOverlay(): void {
   try {
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       // Trigger hide animation and sound
-      overlayWindow.webContents.executeJavaScript(`
+      overlayWindow.webContents
+        .executeJavaScript(
+          `
         if (window.hideOverlay) window.hideOverlay();
-      `).catch(() => {})
+      `
+        )
+        .catch(() => {})
 
       // Hide window after animation completes (350ms)
       setTimeout(() => {
@@ -266,7 +278,13 @@ let overlayReady = false
  */
 export function updateAudioLevel(level: number): void {
   try {
-    if (!overlayWindow || overlayWindow.isDestroyed() || !overlayWindow.isVisible() || !overlayReady || overlayWindow.webContents.isDestroyed()) {
+    if (
+      !overlayWindow ||
+      overlayWindow.isDestroyed() ||
+      !overlayWindow.isVisible() ||
+      !overlayReady ||
+      overlayWindow.webContents.isDestroyed()
+    ) {
       return
     }
 
@@ -302,9 +320,9 @@ export function updateAudioLevel(level: number): void {
       const variation = Math.sin(Date.now() / 100 + i * 0.5) * 2 * clampedLevel
       waveformHeights.push(Math.round(baseHeight + audioBoost + variation))
     }
-    const waveformUpdates = waveformHeights.map((h, i) =>
-      `if (wfBars[${i}]) wfBars[${i}].style.height = "${h}px";`
-    ).join('\n      ')
+    const waveformUpdates = waveformHeights
+      .map((h, i) => `if (wfBars[${i}]) wfBars[${i}].style.height = "${h}px";`)
+      .join('\n      ')
 
     // Update all voice-controlled elements
     const script = `
@@ -349,7 +367,13 @@ function formatTime(seconds: number): string {
  */
 export function updateRecordingTime(seconds: number): void {
   try {
-    if (!overlayWindow || overlayWindow.isDestroyed() || !overlayWindow.isVisible() || !overlayReady || overlayWindow.webContents.isDestroyed()) {
+    if (
+      !overlayWindow ||
+      overlayWindow.isDestroyed() ||
+      !overlayWindow.isVisible() ||
+      !overlayReady ||
+      overlayWindow.webContents.isDestroyed()
+    ) {
       return
     }
 
@@ -368,34 +392,46 @@ export function updateRecordingTime(seconds: number): void {
  * Update the voice commands display in the overlay
  * @param commands - Object with send, clear, cancel command arrays
  */
-export function updateVoiceCommands(commands: { send: string[], clear: string[], cancel: string[] }): void {
+export function updateVoiceCommands(commands: {
+  send: string[]
+  clear: string[]
+  cancel: string[]
+}): void {
   try {
-    if (!overlayWindow || overlayWindow.isDestroyed() || !overlayReady || overlayWindow.webContents.isDestroyed()) {
+    if (
+      !overlayWindow ||
+      overlayWindow.isDestroyed() ||
+      !overlayReady ||
+      overlayWindow.webContents.isDestroyed()
+    ) {
       return
     }
 
     // Build HTML for voice commands
-    const allCommands: { phrase: string, action: string }[] = []
-    commands.send.forEach(phrase => allCommands.push({ phrase, action: 'Send' }))
-    commands.clear.forEach(phrase => allCommands.push({ phrase, action: 'Clear' }))
-    commands.cancel.forEach(phrase => allCommands.push({ phrase, action: 'Cancel' }))
+    const allCommands: { phrase: string; action: string }[] = []
+    commands.send.forEach((phrase) => allCommands.push({ phrase, action: 'Send' }))
+    commands.clear.forEach((phrase) => allCommands.push({ phrase, action: 'Clear' }))
+    commands.cancel.forEach((phrase) => allCommands.push({ phrase, action: 'Cancel' }))
 
-    const commandsHtml = allCommands.slice(0, 4).map(cmd => {
-      // Escape HTML entities
-      const escapedPhrase = cmd.phrase
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-      const escapedAction = cmd.action
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-      return `<div class="voice-cmd-item"><span class="voice-cmd-phrase">"${escapedPhrase}"</span><span class="voice-cmd-action">${escapedAction}</span></div>`
-    }).join('')
+    const commandsHtml = allCommands
+      .slice(0, 4)
+      .map((cmd) => {
+        // Escape HTML entities
+        const escapedPhrase = cmd.phrase
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;')
+        const escapedAction = cmd.action
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;')
+        return `<div class="voice-cmd-item"><span class="voice-cmd-phrase">"${escapedPhrase}"</span><span class="voice-cmd-action">${escapedAction}</span></div>`
+      })
+      .join('')
 
     // Escape the entire HTML for JS string
     const escapedCommandsHtml = escapeForJS(commandsHtml)
@@ -416,7 +452,7 @@ export function updateVoiceCommands(commands: { send: string[], clear: string[],
  * Split text into lines of approximately maxChars characters, breaking at word boundaries
  */
 function splitIntoLines(text: string, maxChars: number = 90): string[] {
-  const words = text.split(/\s+/).filter(w => w.length > 0)
+  const words = text.split(/\s+/).filter((w) => w.length > 0)
   const lines: string[] = []
   let currentLine = ''
 
@@ -444,15 +480,15 @@ function splitIntoLines(text: string, maxChars: number = 90): string[] {
  */
 function escapeForJS(str: string): string {
   return str
-    .replace(/\\/g, '\\\\')  // Backslash must be first
-    .replace(/'/g, "\\'")     // Single quote
-    .replace(/"/g, '\\"')     // Double quote
-    .replace(/`/g, '\\`')     // Backtick
-    .replace(/\n/g, '\\n')    // Newline
-    .replace(/\r/g, '\\r')    // Carriage return
-    .replace(/\t/g, '\\t')    // Tab
-    .replace(/\f/g, '\\f')    // Form feed
-    .replace(/\v/g, '\\v')    // Vertical tab
+    .replace(/\\/g, '\\\\') // Backslash must be first
+    .replace(/'/g, "\\'") // Single quote
+    .replace(/"/g, '\\"') // Double quote
+    .replace(/`/g, '\\`') // Backtick
+    .replace(/\n/g, '\\n') // Newline
+    .replace(/\r/g, '\\r') // Carriage return
+    .replace(/\t/g, '\\t') // Tab
+    .replace(/\f/g, '\\f') // Form feed
+    .replace(/\v/g, '\\v') // Vertical tab
 }
 
 /**
@@ -462,7 +498,13 @@ function escapeForJS(str: string): string {
  */
 export function updateTranscriptPreview(text: string, wordCount: number): void {
   try {
-    if (!overlayWindow || overlayWindow.isDestroyed() || !overlayWindow.isVisible() || !overlayReady || overlayWindow.webContents.isDestroyed()) {
+    if (
+      !overlayWindow ||
+      overlayWindow.isDestroyed() ||
+      !overlayWindow.isVisible() ||
+      !overlayReady ||
+      overlayWindow.webContents.isDestroyed()
+    ) {
       return
     }
 
@@ -480,20 +522,22 @@ export function updateTranscriptPreview(text: string, wordCount: number): void {
     if (displayLines.length === 0) {
       focusHtml = '<div class="focus-placeholder">Listening...</div>'
     } else {
-      focusHtml = displayLines.map((line, index) => {
-        const isCurrentLine = index === displayLines.length - 1
-        // Properly escape for HTML content
-        const escapedLine = line
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;')
-        if (isCurrentLine) {
-          return `<div class="focus-line current">${escapedLine}<span class="focus-cursor"></span></div>`
-        }
-        return `<div class="focus-line">${escapedLine}</div>`
-      }).join('')
+      focusHtml = displayLines
+        .map((line, index) => {
+          const isCurrentLine = index === displayLines.length - 1
+          // Properly escape for HTML content
+          const escapedLine = line
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+          if (isCurrentLine) {
+            return `<div class="focus-line current">${escapedLine}<span class="focus-cursor"></span></div>`
+          }
+          return `<div class="focus-line">${escapedLine}</div>`
+        })
+        .join('')
     }
 
     // Escape the entire HTML string for JS
@@ -525,9 +569,17 @@ export function updateTranscriptPreview(text: string, wordCount: number): void {
  * Update the overlay status indicators
  * @param status - Object with connected and formattingEnabled flags
  */
-export function updateOverlayStatus(status: { connected: boolean, formattingEnabled: boolean }): void {
+export function updateOverlayStatus(status: {
+  connected: boolean
+  formattingEnabled: boolean
+}): void {
   try {
-    if (!overlayWindow || overlayWindow.isDestroyed() || !overlayReady || overlayWindow.webContents.isDestroyed()) {
+    if (
+      !overlayWindow ||
+      overlayWindow.isDestroyed() ||
+      !overlayReady ||
+      overlayWindow.webContents.isDestroyed()
+    ) {
       return
     }
 
@@ -568,18 +620,27 @@ export function updateOverlayStatus(status: { connected: boolean, formattingEnab
  */
 export function updateFrequencyData(frequencyData: number[]): void {
   try {
-    if (!overlayWindow || overlayWindow.isDestroyed() || !overlayWindow.isVisible() || !overlayReady || overlayWindow.webContents.isDestroyed()) {
+    if (
+      !overlayWindow ||
+      overlayWindow.isDestroyed() ||
+      !overlayWindow.isVisible() ||
+      !overlayReady ||
+      overlayWindow.webContents.isDestroyed()
+    ) {
       return
     }
 
     // Build the JavaScript to update all spectrum bars
-    const barUpdates = frequencyData.slice(0, 24).map((value, index) => {
-      // Clamp value between 0 and 1
-      const clampedValue = Math.max(0, Math.min(1, value))
-      // Map to bar height: min 4px, max 40px
-      const height = Math.round(4 + clampedValue * 36)
-      return `bars[${index}].style.height = "${height}px";`
-    }).join('\n      ')
+    const barUpdates = frequencyData
+      .slice(0, 24)
+      .map((value, index) => {
+        // Clamp value between 0 and 1
+        const clampedValue = Math.max(0, Math.min(1, value))
+        // Map to bar height: min 4px, max 40px
+        const height = Math.round(4 + clampedValue * 36)
+        return `bars[${index}].style.height = "${height}px";`
+      })
+      .join('\n      ')
 
     // Calculate overall level from frequency data for orb effects
     const avgLevel = frequencyData.reduce((sum, val) => sum + val, 0) / frequencyData.length

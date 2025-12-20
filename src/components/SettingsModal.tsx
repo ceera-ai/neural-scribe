@@ -1,216 +1,220 @@
-import { useState, useEffect } from 'react';
-import type { VoiceCommandTrigger } from '../types/electron';
-import './SettingsModal.css';
+import { useState, useEffect } from 'react'
+import type { VoiceCommandTrigger } from '../types/electron'
+import './SettingsModal.css'
 
 interface SettingsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onOpenReplacements: () => void;
-  voiceCommandsEnabled: boolean;
-  onVoiceCommandsEnabledChange: (enabled: boolean) => void;
+  isOpen: boolean
+  onClose: () => void
+  onOpenReplacements: () => void
+  voiceCommandsEnabled: boolean
+  onVoiceCommandsEnabledChange: (enabled: boolean) => void
 }
 
-type SettingsTab = 'general' | 'voice' | 'formatting' | 'shortcuts';
+type SettingsTab = 'general' | 'voice' | 'formatting' | 'shortcuts'
 
 export function SettingsModal({
   isOpen,
   onClose,
   onOpenReplacements,
   voiceCommandsEnabled,
-  onVoiceCommandsEnabledChange
+  onVoiceCommandsEnabledChange,
 }: SettingsModalProps) {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('general')
 
   // API Key state
-  const [apiKey, setApiKey] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [isEditingApiKey, setIsEditingApiKey] = useState(false);
-  const [newApiKey, setNewApiKey] = useState('');
-  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
-  const [isValidating, setIsValidating] = useState(false);
-  const [apiKeySuccess, setApiKeySuccess] = useState(false);
+  const [apiKey, setApiKey] = useState('')
+  const [showApiKey, setShowApiKey] = useState(false)
+  const [isEditingApiKey, setIsEditingApiKey] = useState(false)
+  const [newApiKey, setNewApiKey] = useState('')
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null)
+  const [isValidating, setIsValidating] = useState(false)
+  const [apiKeySuccess, setApiKeySuccess] = useState(false)
 
   // Word Replacements
-  const [replacementsEnabled, setReplacementsEnabled] = useState(true);
+  const [replacementsEnabled, setReplacementsEnabled] = useState(true)
 
   // Voice Commands
-  const [triggers, setTriggers] = useState<VoiceCommandTrigger[]>([]);
-  const [expandedCommand, setExpandedCommand] = useState<string | null>(null);
-  const [newTriggerPhrase, setNewTriggerPhrase] = useState('');
-  const [addingToCommand, setAddingToCommand] = useState<'send' | 'clear' | 'cancel' | null>(null);
+  const [triggers, setTriggers] = useState<VoiceCommandTrigger[]>([])
+  const [expandedCommand, setExpandedCommand] = useState<string | null>(null)
+  const [newTriggerPhrase, setNewTriggerPhrase] = useState('')
+  const [addingToCommand, setAddingToCommand] = useState<'send' | 'clear' | 'cancel' | null>(null)
 
   // Prompt Formatting
-  const [formattingEnabled, setFormattingEnabled] = useState(true);
-  const [formattingModel, setFormattingModel] = useState<'sonnet' | 'opus' | 'haiku'>('sonnet');
-  const [formattingInstructions, setFormattingInstructions] = useState('');
-  const [defaultInstructions, setDefaultInstructions] = useState('');
-  const [showInstructions, setShowInstructions] = useState(false);
-  const [claudeCliStatus, setClaudeCliStatus] = useState<{ available: boolean; version: string | null } | null>(null);
+  const [formattingEnabled, setFormattingEnabled] = useState(true)
+  const [formattingModel, setFormattingModel] = useState<'sonnet' | 'opus' | 'haiku'>('sonnet')
+  const [formattingInstructions, setFormattingInstructions] = useState('')
+  const [defaultInstructions, setDefaultInstructions] = useState('')
+  const [showInstructions, setShowInstructions] = useState(false)
+  const [claudeCliStatus, setClaudeCliStatus] = useState<{
+    available: boolean
+    version: string | null
+  } | null>(null)
 
   // Keyboard Shortcuts
-  const [recordHotkey, setRecordHotkey] = useState('CommandOrControl+Shift+R');
-  const [pasteHotkey, setPasteHotkey] = useState('CommandOrControl+Shift+V');
-  const [editingShortcut, setEditingShortcut] = useState<'record' | 'paste' | null>(null);
-  const [shortcutError, setShortcutError] = useState<string | null>(null);
+  const [recordHotkey, setRecordHotkey] = useState('CommandOrControl+Shift+R')
+  const [pasteHotkey, setPasteHotkey] = useState('CommandOrControl+Shift+V')
+  const [editingShortcut, setEditingShortcut] = useState<'record' | 'paste' | null>(null)
+  const [shortcutError, setShortcutError] = useState<string | null>(null)
 
   // History Settings
-  const [historyLimit, setHistoryLimit] = useState<number>(500);
-  const [customHistoryLimit, setCustomHistoryLimit] = useState<string>('');
+  const [historyLimit, setHistoryLimit] = useState<number>(500)
+  const [customHistoryLimit, setCustomHistoryLimit] = useState<string>('')
 
   // Load settings on open
   useEffect(() => {
     if (isOpen) {
-      loadAllSettings();
-      resetState();
+      loadAllSettings()
+      resetState()
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   const resetState = () => {
-    setIsEditingApiKey(false);
-    setNewApiKey('');
-    setApiKeyError(null);
-    setApiKeySuccess(false);
-    setExpandedCommand(null);
-    setAddingToCommand(null);
-    setNewTriggerPhrase('');
-    setEditingShortcut(null);
-    setShortcutError(null);
-    setShowInstructions(false);
-  };
+    setIsEditingApiKey(false)
+    setNewApiKey('')
+    setApiKeyError(null)
+    setApiKeySuccess(false)
+    setExpandedCommand(null)
+    setAddingToCommand(null)
+    setNewTriggerPhrase('')
+    setEditingShortcut(null)
+    setShortcutError(null)
+    setShowInstructions(false)
+  }
 
   const loadAllSettings = async () => {
     try {
-      const [key, settings, triggersData, formattingSettings, defaultInstr, cliStatus] = await Promise.all([
-        window.electronAPI.getApiKey(),
-        window.electronAPI.getSettings(),
-        window.electronAPI.getVoiceCommandTriggers(),
-        window.electronAPI.getPromptFormattingSettings(),
-        window.electronAPI.getDefaultFormattingInstructions(),
-        window.electronAPI.checkClaudeCli()
-      ]);
+      const [key, settings, triggersData, formattingSettings, defaultInstr, cliStatus] =
+        await Promise.all([
+          window.electronAPI.getApiKey(),
+          window.electronAPI.getSettings(),
+          window.electronAPI.getVoiceCommandTriggers(),
+          window.electronAPI.getPromptFormattingSettings(),
+          window.electronAPI.getDefaultFormattingInstructions(),
+          window.electronAPI.checkClaudeCli(),
+        ])
 
-      setApiKey(key || '');
-      setReplacementsEnabled(settings.replacementsEnabled ?? true);
-      setRecordHotkey(settings.recordHotkey || 'CommandOrControl+Shift+R');
-      setPasteHotkey(settings.pasteHotkey || 'CommandOrControl+Shift+V');
-      setHistoryLimit(settings.historyLimit ?? 500);
-      setTriggers(triggersData);
-      setFormattingEnabled(formattingSettings.enabled);
-      setFormattingModel(formattingSettings.model);
-      setFormattingInstructions(formattingSettings.instructions);
-      setDefaultInstructions(defaultInstr);
-      setClaudeCliStatus(cliStatus);
+      setApiKey(key || '')
+      setReplacementsEnabled(settings.replacementsEnabled ?? true)
+      setRecordHotkey(settings.recordHotkey || 'CommandOrControl+Shift+R')
+      setPasteHotkey(settings.pasteHotkey || 'CommandOrControl+Shift+V')
+      setHistoryLimit(settings.historyLimit ?? 500)
+      setTriggers(triggersData)
+      setFormattingEnabled(formattingSettings.enabled)
+      setFormattingModel(formattingSettings.model)
+      setFormattingInstructions(formattingSettings.instructions)
+      setDefaultInstructions(defaultInstr)
+      setClaudeCliStatus(cliStatus)
     } catch (err) {
-      console.error('Failed to load settings:', err);
+      console.error('Failed to load settings:', err)
     }
-  };
+  }
 
   const maskApiKey = (key: string) => {
-    if (!key) return '';
-    if (key.length <= 8) return '•'.repeat(key.length);
-    return key.slice(0, 4) + '•'.repeat(key.length - 8) + key.slice(-4);
-  };
+    if (!key) return ''
+    if (key.length <= 8) return '•'.repeat(key.length)
+    return key.slice(0, 4) + '•'.repeat(key.length - 8) + key.slice(-4)
+  }
 
   const handleSaveApiKey = async () => {
     if (!newApiKey.trim()) {
-      setApiKeyError('Please enter an API key');
-      return;
+      setApiKeyError('Please enter an API key')
+      return
     }
 
-    setApiKeyError(null);
-    setIsValidating(true);
+    setApiKeyError(null)
+    setIsValidating(true)
 
     try {
-      await window.electronAPI.setApiKey(newApiKey.trim());
-      await window.electronAPI.getScribeToken();
+      await window.electronAPI.setApiKey(newApiKey.trim())
+      await window.electronAPI.getScribeToken()
 
-      setApiKey(newApiKey.trim());
-      setNewApiKey('');
-      setIsEditingApiKey(false);
-      setApiKeySuccess(true);
-      setTimeout(() => setApiKeySuccess(false), 3000);
+      setApiKey(newApiKey.trim())
+      setNewApiKey('')
+      setIsEditingApiKey(false)
+      setApiKeySuccess(true)
+      setTimeout(() => setApiKeySuccess(false), 3000)
     } catch (err) {
-      console.error('API key validation failed:', err);
-      setApiKeyError('Invalid API key. Please check and try again.');
-      await window.electronAPI.setApiKey(apiKey);
+      console.error('API key validation failed:', err)
+      setApiKeyError('Invalid API key. Please check and try again.')
+      await window.electronAPI.setApiKey(apiKey)
     } finally {
-      setIsValidating(false);
+      setIsValidating(false)
     }
-  };
+  }
 
   const handleReplacementsEnabledChange = async (enabled: boolean) => {
-    setReplacementsEnabled(enabled);
-    await window.electronAPI.setSettings({ replacementsEnabled: enabled });
-  };
+    setReplacementsEnabled(enabled)
+    await window.electronAPI.setSettings({ replacementsEnabled: enabled })
+  }
 
   const handleHistoryLimitChange = async (limit: number) => {
-    setHistoryLimit(limit);
-    setCustomHistoryLimit('');
-    await window.electronAPI.setSettings({ historyLimit: limit });
-  };
+    setHistoryLimit(limit)
+    setCustomHistoryLimit('')
+    await window.electronAPI.setSettings({ historyLimit: limit })
+  }
 
   const handleCustomHistoryLimitSubmit = async () => {
-    const value = parseInt(customHistoryLimit, 10);
+    const value = parseInt(customHistoryLimit, 10)
     if (!isNaN(value) && value >= 0) {
-      await handleHistoryLimitChange(value);
+      await handleHistoryLimitChange(value)
     }
-  };
+  }
 
   const handleVoiceCommandsChange = async (enabled: boolean) => {
-    onVoiceCommandsEnabledChange(enabled);
-    await window.electronAPI.setSettings({ voiceCommandsEnabled: enabled });
-  };
+    onVoiceCommandsEnabledChange(enabled)
+    await window.electronAPI.setSettings({ voiceCommandsEnabled: enabled })
+  }
 
   const handleFormattingEnabledChange = async (enabled: boolean) => {
-    setFormattingEnabled(enabled);
-    await window.electronAPI.setPromptFormattingEnabled(enabled);
-  };
+    setFormattingEnabled(enabled)
+    await window.electronAPI.setPromptFormattingEnabled(enabled)
+  }
 
   const handleFormattingModelChange = async (model: 'sonnet' | 'opus' | 'haiku') => {
-    setFormattingModel(model);
-    await window.electronAPI.setPromptFormattingModel(model);
-  };
+    setFormattingModel(model)
+    await window.electronAPI.setPromptFormattingModel(model)
+  }
 
   const handleFormattingInstructionsChange = async (instructions: string) => {
-    setFormattingInstructions(instructions);
-    await window.electronAPI.setPromptFormattingInstructions(instructions);
-  };
+    setFormattingInstructions(instructions)
+    await window.electronAPI.setPromptFormattingInstructions(instructions)
+  }
 
   const handleResetInstructions = async () => {
-    setFormattingInstructions('');
-    await window.electronAPI.setPromptFormattingInstructions('');
-  };
+    setFormattingInstructions('')
+    await window.electronAPI.setPromptFormattingInstructions('')
+  }
 
   const handleTriggerToggle = async (id: string, enabled: boolean) => {
-    await window.electronAPI.updateVoiceCommandTrigger(id, { enabled });
-    setTriggers(triggers.map(t => t.id === id ? { ...t, enabled } : t));
-  };
+    await window.electronAPI.updateVoiceCommandTrigger(id, { enabled })
+    setTriggers(triggers.map((t) => (t.id === id ? { ...t, enabled } : t)))
+  }
 
   const handleDeleteTrigger = async (id: string) => {
-    await window.electronAPI.deleteVoiceCommandTrigger(id);
-    setTriggers(triggers.filter(t => t.id !== id));
-  };
+    await window.electronAPI.deleteVoiceCommandTrigger(id)
+    setTriggers(triggers.filter((t) => t.id !== id))
+  }
 
   const handleAddTrigger = async (command: 'send' | 'clear' | 'cancel') => {
-    if (!newTriggerPhrase.trim()) return;
+    if (!newTriggerPhrase.trim()) return
 
     const newTrigger: VoiceCommandTrigger = {
       id: `custom-${Date.now()}`,
       phrase: newTriggerPhrase.trim().toLowerCase(),
       command,
       enabled: true,
-      isCustom: true
-    };
+      isCustom: true,
+    }
 
-    await window.electronAPI.addVoiceCommandTrigger(newTrigger);
-    setTriggers([...triggers, newTrigger]);
-    setNewTriggerPhrase('');
-    setAddingToCommand(null);
-  };
+    await window.electronAPI.addVoiceCommandTrigger(newTrigger)
+    setTriggers([...triggers, newTrigger])
+    setNewTriggerPhrase('')
+    setAddingToCommand(null)
+  }
 
   const getTriggersByCommand = (command: 'send' | 'clear' | 'cancel') => {
-    return triggers.filter(t => t.command === command);
-  };
+    return triggers.filter((t) => t.command === command)
+  }
 
   const formatHotkeyForDisplay = (hotkey: string) => {
     return hotkey
@@ -220,79 +224,86 @@ export function SettingsModal({
       .replace('Shift', '⇧')
       .replace('Alt', '⌥')
       .replace('Option', '⌥')
-      .replace(/\+/g, ' ');
-  };
+      .replace(/\+/g, ' ')
+  }
 
   const keyEventToAccelerator = (e: React.KeyboardEvent): string | null => {
-    const parts: string[] = [];
+    const parts: string[] = []
 
-    if (!e.metaKey && !e.ctrlKey && !e.altKey) return null;
+    if (!e.metaKey && !e.ctrlKey && !e.altKey) return null
 
-    if (e.metaKey || e.ctrlKey) parts.push('CommandOrControl');
-    if (e.shiftKey) parts.push('Shift');
-    if (e.altKey) parts.push('Alt');
+    if (e.metaKey || e.ctrlKey) parts.push('CommandOrControl')
+    if (e.shiftKey) parts.push('Shift')
+    if (e.altKey) parts.push('Alt')
 
-    const key = e.key;
-    if (['Meta', 'Control', 'Shift', 'Alt'].includes(key)) return null;
+    const key = e.key
+    if (['Meta', 'Control', 'Shift', 'Alt'].includes(key)) return null
 
-    let electronKey = key.toUpperCase();
-    if (key === 'ArrowUp') electronKey = 'Up';
-    else if (key === 'ArrowDown') electronKey = 'Down';
-    else if (key === 'ArrowLeft') electronKey = 'Left';
-    else if (key === 'ArrowRight') electronKey = 'Right';
+    let electronKey = key.toUpperCase()
+    if (key === 'ArrowUp') electronKey = 'Up'
+    else if (key === 'ArrowDown') electronKey = 'Down'
+    else if (key === 'ArrowLeft') electronKey = 'Left'
+    else if (key === 'ArrowRight') electronKey = 'Right'
 
-    parts.push(electronKey);
-    return parts.join('+');
-  };
+    parts.push(electronKey)
+    return parts.join('+')
+  }
 
   const handleShortcutKeyDown = async (e: React.KeyboardEvent, type: 'record' | 'paste') => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault()
+    e.stopPropagation()
 
     if (e.key === 'Escape') {
-      setEditingShortcut(null);
-      setShortcutError(null);
-      return;
+      setEditingShortcut(null)
+      setShortcutError(null)
+      return
     }
 
-    const accelerator = keyEventToAccelerator(e);
-    if (!accelerator) return;
+    const accelerator = keyEventToAccelerator(e)
+    if (!accelerator) return
 
-    const result = await window.electronAPI.updateHotkey(type, accelerator);
+    const result = await window.electronAPI.updateHotkey(type, accelerator)
 
     if (result.success) {
-      if (type === 'record') setRecordHotkey(accelerator);
-      else setPasteHotkey(accelerator);
-      setEditingShortcut(null);
-      setShortcutError(null);
+      if (type === 'record') setRecordHotkey(accelerator)
+      else setPasteHotkey(accelerator)
+      setEditingShortcut(null)
+      setShortcutError(null)
     } else {
-      setShortcutError(result.error || 'Failed to set shortcut');
+      setShortcutError(result.error || 'Failed to set shortcut')
     }
-  };
+  }
 
   const commandConfig = {
     send: { title: 'Send / Paste', description: 'Stop and paste to terminal', icon: '📤' },
     clear: { title: 'Clear', description: 'Clear transcript', icon: '🗑️' },
-    cancel: { title: 'Cancel', description: 'Discard recording', icon: '❌' }
-  };
+    cancel: { title: 'Cancel', description: 'Discard recording', icon: '❌' },
+  }
 
   const tabs = [
     { id: 'general' as SettingsTab, label: 'General', icon: '⚙️' },
     { id: 'voice' as SettingsTab, label: 'Voice', icon: '🎤' },
     { id: 'formatting' as SettingsTab, label: 'AI Format', icon: '✨' },
     { id: 'shortcuts' as SettingsTab, label: 'Shortcuts', icon: '⌨️' },
-  ];
+  ]
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
     <div className="cyber-modal-overlay" onClick={onClose}>
-      <div className="cyber-settings-modal" onClick={e => e.stopPropagation()}>
+      <div className="cyber-settings-modal" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="cyber-modal-header">
           <h2>Settings</h2>
           <button className="cyber-close-btn" onClick={onClose}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
@@ -300,7 +311,7 @@ export function SettingsModal({
 
         {/* Tabs */}
         <div className="cyber-settings-tabs">
-          {tabs.map(tab => (
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               className={`cyber-settings-tab ${activeTab === tab.id ? 'active' : ''}`}
@@ -336,7 +347,10 @@ export function SettingsModal({
                       <button className="cyber-btn-sm" onClick={() => setShowApiKey(!showApiKey)}>
                         {showApiKey ? 'Hide' : 'Show'}
                       </button>
-                      <button className="cyber-btn-sm cyber-btn-primary" onClick={() => setIsEditingApiKey(true)}>
+                      <button
+                        className="cyber-btn-sm cyber-btn-primary"
+                        onClick={() => setIsEditingApiKey(true)}
+                      >
                         Change
                       </button>
                     </div>
@@ -355,7 +369,11 @@ export function SettingsModal({
                     <div className="api-key-actions">
                       <button
                         className="cyber-btn-sm"
-                        onClick={() => { setIsEditingApiKey(false); setNewApiKey(''); setApiKeyError(null); }}
+                        onClick={() => {
+                          setIsEditingApiKey(false)
+                          setNewApiKey('')
+                          setApiKeyError(null)
+                        }}
                         disabled={isValidating}
                       >
                         Cancel
@@ -418,7 +436,7 @@ export function SettingsModal({
                 </div>
 
                 <div className="history-limit-options">
-                  {[100, 250, 500, 1000, 0].map(limit => (
+                  {[100, 250, 500, 1000, 0].map((limit) => (
                     <button
                       key={limit}
                       className={`history-limit-btn ${historyLimit === limit ? 'active' : ''}`}
@@ -437,7 +455,7 @@ export function SettingsModal({
                     value={customHistoryLimit}
                     onChange={(e) => setCustomHistoryLimit(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleCustomHistoryLimitSubmit();
+                      if (e.key === 'Enter') handleCustomHistoryLimitSubmit()
                     }}
                     min="0"
                   />
@@ -490,10 +508,10 @@ export function SettingsModal({
 
               {voiceCommandsEnabled && (
                 <div className="voice-commands-section">
-                  {(['send', 'clear', 'cancel'] as const).map(command => {
-                    const cmdTriggers = getTriggersByCommand(command);
-                    const isExpanded = expandedCommand === command;
-                    const config = commandConfig[command];
+                  {(['send', 'clear', 'cancel'] as const).map((command) => {
+                    const cmdTriggers = getTriggersByCommand(command)
+                    const isExpanded = expandedCommand === command
+                    const config = commandConfig[command]
 
                     return (
                       <div key={command} className="cyber-command-group">
@@ -507,20 +525,22 @@ export function SettingsModal({
                             <span className="command-desc">{config.description}</span>
                           </div>
                           <span className="command-count">
-                            {cmdTriggers.filter(t => t.enabled).length}/{cmdTriggers.length}
+                            {cmdTriggers.filter((t) => t.enabled).length}/{cmdTriggers.length}
                           </span>
                           <span className="expand-icon">{isExpanded ? '−' : '+'}</span>
                         </button>
 
                         {isExpanded && (
                           <div className="command-triggers">
-                            {cmdTriggers.map(trigger => (
+                            {cmdTriggers.map((trigger) => (
                               <div key={trigger.id} className="trigger-item">
                                 <label className="cyber-checkbox">
                                   <input
                                     type="checkbox"
                                     checked={trigger.enabled}
-                                    onChange={(e) => handleTriggerToggle(trigger.id, e.target.checked)}
+                                    onChange={(e) =>
+                                      handleTriggerToggle(trigger.id, e.target.checked)
+                                    }
                                   />
                                   <span className="checkbox-mark" />
                                 </label>
@@ -546,10 +566,10 @@ export function SettingsModal({
                                   className="cyber-input cyber-input-sm"
                                   autoFocus
                                   onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleAddTrigger(command);
+                                    if (e.key === 'Enter') handleAddTrigger(command)
                                     if (e.key === 'Escape') {
-                                      setAddingToCommand(null);
-                                      setNewTriggerPhrase('');
+                                      setAddingToCommand(null)
+                                      setNewTriggerPhrase('')
                                     }
                                   }}
                                 />
@@ -572,7 +592,7 @@ export function SettingsModal({
                           </div>
                         )}
                       </div>
-                    );
+                    )
                   })}
                 </div>
               )}
@@ -615,13 +635,15 @@ export function SettingsModal({
                   <div className="cyber-setting-group">
                     <h4 className="setting-label">Model</h4>
                     <div className="model-selector">
-                      {(['haiku', 'sonnet', 'opus'] as const).map(model => (
+                      {(['haiku', 'sonnet', 'opus'] as const).map((model) => (
                         <button
                           key={model}
                           className={`model-btn ${formattingModel === model ? 'active' : ''}`}
                           onClick={() => handleFormattingModelChange(model)}
                         >
-                          <span className="model-name">{model.charAt(0).toUpperCase() + model.slice(1)}</span>
+                          <span className="model-name">
+                            {model.charAt(0).toUpperCase() + model.slice(1)}
+                          </span>
                           <span className="model-badge">
                             {model === 'haiku' && 'Fast'}
                             {model === 'sonnet' && 'Balanced'}
@@ -692,13 +714,19 @@ export function SettingsModal({
                       placeholder="Press keys..."
                       autoFocus
                       onKeyDown={(e) => handleShortcutKeyDown(e, 'record')}
-                      onBlur={() => { setEditingShortcut(null); setShortcutError(null); }}
+                      onBlur={() => {
+                        setEditingShortcut(null)
+                        setShortcutError(null)
+                      }}
                       readOnly
                     />
                   ) : (
                     <button
                       className="shortcut-key"
-                      onClick={() => { setEditingShortcut('record'); setShortcutError(null); }}
+                      onClick={() => {
+                        setEditingShortcut('record')
+                        setShortcutError(null)
+                      }}
                     >
                       {formatHotkeyForDisplay(recordHotkey)}
                     </button>
@@ -714,13 +742,19 @@ export function SettingsModal({
                       placeholder="Press keys..."
                       autoFocus
                       onKeyDown={(e) => handleShortcutKeyDown(e, 'paste')}
-                      onBlur={() => { setEditingShortcut(null); setShortcutError(null); }}
+                      onBlur={() => {
+                        setEditingShortcut(null)
+                        setShortcutError(null)
+                      }}
                       readOnly
                     />
                   ) : (
                     <button
                       className="shortcut-key"
-                      onClick={() => { setEditingShortcut('paste'); setShortcutError(null); }}
+                      onClick={() => {
+                        setEditingShortcut('paste')
+                        setShortcutError(null)
+                      }}
                     >
                       {formatHotkeyForDisplay(pasteHotkey)}
                     </button>
@@ -730,11 +764,13 @@ export function SettingsModal({
 
               {shortcutError && <div className="cyber-error">{shortcutError}</div>}
 
-              <p className="shortcut-hint">Click a shortcut to change it. Press Escape to cancel.</p>
+              <p className="shortcut-hint">
+                Click a shortcut to change it. Press Escape to cancel.
+              </p>
             </div>
           )}
         </div>
       </div>
     </div>
-  );
+  )
 }

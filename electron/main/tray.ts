@@ -6,9 +6,10 @@ let isRecording = false
 
 export function createTray(mainWindow: BrowserWindow): void {
   // Create a simple tray icon (we'll use a template image for macOS)
-  const iconPath = process.platform === 'darwin'
-    ? join(__dirname, '../../resources/trayTemplate.png')
-    : join(__dirname, '../../resources/tray.png')
+  const iconPath =
+    process.platform === 'darwin'
+      ? join(__dirname, '../../resources/trayTemplate.png')
+      : join(__dirname, '../../resources/tray.png')
 
   // Create a simple icon if the file doesn't exist
   let icon: nativeImage
@@ -46,10 +47,10 @@ function createDefaultIcon(): nativeImage {
 
       if (dist < size / 2 - 1) {
         // Inside circle - white/black depending on recording state
-        buffer[idx] = isRecording ? 255 : 100     // R
+        buffer[idx] = isRecording ? 255 : 100 // R
         buffer[idx + 1] = isRecording ? 100 : 100 // G
         buffer[idx + 2] = isRecording ? 100 : 100 // B
-        buffer[idx + 3] = 255                      // A
+        buffer[idx + 3] = 255 // A
       } else {
         // Outside - transparent
         buffer[idx] = 0
@@ -69,7 +70,7 @@ function updateTrayMenu(mainWindow: BrowserWindow): void {
       label: isRecording ? 'Stop Recording' : 'Start Recording',
       click: () => {
         mainWindow.webContents.send('toggle-recording')
-      }
+      },
     },
     { type: 'separator' },
     {
@@ -77,22 +78,22 @@ function updateTrayMenu(mainWindow: BrowserWindow): void {
       accelerator: 'CommandOrControl+Shift+V',
       click: () => {
         mainWindow.webContents.send('paste-last-transcription')
-      }
+      },
     },
     { type: 'separator' },
     {
       label: 'Show Window',
       click: () => {
         mainWindow.show()
-      }
+      },
     },
     { type: 'separator' },
     {
       label: 'Quit',
       click: () => {
         app.quit()
-      }
-    }
+      },
+    },
   ])
 
   tray?.setContextMenu(contextMenu)

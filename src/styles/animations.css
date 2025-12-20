@@ -2,7 +2,8 @@
 
 /* Neon Pulse Animation */
 @keyframes neon-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     filter: brightness(1);
   }
@@ -18,11 +19,17 @@
 
 /* Glow Pulse Animation */
 @keyframes glow-pulse {
-  0%, 100% {
-    box-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan);
+  0%,
+  100% {
+    box-shadow:
+      0 0 5px var(--neon-cyan),
+      0 0 10px var(--neon-cyan);
   }
   50% {
-    box-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan), 0 0 30px var(--neon-cyan);
+    box-shadow:
+      0 0 10px var(--neon-cyan),
+      0 0 20px var(--neon-cyan),
+      0 0 30px var(--neon-cyan);
   }
 }
 
@@ -32,25 +39,36 @@
 
 /* Glitch Effect */
 @keyframes glitch {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0);
-    text-shadow: -2px 0 var(--neon-magenta), 2px 0 var(--neon-cyan);
+    text-shadow:
+      -2px 0 var(--neon-magenta),
+      2px 0 var(--neon-cyan);
   }
   20% {
     transform: translate(-2px, 2px);
-    text-shadow: 2px 0 var(--neon-magenta), -2px 0 var(--neon-cyan);
+    text-shadow:
+      2px 0 var(--neon-magenta),
+      -2px 0 var(--neon-cyan);
   }
   40% {
     transform: translate(-2px, -2px);
-    text-shadow: 2px 0 var(--neon-cyan), -2px 0 var(--neon-magenta);
+    text-shadow:
+      2px 0 var(--neon-cyan),
+      -2px 0 var(--neon-magenta);
   }
   60% {
     transform: translate(2px, 2px);
-    text-shadow: -2px 0 var(--neon-cyan), 2px 0 var(--neon-magenta);
+    text-shadow:
+      -2px 0 var(--neon-cyan),
+      2px 0 var(--neon-magenta);
   }
   80% {
     transform: translate(2px, -2px);
-    text-shadow: 2px 0 var(--neon-magenta), -2px 0 var(--neon-cyan);
+    text-shadow:
+      2px 0 var(--neon-magenta),
+      -2px 0 var(--neon-cyan);
   }
 }
 
@@ -78,12 +96,25 @@
 
 /* Flicker Animation */
 @keyframes flicker {
-  0%, 100% { opacity: 1; }
-  41% { opacity: 1; }
-  42% { opacity: 0.8; }
-  43% { opacity: 1; }
-  45% { opacity: 0.3; }
-  46% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  41% {
+    opacity: 1;
+  }
+  42% {
+    opacity: 0.8;
+  }
+  43% {
+    opacity: 1;
+  }
+  45% {
+    opacity: 0.3;
+  }
+  46% {
+    opacity: 1;
+  }
 }
 
 .animate-flicker {
@@ -92,8 +123,12 @@
 
 /* Rotate Animation */
 @keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .animate-rotate {
@@ -110,8 +145,12 @@
 
 /* Counter-Rotate Animation */
 @keyframes counter-rotate {
-  from { transform: rotate(360deg); }
-  to { transform: rotate(0deg); }
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
 }
 
 .animate-counter-rotate {
@@ -120,7 +159,8 @@
 
 /* Float Animation */
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -134,7 +174,8 @@
 
 /* Breathe Animation (Scale) */
 @keyframes breathe {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {
@@ -157,12 +198,7 @@
 }
 
 .animate-data-stream {
-  background: linear-gradient(
-    0deg,
-    transparent 0%,
-    var(--neon-cyan) 10%,
-    transparent 20%
-  );
+  background: linear-gradient(0deg, transparent 0%, var(--neon-cyan) 10%, transparent 20%);
   background-size: 100% 1000%;
   animation: data-stream 2s linear infinite;
 }
@@ -260,16 +296,37 @@
 
 /* Cyber Shake Animation */
 @keyframes cyber-shake {
-  0%, 100% { transform: translateX(0); }
-  10% { transform: translateX(-5px); }
-  20% { transform: translateX(5px); }
-  30% { transform: translateX(-5px); }
-  40% { transform: translateX(5px); }
-  50% { transform: translateX(-3px); }
-  60% { transform: translateX(3px); }
-  70% { transform: translateX(-2px); }
-  80% { transform: translateX(2px); }
-  90% { transform: translateX(-1px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10% {
+    transform: translateX(-5px);
+  }
+  20% {
+    transform: translateX(5px);
+  }
+  30% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  50% {
+    transform: translateX(-3px);
+  }
+  60% {
+    transform: translateX(3px);
+  }
+  70% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+  90% {
+    transform: translateX(-1px);
+  }
 }
 
 .animate-shake {
@@ -298,7 +355,8 @@
 
 /* Recording Pulse Animation */
 @keyframes recording-pulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(255, 0, 136, 0.7);
   }
   50% {
@@ -312,8 +370,14 @@
 
 /* Typing Cursor Animation */
 @keyframes cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .animate-cursor {

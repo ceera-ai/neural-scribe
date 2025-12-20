@@ -37,8 +37,13 @@
 }
 
 @keyframes label-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .achievement-popup__count {
@@ -84,8 +89,13 @@
 }
 
 @keyframes icon-bounce {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.2); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
 }
 
 .achievement-popup__content {
@@ -160,11 +170,14 @@
 }
 
 @keyframes legendary-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 5px #ffaa00;
   }
   50% {
-    box-shadow: 0 0 15px #ffaa00, 0 0 25px #ffaa00;
+    box-shadow:
+      0 0 15px #ffaa00,
+      0 0 25px #ffaa00;
   }
 }
 

@@ -99,11 +99,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: radial-gradient(
-    circle at center,
-    var(--rarity-color) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle at center, var(--rarity-color) 0%, transparent 70%);
   opacity: 0.1;
   pointer-events: none;
 }
@@ -114,11 +110,14 @@
 }
 
 @keyframes legendary-shine {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 10px rgba(255, 170, 0, 0.3);
   }
   50% {
-    box-shadow: 0 0 20px rgba(255, 170, 0, 0.5), 0 0 30px rgba(255, 170, 0, 0.2);
+    box-shadow:
+      0 0 20px rgba(255, 170, 0, 0.5),
+      0 0 30px rgba(255, 170, 0, 0.2);
   }
 }
 
@@ -127,7 +126,8 @@
 }
 
 @keyframes epic-pulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 8px rgba(170, 0, 255, 0.2);
   }
   50% {

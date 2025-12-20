@@ -11,9 +11,11 @@ export function registerHotkeys(window: BrowserWindow): void {
 
   // Register paste hotkey (Cmd+Shift+V by default)
   try {
-    if (globalShortcut.register(settings.pasteHotkey, () => {
-      pasteLastTranscription()
-    })) {
+    if (
+      globalShortcut.register(settings.pasteHotkey, () => {
+        pasteLastTranscription()
+      })
+    ) {
       currentPasteHotkey = settings.pasteHotkey
     }
   } catch (err) {
@@ -22,9 +24,11 @@ export function registerHotkeys(window: BrowserWindow): void {
 
   // Register record toggle hotkey (Cmd+Shift+R by default)
   try {
-    if (globalShortcut.register(settings.recordHotkey, () => {
-      mainWindow?.webContents.send('toggle-recording')
-    })) {
+    if (
+      globalShortcut.register(settings.recordHotkey, () => {
+        mainWindow?.webContents.send('toggle-recording')
+      })
+    ) {
       currentRecordHotkey = settings.recordHotkey
     }
   } catch (err) {
@@ -39,7 +43,10 @@ export function unregisterHotkeys(): void {
 }
 
 // Update a specific hotkey
-export function updateHotkey(type: 'paste' | 'record', newHotkey: string): { success: boolean; error?: string } {
+export function updateHotkey(
+  type: 'paste' | 'record',
+  newHotkey: string
+): { success: boolean; error?: string } {
   // Validate the hotkey format
   if (!newHotkey || newHotkey.trim() === '') {
     return { success: false, error: 'Hotkey cannot be empty' }
@@ -80,7 +87,9 @@ export function updateHotkey(type: 'paste' | 'record', newHotkey: string): { suc
         globalShortcut.register(settings.pasteHotkey, () => pasteLastTranscription())
         currentPasteHotkey = settings.pasteHotkey
       } else if (type === 'record' && settings.recordHotkey) {
-        globalShortcut.register(settings.recordHotkey, () => mainWindow?.webContents.send('toggle-recording'))
+        globalShortcut.register(settings.recordHotkey, () =>
+          mainWindow?.webContents.send('toggle-recording')
+        )
         currentRecordHotkey = settings.recordHotkey
       }
       return { success: false, error: 'Hotkey is already in use or invalid' }
@@ -89,7 +98,10 @@ export function updateHotkey(type: 'paste' | 'record', newHotkey: string): { suc
     return { success: true }
   } catch (err) {
     console.error('Failed to register hotkey:', err)
-    return { success: false, error: err instanceof Error ? err.message : 'Failed to register hotkey' }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to register hotkey',
+    }
   }
 }
 

@@ -115,54 +115,73 @@ const electronAPI = {
   readClipboard: (): Promise<string> => ipcRenderer.invoke('read-clipboard'),
 
   // Terminal operations
-  getRunningTerminals: (): Promise<TerminalApp[]> =>
-    ipcRenderer.invoke('get-running-terminals'),
+  getRunningTerminals: (): Promise<TerminalApp[]> => ipcRenderer.invoke('get-running-terminals'),
   getSupportedTerminals: (): Promise<TerminalApp[]> =>
     ipcRenderer.invoke('get-supported-terminals'),
-  pasteToTerminal: (text: string, bundleId: string): Promise<{ success: boolean; needsPermission: boolean; copied: boolean }> =>
+  pasteToTerminal: (
+    text: string,
+    bundleId: string
+  ): Promise<{ success: boolean; needsPermission: boolean; copied: boolean }> =>
     ipcRenderer.invoke('paste-to-terminal', text, bundleId),
-  getTerminalWindows: (): Promise<TerminalWindow[]> =>
-    ipcRenderer.invoke('get-terminal-windows'),
-  pasteToTerminalWindow: (text: string, bundleId: string, windowName: string): Promise<{ success: boolean; needsPermission: boolean; copied: boolean }> =>
+  getTerminalWindows: (): Promise<TerminalWindow[]> => ipcRenderer.invoke('get-terminal-windows'),
+  pasteToTerminalWindow: (
+    text: string,
+    bundleId: string,
+    windowName: string
+  ): Promise<{ success: boolean; needsPermission: boolean; copied: boolean }> =>
     ipcRenderer.invoke('paste-to-terminal-window', text, bundleId, windowName),
-  pasteToLastActiveTerminal: (text: string): Promise<{ success: boolean; needsPermission: boolean; copied: boolean; targetApp: string | null }> =>
-    ipcRenderer.invoke('paste-to-last-active-terminal', text),
+  pasteToLastActiveTerminal: (
+    text: string
+  ): Promise<{
+    success: boolean
+    needsPermission: boolean
+    copied: boolean
+    targetApp: string | null
+  }> => ipcRenderer.invoke('paste-to-last-active-terminal', text),
 
   // Word replacement operations
-  getReplacements: (): Promise<WordReplacement[]> =>
-    ipcRenderer.invoke('get-replacements'),
+  getReplacements: (): Promise<WordReplacement[]> => ipcRenderer.invoke('get-replacements'),
   addReplacement: (replacement: WordReplacement): Promise<boolean> =>
     ipcRenderer.invoke('add-replacement', replacement),
   updateReplacement: (id: string, updates: Partial<WordReplacement>): Promise<boolean> =>
     ipcRenderer.invoke('update-replacement', id, updates),
-  deleteReplacement: (id: string): Promise<boolean> =>
-    ipcRenderer.invoke('delete-replacement', id),
+  deleteReplacement: (id: string): Promise<boolean> => ipcRenderer.invoke('delete-replacement', id),
   applyReplacements: (text: string): Promise<string> =>
     ipcRenderer.invoke('apply-replacements', text),
 
   // Voice command trigger operations
   getVoiceCommandTriggers: (): Promise<VoiceCommandTrigger[]> =>
     ipcRenderer.invoke('get-voice-command-triggers'),
-  updateVoiceCommandTrigger: (id: string, updates: Partial<VoiceCommandTrigger>): Promise<boolean> =>
-    ipcRenderer.invoke('update-voice-command-trigger', id, updates),
+  updateVoiceCommandTrigger: (
+    id: string,
+    updates: Partial<VoiceCommandTrigger>
+  ): Promise<boolean> => ipcRenderer.invoke('update-voice-command-trigger', id, updates),
   addVoiceCommandTrigger: (trigger: VoiceCommandTrigger): Promise<boolean> =>
     ipcRenderer.invoke('add-voice-command-trigger', trigger),
   deleteVoiceCommandTrigger: (id: string): Promise<boolean> =>
     ipcRenderer.invoke('delete-voice-command-trigger', id),
   resetVoiceCommandTriggers: (): Promise<boolean> =>
     ipcRenderer.invoke('reset-voice-command-triggers'),
-  getEnabledVoiceCommands: (): Promise<{ send: string[], clear: string[], cancel: string[] }> =>
+  getEnabledVoiceCommands: (): Promise<{ send: string[]; clear: string[]; cancel: string[] }> =>
     ipcRenderer.invoke('get-enabled-voice-commands'),
 
   // Hotkey operations
-  updateHotkey: (type: 'paste' | 'record', newHotkey: string): Promise<{ success: boolean; error?: string }> =>
+  updateHotkey: (
+    type: 'paste' | 'record',
+    newHotkey: string
+  ): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('update-hotkey', type, newHotkey),
 
   // Prompt formatting operations
-  formatPrompt: (text: string): Promise<{ success: boolean; formatted: string; error?: string; skipped?: boolean }> =>
+  formatPrompt: (
+    text: string
+  ): Promise<{ success: boolean; formatted: string; error?: string; skipped?: boolean }> =>
     ipcRenderer.invoke('format-prompt', text),
-  getPromptFormattingSettings: (): Promise<{ enabled: boolean; instructions: string; model: 'sonnet' | 'opus' | 'haiku' }> =>
-    ipcRenderer.invoke('get-prompt-formatting-settings'),
+  getPromptFormattingSettings: (): Promise<{
+    enabled: boolean
+    instructions: string
+    model: 'sonnet' | 'opus' | 'haiku'
+  }> => ipcRenderer.invoke('get-prompt-formatting-settings'),
   setPromptFormattingEnabled: (enabled: boolean): Promise<boolean> =>
     ipcRenderer.invoke('set-prompt-formatting-enabled', enabled),
   setPromptFormattingInstructions: (instructions: string): Promise<boolean> =>
@@ -175,7 +194,10 @@ const electronAPI = {
     ipcRenderer.invoke('check-claude-cli'),
   generateTitle: (text: string): Promise<{ success: boolean; title: string; error?: string }> =>
     ipcRenderer.invoke('generate-title', text),
-  reformatText: (text: string, customInstructions?: string): Promise<{ success: boolean; formatted: string; error?: string }> =>
+  reformatText: (
+    text: string,
+    customInstructions?: string
+  ): Promise<{ success: boolean; formatted: string; error?: string }> =>
     ipcRenderer.invoke('reformat-text', text, customInstructions),
 
   // Gamification operations
@@ -234,7 +256,7 @@ const electronAPI = {
   },
 
   // Send voice commands to main process (for overlay display)
-  sendVoiceCommands: (commands: { send: string[], clear: string[], cancel: string[] }): void => {
+  sendVoiceCommands: (commands: { send: string[]; clear: string[]; cancel: string[] }): void => {
     ipcRenderer.send('voice-commands-update', commands)
   },
 
@@ -244,9 +266,9 @@ const electronAPI = {
   },
 
   // Send overlay status info to main process
-  sendOverlayStatus: (status: { connected: boolean, formattingEnabled: boolean }): void => {
+  sendOverlayStatus: (status: { connected: boolean; formattingEnabled: boolean }): void => {
     ipcRenderer.send('overlay-status', status)
-  }
+  },
 }
 
 // Expose API to renderer

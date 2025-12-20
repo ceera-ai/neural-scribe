@@ -766,7 +766,8 @@
 }
 
 @keyframes shortcutPulse {
-  0%, 100% {
+  0%,
+  100% {
     border-color: var(--neon-cyan, #00ffff);
     box-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
   }

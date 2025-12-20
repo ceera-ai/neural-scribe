@@ -1,8 +1,8 @@
-import './ScanLines.css';
+import './ScanLines.css'
 
 interface ScanLinesProps {
-  opacity?: number;
-  animate?: boolean;
+  opacity?: number
+  animate?: boolean
 }
 
 export function ScanLines({ opacity = 0.05, animate = true }: ScanLinesProps) {
@@ -12,5 +12,5 @@ export function ScanLines({ opacity = 0.05, animate = true }: ScanLinesProps) {
       style={{ '--scan-opacity': opacity } as React.CSSProperties}
       aria-hidden="true"
     />
-  );
+  )
 }
