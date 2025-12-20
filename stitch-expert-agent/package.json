@@ -1,0 +1,32 @@
+{
+  "name": "stitch-expert-agent",
+  "version": "1.0.0",
+  "description": "Google Stitch expert AI design coach powered by Claude Agent SDK",
+  "main": "dist/agent.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/agent.ts",
+    "interactive": "tsx src/conversation-agent.ts",
+    "test": "tsx src/test.ts",
+    "build": "tsc",
+    "start": "node dist/agent.js"
+  },
+  "keywords": [
+    "google-stitch",
+    "ai-agent",
+    "design-assistant",
+    "claude",
+    "anthropic"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^1.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "tsx": "^4.0.0"
+  }
+}

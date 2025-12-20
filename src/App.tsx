@@ -207,6 +207,23 @@ function App() {
     }
   }
 
+  // Handler for clearing transcript and starting new recording
+  const handleClearAndStart = () => {
+    clearTranscript()
+    handleStartRecording()
+  }
+
+  // Handler for pasting to terminal
+  const handlePasteClick = () => {
+    pasteToTerminal(getCurrentTranscript, isRecording, stopRecording, recordingTime, pendingPasteRef)
+  }
+
+  // Handler for formatting setting change
+  const handleFormattingChange = async (enabled: boolean) => {
+    setFormattingEnabled(enabled)
+    await window.electronAPI.setPromptFormattingEnabled(enabled)
+  }
+
   // Show loading state while checking for API key
   if (hasApiKey === null) {
     return (
@@ -258,10 +275,7 @@ function App() {
             hasTranscript={hasTranscript}
             onStartRecording={handleStartRecording}
             onStopRecording={handleStopRecording}
-            onClearAndStart={() => {
-              clearTranscript()
-              handleStartRecording()
-            }}
+            onClearAndStart={handleClearAndStart}
             onCopy={copyToClipboard}
             onClear={clearTranscript}
             onToggleHistory={() => setShowHistory(!showHistory)}
@@ -293,13 +307,7 @@ function App() {
           />
 
           {/* Terminal Paste Section */}
-          <PasteButton
-            hasTranscript={hasTranscript}
-            pasteStatus={pasteStatus}
-            onPaste={() =>
-              pasteToTerminal(getCurrentTranscript, isRecording, stopRecording, recordingTime, pendingPasteRef)
-            }
-          />
+          <PasteButton hasTranscript={hasTranscript} pasteStatus={pasteStatus} onPaste={handlePasteClick} />
 
           {/* Toast Notifications */}
           <ToastNotifications
@@ -314,13 +322,8 @@ function App() {
             pasteHotkey={pasteHotkey}
             formattingEnabled={formattingEnabled}
             voiceCommandsEnabled={voiceCommandsEnabled}
-            onFormattingChange={async (enabled) => {
-              setFormattingEnabled(enabled)
-              await window.electronAPI.setPromptFormattingEnabled(enabled)
-            }}
-            onVoiceCommandsChange={(enabled) => {
-              setVoiceCommandsEnabled(enabled)
-            }}
+            onFormattingChange={handleFormattingChange}
+            onVoiceCommandsChange={setVoiceCommandsEnabled}
           />
         </main>
 
