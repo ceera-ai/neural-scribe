@@ -15,6 +15,9 @@ import { ScanLines } from './components/cyberpunk/ScanLines'
 import { GlitchText } from './components/cyberpunk/GlitchText'
 import { AchievementPopup } from './components/gamification/AchievementPopup'
 import { GamificationModal } from './components/gamification/GamificationModal'
+import { RecordingControls } from './components/controls/RecordingControls'
+import { TranscriptDisplay } from './components/transcript/TranscriptDisplay'
+import { AppHeader } from './components/header/AppHeader'
 import './App.css'
 
 // Check if running in Electron
@@ -571,128 +574,31 @@ function App() {
         <AchievementPopup achievements={recentUnlocks} onDismiss={clearRecentUnlocks} />
       )}
 
-      <header className="app-header cyber-header">
-        <div className="header-title">
-          <GlitchText as="h1" intensity="subtle" className="cyber-title">
-            Neural Scribe
-          </GlitchText>
-          <div
-            className={`status-indicator cyber-status ${isRecording ? 'recording' : isConnected ? 'connected' : ''}`}
-          >
-            <span className="status-dot" />
-            <span>
-              {isRecording
-                ? `Recording ${formatTime(recordingTime)}`
-                : isConnected
-                  ? 'Connected'
-                  : 'Ready'}
-            </span>
-          </div>
-        </div>
-        <div className="header-center">{/* XP Bar moved to gamification modal */}</div>
-        <div className="header-right">
-          <MicrophoneSelector disabled={isRecording} />
-          <button
-            className="btn btn-icon cyber-btn"
-            onClick={() => setShowGamification(true)}
-            title="Stats & Progress"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 20V10"></path>
-              <path d="M18 20V4"></path>
-              <path d="M6 20v-4"></path>
-            </svg>
-          </button>
-          <button
-            className="btn settings-btn cyber-btn"
-            onClick={() => setShowSettings(true)}
-            title="Settings"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-            </svg>
-          </button>
-        </div>
-      </header>
+      <AppHeader
+        isRecording={isRecording}
+        isConnected={isConnected}
+        recordingTime={recordingTime}
+        onOpenGamification={() => setShowGamification(true)}
+        onOpenSettings={() => setShowSettings(true)}
+      />
 
       <div className="main-layout">
         <main className="main-content">
           {/* Recording Controls */}
-          <div className="controls-bar">
-            <div className="controls-left">
-              {!isRecording ? (
-                <>
-                  <button onClick={handleStartRecording} className="btn btn-record">
-                    <span className="record-icon" />
-                    {hasTranscript ? 'Continue' : 'Start Recording'}
-                  </button>
-                  {hasTranscript && (
-                    <button
-                      onClick={() => {
-                        clearTranscript()
-                        handleStartRecording()
-                      }}
-                      className="btn btn-new"
-                      title="Clear and start new recording"
-                    >
-                      New
-                    </button>
-                  )}
-                </>
-              ) : (
-                <button onClick={handleStopRecording} className="btn btn-stop">
-                  <span className="stop-icon" />
-                  Stop
-                </button>
-              )}
-            </div>
-            <div className="controls-right">
-              {hasTranscript && (
-                <>
-                  <button
-                    onClick={copyToClipboard}
-                    className="btn btn-icon"
-                    title="Copy to clipboard"
-                  >
-                    Copy
-                  </button>
-                  <button
-                    onClick={clearTranscript}
-                    className="btn btn-icon"
-                    title="Clear transcript"
-                  >
-                    Clear
-                  </button>
-                </>
-              )}
-              <button
-                onClick={() => setShowHistory(!showHistory)}
-                className={`btn btn-icon ${showHistory ? 'active' : ''}`}
-                title="Toggle history"
-              >
-                History
-              </button>
-            </div>
-          </div>
+          <RecordingControls
+            isRecording={isRecording}
+            hasTranscript={hasTranscript}
+            onStartRecording={handleStartRecording}
+            onStopRecording={handleStopRecording}
+            onClearAndStart={() => {
+              clearTranscript()
+              handleStartRecording()
+            }}
+            onCopy={copyToClipboard}
+            onClear={clearTranscript}
+            onToggleHistory={() => setShowHistory(!showHistory)}
+            showHistory={showHistory}
+          />
 
           {error && <div className="error-banner">{error}</div>}
 
@@ -708,28 +614,15 @@ function App() {
           </div>
 
           {/* Transcript Area */}
-          <div className="transcript-area cyber-panel">
-            {!hasTranscript ? (
-              <div className="transcript-placeholder cyber-placeholder">
-                <p className="cyber-placeholder-text">
-                  <GlitchText intensity="subtle">Click the orb or press</GlitchText>
-                </p>
-                <p className="placeholder-hint">
-                  <kbd className="cyber-kbd">Cmd+Shift+R</kbd> to begin
-                </p>
-              </div>
-            ) : (
-              <textarea
-                ref={transcriptInputRef}
-                className="transcript-input"
-                value={getCurrentTranscript()}
-                onChange={handleTranscriptChange}
-                onContextMenu={handleTranscriptContextMenu}
-                placeholder="Your transcript will appear here..."
-              />
-            )}
-            <div ref={transcriptEndRef} />
-          </div>
+          <TranscriptDisplay
+            hasTranscript={hasTranscript}
+            transcript={getCurrentTranscript()}
+            transcriptInputRef={transcriptInputRef}
+            transcriptEndRef={transcriptEndRef}
+            recordHotkey={recordHotkey}
+            onChange={handleTranscriptChange}
+            onContextMenu={handleTranscriptContextMenu}
+          />
 
           {/* Terminal Paste Section - Always visible */}
           <div className="terminal-section">
