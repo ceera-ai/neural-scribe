@@ -6,6 +6,7 @@ import { useGamification } from './hooks/useGamification'
 import { useAudioAnalyzer } from './hooks/useAudioAnalyzer'
 import { useAppInitialization } from './hooks/useAppInitialization'
 import { usePasteToTerminal } from './hooks/usePasteToTerminal'
+import { useRecordingHandlers } from './hooks/useRecordingHandlers'
 import { HistoryPanel } from './components/HistoryPanel'
 import { ApiKeySetup } from './components/ApiKeySetup'
 import { AIOrb } from './components/orb/AIOrb'
@@ -39,7 +40,6 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [showGamification, setShowGamification] = useState(false)
   const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(true)
-  const [lastVoiceCommand, setLastVoiceCommand] = useState<string | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; text: string } | null>(
     null
   )
@@ -69,118 +69,22 @@ function App() {
     saveTranscriptionWithFormatting,
   })
 
+  // Recording handlers
+  const {
+    lastVoiceCommand,
+    handleRecordingStopped,
+    handleVoiceCommand,
+    handleSaveTranscript,
+  } = useRecordingHandlers({
+    recordSession,
+    saveTranscription,
+    pendingPasteRef,
+  })
+
   // Check daily login on mount
   useEffect(() => {
     checkDailyLogin()
   }, [checkDailyLogin])
-
-  // CENTRALIZED RECORDING COMPLETION - Ensures gamification is ALWAYS triggered
-  const handleRecordingComplete = useCallback(
-    async (
-      transcript: string,
-      duration: number,
-      source:
-        | 'stop_button'
-        | 'voice_send'
-        | 'voice_clear'
-        | 'voice_cancel'
-        | 'hotkey'
-        | 'paste'
-        | 'auto'
-    ) => {
-      console.log(`[App] Recording complete via: ${source}, duration: ${duration}s`)
-
-      // Apply word replacements if enabled
-      let processedTranscript = transcript
-      try {
-        const settings = await window.electronAPI.getSettings()
-        if (settings.replacementsEnabled) {
-          processedTranscript = await window.electronAPI.applyReplacements(transcript)
-        }
-      } catch (err) {
-        console.error('Failed to apply replacements:', err)
-      }
-
-      // CRITICAL: Always record session for gamification (except for cancel)
-      // This fixes the bug where voice commands weren't being tracked
-      if (source !== 'voice_cancel' && processedTranscript.trim()) {
-        const wordCount = processedTranscript.trim().split(/\s+/).length
-        if (wordCount > 0) {
-          console.log(`[App] Recording gamification: ${wordCount} words, ${duration}s`)
-          await recordSession(wordCount, duration * 1000) // Convert to milliseconds
-        }
-      }
-
-      return processedTranscript
-    },
-    [recordSession]
-  )
-
-  const handleRecordingStopped = useCallback(
-    async (transcript: string, duration: number) => {
-      // Determine source based on context
-      const source = pendingPasteRef.current ? 'voice_send' : 'auto'
-
-      // Always trigger gamification via centralized handler
-      const processedTranscript = await handleRecordingComplete(transcript, duration, source)
-
-      // Only auto-save if there's no pending paste operation
-      // If there's a pending paste, formatAndPaste will handle saving with formatting
-      if (processedTranscript.trim() && !pendingPasteRef.current) {
-        await saveTranscription(processedTranscript, duration)
-      }
-
-      // Return the processed transcript to update the UI
-      return processedTranscript
-    },
-    [saveTranscription, handleRecordingComplete]
-  )
-
-  // Handle voice commands
-  const handleVoiceCommand = useCallback(
-    async (command: 'send' | 'clear' | 'cancel', transcript: string) => {
-      console.log(`[App] Voice command received: ${command}, transcript: "${transcript}"`)
-      setLastVoiceCommand(command)
-      setTimeout(() => setLastVoiceCommand(null), 2000)
-
-      switch (command) {
-        case 'send':
-          // Store transcript for paste, will be executed after recording stops
-          if (transcript.trim()) {
-            pendingPasteRef.current = transcript
-          }
-          break
-        case 'clear':
-          // Will be handled after recording stops
-          break
-        case 'cancel':
-          // Will be handled after recording stops
-          break
-      }
-    },
-    []
-  )
-
-  // Handle saving transcript when starting new recording via hotkey
-  const handleSaveTranscript = useCallback(
-    async (transcript: string) => {
-      if (transcript.trim()) {
-        // Apply word replacements before saving
-        let processedText = transcript
-        try {
-          const settings = await window.electronAPI.getSettings()
-          if (settings.replacementsEnabled) {
-            processedText = await window.electronAPI.applyReplacements(transcript)
-          }
-        } catch (err) {
-          console.error('Failed to apply replacements:', err)
-        }
-        // Save to history with 0 duration (since we don't track it for hotkey-triggered saves)
-        await saveTranscription(processedText, 0)
-      }
-    },
-    [saveTranscription]
-  )
 
   const {
     isConnected,
