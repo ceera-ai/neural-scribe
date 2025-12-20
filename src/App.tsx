@@ -7,6 +7,7 @@ import { useAudioAnalyzer } from './hooks/useAudioAnalyzer'
 import { useAppInitialization } from './hooks/useAppInitialization'
 import { usePasteToTerminal } from './hooks/usePasteToTerminal'
 import { useRecordingHandlers } from './hooks/useRecordingHandlers'
+import { useRecordingEffects } from './hooks/useRecordingEffects'
 import { HistoryPanel } from './components/HistoryPanel'
 import { ApiKeySetup } from './components/ApiKeySetup'
 import { AIOrb } from './components/orb/AIOrb'
@@ -35,7 +36,6 @@ function App() {
   } = useAppInitialization()
 
   const [showHistory, setShowHistory] = useState(false)
-  const [recordingTime, setRecordingTime] = useState(0)
   const [showReplacements, setShowReplacements] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showGamification, setShowGamification] = useState(false)
@@ -109,7 +109,18 @@ function App() {
     enabled: isRecording,
     deviceId: selectedDeviceId,
     fftSize: 128, // 64 frequency bins - enough for visualization
-    smoothingTimeConstant: 0.3, // Low smoothing = snappy response
+    smoothingTimeConstant: 0.3, // Low smoothing = snappy response,
+  })
+
+  // Recording effects (timer, overlay updates, auto-scroll)
+  const { recordingTime } = useRecordingEffects({
+    isRecording,
+    isConnected,
+    formattingEnabled,
+    transcriptSegments,
+    transcriptEndRef,
+    pendingPasteRef,
+    formatAndPaste,
   })
 
   // Determine orb state based on app state
@@ -120,111 +131,6 @@ function App() {
     if (isRecording) return 'recording'
     return 'idle'
   }
-
-  // Handle pending paste after recording stops (triggered by "send it" voice command)
-  useEffect(() => {
-    if (!isRecording && pendingPasteRef.current) {
-      const textToPaste = pendingPasteRef.current
-      const duration = recordingTime // Capture duration before it resets
-      pendingPasteRef.current = null
-
-      // Execute paste to terminal with formatting
-      ;(async () => {
-        try {
-          // Apply replacements first
-          const processedText = await window.electronAPI.applyReplacements(textToPaste)
-          console.log('[App] Voice command paste:', processedText, 'duration:', duration)
-
-          // Use the formatAndPaste helper with duration
-          await formatAndPaste(processedText, true, duration)
-        } catch (err) {
-          console.error('[App] Voice command paste error:', err)
-          setPasteStatus('error')
-          setTimeout(() => setPasteStatus('idle'), 3000)
-        }
-      })()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRecording]) // Only trigger when isRecording changes
-
-  // Recording timer
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null
-    if (isRecording) {
-      setRecordingTime(0)
-      window.electronAPI.sendRecordingTime(0)
-      interval = setInterval(() => {
-        setRecordingTime((t) => {
-          const newTime = t + 1
-          window.electronAPI.sendRecordingTime(newTime)
-          return newTime
-        })
-      }, 1000)
-    }
-    return () => {
-      if (interval) clearInterval(interval)
-    }
-  }, [isRecording])
-
-  // Send voice commands and status to overlay when recording starts
-  useEffect(() => {
-    if (isRecording) {
-      // Send voice commands
-      window.electronAPI
-        .getEnabledVoiceCommands()
-        .then((commands) => {
-          window.electronAPI.sendVoiceCommands(commands)
-        })
-        .catch((err) => {
-          console.error('Failed to get voice commands for overlay:', err)
-        })
-
-      // Send status (connected, formatting enabled)
-      window.electronAPI.sendOverlayStatus({
-        connected: isConnected,
-        formattingEnabled: formattingEnabled,
-      })
-    }
-  }, [isRecording, isConnected, formattingEnabled])
-
-  // Send live transcript preview to overlay
-  useEffect(() => {
-    if (isRecording) {
-      const fullText = transcriptSegments
-        .map((s) => s.text)
-        .join(' ')
-        .trim()
-      const wordCount = fullText ? fullText.split(/\s+/).length : 0
-      window.electronAPI.sendTranscriptPreview(fullText, wordCount)
-    }
-  }, [transcriptSegments, isRecording])
-
-  // Format seconds to MM:SS
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
-
-  // Format hotkey for display
-  const formatHotkeyForDisplay = (hotkey: string) => {
-    return hotkey
-      .replace('CommandOrControl', '⌘')
-      .replace('Command', '⌘')
-      .replace('Control', 'Ctrl')
-      .replace('Shift', '⇧')
-      .replace('Alt', '⌥')
-      .replace('Option', '⌥')
-      .replace(/\+/g, ' ')
-      .trim()
-  }
-
-  // Auto-scroll to bottom when new transcript appears
-  useEffect(() => {
-    requestAnimationFrame(() => {
-      transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    })
-  }, [transcriptSegments])
 
   const handleStartRecording = async () => {
     try {
