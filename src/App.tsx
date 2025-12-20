@@ -18,6 +18,9 @@ import { GamificationModal } from './components/gamification/GamificationModal'
 import { RecordingControls } from './components/controls/RecordingControls'
 import { TranscriptDisplay } from './components/transcript/TranscriptDisplay'
 import { AppHeader } from './components/header/AppHeader'
+import { PasteButton } from './components/paste/PasteButton'
+import { ToastNotifications } from './components/notifications/ToastNotifications'
+import { HotkeyFooter } from './components/footer/HotkeyFooter'
 import './App.css'
 
 // Check if running in Electron
@@ -624,139 +627,34 @@ function App() {
             onContextMenu={handleTranscriptContextMenu}
           />
 
-          {/* Terminal Paste Section - Always visible */}
-          <div className="terminal-section">
-            <div className="paste-button-row">
-              <button
-                onClick={handlePasteToTerminal}
-                className="btn btn-paste"
-                disabled={!hasTranscript || pasteStatus === 'formatting'}
-              >
-                {pasteStatus === 'formatting' ? (
-                  <>
-                    <span className="formatting-spinner" />
-                    Formatting...
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M12 5v14M5 12l7 7 7-7" />
-                    </svg>
-                    Paste to Terminal
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
+          {/* Terminal Paste Section */}
+          <PasteButton
+            hasTranscript={hasTranscript}
+            pasteStatus={pasteStatus}
+            onPaste={handlePasteToTerminal}
+          />
 
           {/* Toast Notifications */}
-          {(pasteStatus !== 'idle' || lastVoiceCommand || historySaved) && (
-            <div className="toast-container">
-              {lastVoiceCommand && (
-                <div className="toast toast-voice">
-                  <span className="toast-icon">🎤</span>
-                  <span className="toast-message">Voice: {lastVoiceCommand}</span>
-                </div>
-              )}
-              {pasteStatus === 'formatting' && (
-                <div className="toast toast-processing">
-                  <span className="toast-icon">
-                    <span className="formatting-spinner" />
-                  </span>
-                  <span className="toast-message">Formatting with Claude...</span>
-                </div>
-              )}
-              {pasteStatus === 'permission' && (
-                <div className="toast toast-info">
-                  <span className="toast-icon">📋</span>
-                  <span className="toast-message">Copied! Press ⌘V to paste</span>
-                </div>
-              )}
-              {pasteStatus === 'success' && (
-                <div className="toast toast-success">
-                  <span className="toast-icon">✓</span>
-                  <span className="toast-message">Pasted successfully</span>
-                </div>
-              )}
-              {pasteStatus === 'no-terminal' && (
-                <div className="toast toast-error">
-                  <span className="toast-icon">!</span>
-                  <span className="toast-message">No terminal app running</span>
-                </div>
-              )}
-              {pasteStatus === 'error' && (
-                <div className="toast toast-error">
-                  <span className="toast-icon">!</span>
-                  <span className="toast-message">Paste failed - copied to clipboard</span>
-                </div>
-              )}
-              {historySaved && (
-                <div className="toast toast-history">
-                  <span className="toast-icon">📝</span>
-                  <span className="toast-message">Saved: {historySaved}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Voice Command Indicator - now shown as toast */}
-
-          {/* Stats Panel moved to gamification modal */}
+          <ToastNotifications
+            pasteStatus={pasteStatus}
+            lastVoiceCommand={lastVoiceCommand}
+            historySaved={historySaved}
+          />
 
           {/* Hotkey Footer */}
-          <div className="hotkey-bar cyber-hotkey-bar">
-            <div className="hotkey-left">
-              <span>
-                <kbd className="cyber-kbd">{formatHotkeyForDisplay(recordHotkey)}</kbd> Toggle
-                recording
-              </span>
-              <span>
-                <kbd className="cyber-kbd">{formatHotkeyForDisplay(pasteHotkey)}</kbd> Copy last
-              </span>
-            </div>
-            <div className="hotkey-right">
-              <label
-                className="footer-switch"
-                title={formattingEnabled ? 'AI formatting enabled' : 'AI formatting disabled'}
-              >
-                <span className="switch-label">Format</span>
-                <input
-                  type="checkbox"
-                  checked={formattingEnabled}
-                  onChange={async (e) => {
-                    const newValue = e.target.checked
-                    setFormattingEnabled(newValue)
-                    await window.electronAPI.setPromptFormattingEnabled(newValue)
-                  }}
-                />
-                <span className="switch-track">
-                  <span className="switch-thumb" />
-                </span>
-              </label>
-              <label
-                className="footer-switch"
-                title={voiceCommandsEnabled ? 'Voice commands enabled' : 'Voice commands disabled'}
-              >
-                <span className="switch-label">Voice commands</span>
-                <input
-                  type="checkbox"
-                  checked={voiceCommandsEnabled}
-                  onChange={(e) => setVoiceCommandsEnabled(e.target.checked)}
-                />
-                <span className="switch-track">
-                  <span className="switch-thumb" />
-                </span>
-              </label>
-              {voiceCommandsEnabled && <span className="voice-hint">Say "send it" to paste</span>}
-            </div>
-          </div>
+          <HotkeyFooter
+            recordHotkey={recordHotkey}
+            pasteHotkey={pasteHotkey}
+            formattingEnabled={formattingEnabled}
+            voiceCommandsEnabled={voiceCommandsEnabled}
+            onFormattingChange={async (enabled) => {
+              setFormattingEnabled(enabled)
+              await window.electronAPI.setPromptFormattingEnabled(enabled)
+            }}
+            onVoiceCommandsChange={(enabled) => {
+              setVoiceCommandsEnabled(enabled)
+            }}
+          />
         </main>
 
         {showHistory && (
