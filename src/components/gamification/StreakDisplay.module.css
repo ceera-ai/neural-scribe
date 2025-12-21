@@ -1,0 +1,366 @@
+/**
+ * StreakDisplay Component Styles
+ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+/* Streak status variants */
+.none {
+  border-color: #d1d5db;
+}
+
+.starting {
+  border-color: #fbbf24;
+  background: linear-gradient(135deg, #fefce8 0%, #ffffff 100%);
+}
+
+.building {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
+}
+
+.strong {
+  border-color: #f97316;
+  background: linear-gradient(135deg, #ffedd5 0%, #ffffff 100%);
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.2);
+}
+
+.legendary {
+  border-color: #ef4444;
+  background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+  animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(239, 68, 68, 0.5);
+  }
+}
+
+/* Current Streak */
+.currentStreak {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.fireContainer {
+  flex-shrink: 0;
+  display: flex;
+  gap: 0.25rem;
+  align-items: flex-end;
+  min-width: 80px;
+  justify-content: center;
+}
+
+.fire {
+  font-size: 2.5rem;
+  animation: flicker 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.5));
+}
+
+@keyframes flicker {
+  0%,
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1) translateY(-4px);
+    opacity: 0.9;
+  }
+}
+
+.fireOff {
+  font-size: 2.5rem;
+  opacity: 0.3;
+  filter: grayscale(100%);
+}
+
+.streakInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.streakNumber {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+
+.streakLabel {
+  font-size: 1rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.activeToday {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: #ecfdf5;
+  border: 1px solid #10b981;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #059669;
+  align-self: flex-start;
+  margin-top: 0.5rem;
+}
+
+.checkmark {
+  font-size: 1rem;
+}
+
+/* Status */
+.status {
+  padding: 0.75rem 1rem;
+  background: #f3f4f6;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.statusMessage {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.strong .statusMessage,
+.legendary .statusMessage {
+  color: #dc2626;
+}
+
+/* Longest Streak */
+.longestStreak {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #fefce8;
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+}
+
+.trophy {
+  font-size: 2rem;
+  filter: drop-shadow(0 2px 4px rgba(251, 191, 36, 0.3));
+}
+
+.longestInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.longestLabel {
+  font-size: 0.875rem;
+  color: #78350f;
+  font-weight: 600;
+}
+
+.longestNumber {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+/* Tips */
+.tips {
+  padding: 1rem;
+  background: #eff6ff;
+  border: 1px solid #3b82f6;
+  border-radius: 8px;
+}
+
+.tipsTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e40af;
+  margin-bottom: 0.5rem;
+}
+
+.tipsList {
+  margin: 0;
+  padding-left: 1.25rem;
+  list-style-type: disc;
+}
+
+.tipsList li {
+  font-size: 0.875rem;
+  color: #1e3a8a;
+  margin-bottom: 0.25rem;
+  line-height: 1.5;
+}
+
+.tipsList li:last-child {
+  margin-bottom: 0;
+}
+
+/* Warning */
+.warning {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  animation: pulse-warning 2s ease-in-out infinite;
+}
+
+@keyframes pulse-warning {
+  0%,
+  100% {
+    background: #fef3c7;
+  }
+  50% {
+    background: #fde68a;
+  }
+}
+
+.warningIcon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.warningText {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #92400e;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .container {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .none {
+    border-color: #4b5563;
+  }
+
+  .starting {
+    background: linear-gradient(135deg, #422006 0%, #1f2937 100%);
+  }
+
+  .building {
+    background: linear-gradient(135deg, #78350f 0%, #1f2937 100%);
+  }
+
+  .strong {
+    background: linear-gradient(135deg, #7c2d12 0%, #1f2937 100%);
+  }
+
+  .legendary {
+    background: linear-gradient(135deg, #991b1b 0%, #1f2937 100%);
+  }
+
+  .streakNumber {
+    color: #f9fafb;
+  }
+
+  .streakLabel {
+    color: #d1d5db;
+  }
+
+  .activeToday {
+    background: #064e3b;
+    border-color: #10b981;
+    color: #6ee7b7;
+  }
+
+  .status {
+    background: #374151;
+  }
+
+  .statusMessage {
+    color: #d1d5db;
+  }
+
+  .strong .statusMessage,
+  .legendary .statusMessage {
+    color: #fca5a5;
+  }
+
+  .longestStreak {
+    background: #422006;
+    border-color: #f59e0b;
+  }
+
+  .longestLabel {
+    color: #fcd34d;
+  }
+
+  .longestNumber {
+    color: #fbbf24;
+  }
+
+  .tips {
+    background: #1e3a8a;
+    border-color: #3b82f6;
+  }
+
+  .tipsTitle {
+    color: #93c5fd;
+  }
+
+  .tipsList li {
+    color: #bfdbfe;
+  }
+
+  .warning {
+    background: #78350f;
+    border-color: #f59e0b;
+  }
+
+  .warningText {
+    color: #fcd34d;
+  }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .container {
+    padding: 1.25rem;
+  }
+
+  .currentStreak {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .fireContainer {
+    align-self: center;
+  }
+
+  .streakNumber {
+    font-size: 2.5rem;
+  }
+
+  .longestStreak {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
