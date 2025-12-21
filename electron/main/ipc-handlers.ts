@@ -23,7 +23,6 @@ import {
   FormatPromptSchema,
   ReformatTextSchema,
   GenerateTitleSchema,
-  PromptFormattingSettingsSchema,
   ErrorLogSchema,
 } from './validation'
 import {
@@ -58,26 +57,10 @@ import {
   checkDailyLoginBonus,
   resetGamificationProgress,
   TranscriptionRecord,
-  AppSettings,
-  WordReplacement,
-  VoiceCommandTrigger,
   GamificationData,
 } from './store'
-import {
-  formatPrompt,
-  generateTitle,
-  isClaudeCliAvailable,
-  getClaudeCliVersion,
-  DEFAULT_FORMATTING_INSTRUCTIONS,
-} from './prompt-formatter'
-import {
-  getRunningTerminals,
-  getTerminalWindows,
-  pasteToTerminal,
-  pasteToTerminalWindow,
-  pasteToLastActiveTerminal,
-  SUPPORTED_TERMINALS,
-} from './terminal'
+import { FormattingService, TerminalService } from './services'
+import { SUPPORTED_TERMINALS } from './terminal'
 import { updateHotkey } from './hotkeys'
 
 let onRecordingStateChange: ((isRecording: boolean) => void) | null = null
@@ -226,7 +209,7 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
 
   // Terminal operations
   ipcMain.handle('get-running-terminals', async () => {
-    return getRunningTerminals()
+    return TerminalService.getInstance().getRunningTerminals()
   })
 
   ipcMain.handle('get-supported-terminals', () => {
@@ -239,12 +222,12 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
       { text, bundleId },
       'Invalid paste to terminal params'
     )
-    return pasteToTerminal(validated.text, validated.bundleId)
+    return TerminalService.getInstance().pasteToTerminal(validated.text, validated.bundleId)
   })
 
   // Terminal window operations
   ipcMain.handle('get-terminal-windows', async () => {
-    return getTerminalWindows()
+    return TerminalService.getInstance().getTerminalWindows()
   })
 
   ipcMain.handle(
@@ -255,12 +238,16 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
         { text, bundleId, windowName },
         'Invalid paste to terminal window params'
       )
-      return pasteToTerminalWindow(validated.text, validated.bundleId, validated.windowName)
+      return TerminalService.getInstance().pasteToWindow(
+        validated.text,
+        validated.bundleId,
+        validated.windowName
+      )
     }
   )
 
   ipcMain.handle('paste-to-last-active-terminal', async (_, text: string) => {
-    return pasteToLastActiveTerminal(text)
+    return TerminalService.getInstance().pasteToActiveTerminal(text)
   })
 
   // Word replacement operations
@@ -269,11 +256,7 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   })
 
   ipcMain.handle('add-replacement', (_, replacement: unknown) => {
-    const validated = validateIPC(
-      WordReplacementSchema,
-      replacement,
-      'Invalid word replacement'
-    )
+    const validated = validateIPC(WordReplacementSchema, replacement, 'Invalid word replacement')
     addReplacement(validated)
     return true
   })
@@ -305,21 +288,18 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return getVoiceCommandTriggers()
   })
 
-  ipcMain.handle(
-    'update-voice-command-trigger',
-    (_, id: unknown, updates: unknown) => {
-      if (typeof id !== 'string' || !id) {
-        throw new Error('Invalid voice command trigger ID')
-      }
-      const validated = validateIPC(
-        VoiceCommandTriggerUpdateSchema,
-        updates,
-        'Invalid voice command trigger updates'
-      )
-      updateVoiceCommandTrigger(id, validated)
-      return true
+  ipcMain.handle('update-voice-command-trigger', (_, id: unknown, updates: unknown) => {
+    if (typeof id !== 'string' || !id) {
+      throw new Error('Invalid voice command trigger ID')
     }
-  )
+    const validated = validateIPC(
+      VoiceCommandTriggerUpdateSchema,
+      updates,
+      'Invalid voice command trigger updates'
+    )
+    updateVoiceCommandTrigger(id, validated)
+    return true
+  })
 
   ipcMain.handle('add-voice-command-trigger', (_, trigger: unknown) => {
     const validated = validateIPC(
@@ -353,12 +333,7 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   // Prompt formatting operations
   ipcMain.handle('format-prompt', async (_, text: unknown) => {
     const validated = validateIPC(FormatPromptSchema, { text }, 'Invalid format prompt params')
-    const settings = getPromptFormattingSettings()
-    if (!settings.enabled) {
-      return { success: true, formatted: validated.text, skipped: true }
-    }
-    const result = await formatPrompt(validated.text, settings.instructions || undefined, settings.model)
-    return result
+    return FormattingService.getInstance().formatPrompt(validated.text)
   })
 
   ipcMain.handle('get-prompt-formatting-settings', () => {
@@ -381,18 +356,16 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   })
 
   ipcMain.handle('get-default-formatting-instructions', () => {
-    return DEFAULT_FORMATTING_INSTRUCTIONS
+    return FormattingService.getInstance().getDefaultInstructions()
   })
 
   ipcMain.handle('check-claude-cli', async () => {
-    const available = await isClaudeCliAvailable()
-    const version = available ? await getClaudeCliVersion() : null
-    return { available, version }
+    return FormattingService.getInstance().checkClaudeCliStatus()
   })
 
   ipcMain.handle('generate-title', async (_, text: unknown) => {
     const validated = validateIPC(GenerateTitleSchema, { text }, 'Invalid generate title params')
-    return generateTitle(validated.text)
+    return FormattingService.getInstance().generateTitle(validated.text)
   })
 
   // Reformat text with optional custom instructions (for reformat dialog)
@@ -402,11 +375,10 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
       { text, customInstructions },
       'Invalid reformat text params'
     )
-    const settings = getPromptFormattingSettings()
-    // Use custom instructions if provided, otherwise use default settings
-    const instructions = validated.customInstructions || settings.instructions || undefined
-    const result = await formatPrompt(validated.text, instructions, settings.model)
-    return result
+    return FormattingService.getInstance().reformatText(
+      validated.text,
+      validated.customInstructions
+    )
   })
 
   // Gamification operations
@@ -423,39 +395,33 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return true
   })
 
-  ipcMain.handle(
-    'record-gamification-session',
-    (_, params: unknown) => {
-      const validated = validateIPC(
-        GamificationSessionSchema,
-        params,
-        'Invalid gamification session params'
-      )
-      const result = recordGamificationSession(validated.words, validated.durationMs)
-      // Notify all windows that gamification data changed
-      BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send('gamification-data-changed')
-      })
-      return result
-    }
-  )
+  ipcMain.handle('record-gamification-session', (_, params: unknown) => {
+    const validated = validateIPC(
+      GamificationSessionSchema,
+      params,
+      'Invalid gamification session params'
+    )
+    const result = recordGamificationSession(validated.words, validated.durationMs)
+    // Notify all windows that gamification data changed
+    BrowserWindow.getAllWindows().forEach((win) => {
+      win.webContents.send('gamification-data-changed')
+    })
+    return result
+  })
 
-  ipcMain.handle(
-    'unlock-gamification-achievement',
-    (_, params: unknown) => {
-      const validated = validateIPC(
-        GamificationAchievementSchema,
-        params,
-        'Invalid gamification achievement params'
-      )
-      unlockGamificationAchievement(validated.achievementId, validated.xpReward)
-      // Notify all windows that an achievement was unlocked
-      BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send('achievement-unlocked', validated.achievementId)
-      })
-      return true
-    }
-  )
+  ipcMain.handle('unlock-gamification-achievement', (_, params: unknown) => {
+    const validated = validateIPC(
+      GamificationAchievementSchema,
+      params,
+      'Invalid gamification achievement params'
+    )
+    unlockGamificationAchievement(validated.achievementId, validated.xpReward)
+    // Notify all windows that an achievement was unlocked
+    BrowserWindow.getAllWindows().forEach((win) => {
+      win.webContents.send('achievement-unlocked', validated.achievementId)
+    })
+    return true
+  })
 
   ipcMain.handle('check-gamification-daily-login', () => {
     const result = checkDailyLoginBonus()
