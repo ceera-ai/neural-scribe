@@ -21,6 +21,10 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'electron/preload/index.ts')
+        },
+        output: {
+          format: 'cjs', // Output as CommonJS for Electron preload
+          entryFileNames: '[name].js' // Use .js extension instead of .mjs
         }
       }
     }

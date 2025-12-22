@@ -24,7 +24,7 @@ function createWindow(): void {
     trafficLightPosition: { x: 15, y: 15 },
     icon: join(__dirname, '../../resources/icon.png'),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.mjs'),
+      preload: join(__dirname, '../preload/index.js'),
       sandbox: true, // ✅ Enable sandboxing for security
       contextIsolation: true,
       nodeIntegration: false,
