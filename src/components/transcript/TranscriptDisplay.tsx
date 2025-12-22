@@ -39,8 +39,10 @@ export const TranscriptDisplay: FC<TranscriptDisplayProps> = ({
   onContextMenu,
 }) => {
   // Format hotkey for display (e.g., "CommandOrControl+Shift+R" -> "Cmd+Shift+R")
+  // Use browser-safe platform detection instead of process.platform
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
   const displayHotkey = recordHotkey
-    .replace('CommandOrControl', process.platform === 'darwin' ? 'Cmd' : 'Ctrl')
+    .replace('CommandOrControl', isMac ? 'Cmd' : 'Ctrl')
     .replace('+', '+')
 
   return (
