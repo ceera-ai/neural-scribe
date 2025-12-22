@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react'
 
-// Check if running in Electron
-const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
-
 interface AppInitializationState {
   hasApiKey: boolean | null
   initError: string | null
@@ -36,8 +33,12 @@ export function useAppInitialization(): AppInitializationState {
 
   // Check if API key is configured and load settings on mount
   useEffect(() => {
+    // Check at runtime inside useEffect to avoid race conditions
+    const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+
     if (!isElectron) {
       setInitError('This app requires Electron. The preload script may not have loaded correctly.')
+      setHasApiKey(false) // Set to false instead of leaving as null
       return
     }
 
