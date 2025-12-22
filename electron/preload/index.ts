@@ -278,6 +278,7 @@ const electronAPI = {
 
 // Expose API to renderer
 contextBridge.exposeInMainWorld('electronAPI', electronAPI)
+console.log('[Preload] electronAPI exposed to renderer')
 
 // Type declaration for TypeScript
 export type ElectronAPI = typeof electronAPI
