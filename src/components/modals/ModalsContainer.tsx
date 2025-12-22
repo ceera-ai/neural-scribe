@@ -2,7 +2,7 @@ import { FC } from 'react'
 import { SettingsModal } from '../SettingsModal'
 import { ReplacementsModal } from '../ReplacementsModal'
 import { GamificationModal } from '../gamification/GamificationModal'
-import type { GamificationStats, UserLevel, XPProgress, Achievement } from '../../types/gamification'
+import type { UserStats, LevelSystem, Achievement } from '../../types/gamification'
 import './ModalsContainer.css'
 
 interface ModalsContainerProps {
@@ -25,9 +25,9 @@ interface ModalsContainerProps {
   // Gamification modal
   showGamification: boolean
   onCloseGamification: () => void
-  stats: GamificationStats
-  level: UserLevel
-  xpProgress: XPProgress
+  stats: UserStats
+  level: LevelSystem
+  xpProgress: number
   achievements: Achievement[]
 }
 

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { useElevenLabsScribe } from './hooks/useElevenLabsScribe'
 import { useMicrophoneDevices } from './hooks/useMicrophoneDevices'
 import { useTranscriptionHistory } from './hooks/useTranscriptionHistory'
@@ -13,8 +13,10 @@ import { ApiKeySetup } from './components/ApiKeySetup'
 import { AIOrb } from './components/orb/AIOrb'
 import type { OrbState } from './components/orb/AIOrb'
 import { ScanLines } from './components/cyberpunk/ScanLines'
-import { GlitchText } from './components/cyberpunk/GlitchText'
-import { AchievementPopup } from './components/gamification/AchievementPopup'
+import {
+  NotificationQueue,
+  showAchievementNotification,
+} from './components/gamification/NotificationQueue'
 import { RecordingControls } from './components/controls/RecordingControls'
 import { TranscriptDisplay } from './components/transcript/TranscriptDisplay'
 import { AppHeader } from './components/header/AppHeader'
@@ -64,27 +66,46 @@ function App() {
   } = useGamification()
 
   // Paste to terminal with formatting
-  const { pasteStatus, historySaved, formatAndPaste, handlePasteToTerminal: pasteToTerminal } = usePasteToTerminal({
+  const {
+    pasteStatus,
+    historySaved,
+    formatAndPaste,
+    handlePasteToTerminal: pasteToTerminal,
+  } = usePasteToTerminal({
     formattingEnabled,
     saveTranscriptionWithFormatting,
   })
 
   // Recording handlers
-  const {
-    lastVoiceCommand,
-    handleRecordingStopped,
-    handleVoiceCommand,
-    handleSaveTranscript,
-  } = useRecordingHandlers({
-    recordSession,
-    saveTranscription,
-    pendingPasteRef,
-  })
+  const { lastVoiceCommand, handleRecordingStopped, handleVoiceCommand, handleSaveTranscript } =
+    useRecordingHandlers({
+      recordSession,
+      saveTranscription,
+      pendingPasteRef,
+    })
 
   // Check daily login on mount
   useEffect(() => {
     checkDailyLogin()
   }, [checkDailyLogin])
+
+  // Trigger notifications for recent unlocks
+  useEffect(() => {
+    recentUnlocks.forEach((achievement) => {
+      showAchievementNotification({
+        id: achievement.id,
+        name: achievement.name,
+        description: achievement.description,
+        icon: achievement.icon,
+        xpReward: achievement.xpReward,
+      })
+    })
+
+    if (recentUnlocks.length > 0) {
+      const timer = setTimeout(clearRecentUnlocks, 6000)
+      return () => clearTimeout(timer)
+    }
+  }, [recentUnlocks, clearRecentUnlocks])
 
   const {
     isConnected,
@@ -215,7 +236,13 @@ function App() {
 
   // Handler for pasting to terminal
   const handlePasteClick = () => {
-    pasteToTerminal(getCurrentTranscript, isRecording, stopRecording, recordingTime, pendingPasteRef)
+    pasteToTerminal(
+      getCurrentTranscript,
+      isRecording,
+      stopRecording,
+      recordingTime,
+      pendingPasteRef
+    )
   }
 
   // Handler for formatting setting change
@@ -254,10 +281,13 @@ function App() {
       {/* Cyberpunk Scan Lines Overlay */}
       <ScanLines opacity={0.03} animate={true} />
 
-      {/* Achievement Popup */}
-      {recentUnlocks.length > 0 && (
-        <AchievementPopup achievements={recentUnlocks} onDismiss={clearRecentUnlocks} />
-      )}
+      {/* Achievement Notification Queue */}
+      <NotificationQueue
+        maxVisible={3}
+        duration={5000}
+        staggerDelay={500}
+        onNotificationClick={() => setShowGamification(true)}
+      />
 
       <AppHeader
         isRecording={isRecording}
@@ -307,7 +337,11 @@ function App() {
           />
 
           {/* Terminal Paste Section */}
-          <PasteButton hasTranscript={hasTranscript} pasteStatus={pasteStatus} onPaste={handlePasteClick} />
+          <PasteButton
+            hasTranscript={hasTranscript}
+            pasteStatus={pasteStatus}
+            onPaste={handlePasteClick}
+          />
 
           {/* Toast Notifications */}
           <ToastNotifications
