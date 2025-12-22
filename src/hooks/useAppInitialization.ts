@@ -33,44 +33,57 @@ export function useAppInitialization(): AppInitializationState {
 
   // Check if API key is configured and load settings on mount
   useEffect(() => {
-    // Check at runtime inside useEffect to avoid race conditions
-    const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+    const initializeApp = () => {
+      // Check at runtime inside useEffect to avoid race conditions
+      const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
 
-    if (!isElectron) {
-      setInitError('This app requires Electron. The preload script may not have loaded correctly.')
-      setHasApiKey(false) // Set to false instead of leaving as null
-      return
+      if (!isElectron) {
+        // If electronAPI isn't ready yet, wait a bit and retry
+        const retryTimer = setTimeout(() => {
+          const stillNotElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+          if (!stillNotElectron) {
+            setInitError('This app requires Electron. The preload script may not have loaded correctly.')
+            setHasApiKey(false) // Set to false instead of leaving as null
+          } else {
+            // Retry initialization
+            initializeApp()
+          }
+        }, 100)
+        return () => clearTimeout(retryTimer)
+      }
+
+      // Check API key
+      window.electronAPI
+        .hasApiKey()
+        .then(setHasApiKey)
+        .catch((err) => {
+          console.error('Failed to check API key:', err)
+          setInitError('Failed to initialize: ' + err.message)
+        })
+
+      // Load formatting settings
+      window.electronAPI
+        .getPromptFormattingSettings()
+        .then((settings) => {
+          setFormattingEnabled(settings.enabled)
+        })
+        .catch((err) => {
+          console.error('Failed to load formatting settings:', err)
+        })
+
+      // Load shortcut settings
+      window.electronAPI
+        .getSettings()
+        .then((settings) => {
+          if (settings.recordHotkey) setRecordHotkey(settings.recordHotkey)
+          if (settings.pasteHotkey) setPasteHotkey(settings.pasteHotkey)
+        })
+        .catch((err) => {
+          console.error('Failed to load shortcut settings:', err)
+        })
     }
 
-    // Check API key
-    window.electronAPI
-      .hasApiKey()
-      .then(setHasApiKey)
-      .catch((err) => {
-        console.error('Failed to check API key:', err)
-        setInitError('Failed to initialize: ' + err.message)
-      })
-
-    // Load formatting settings
-    window.electronAPI
-      .getPromptFormattingSettings()
-      .then((settings) => {
-        setFormattingEnabled(settings.enabled)
-      })
-      .catch((err) => {
-        console.error('Failed to load formatting settings:', err)
-      })
-
-    // Load shortcut settings
-    window.electronAPI
-      .getSettings()
-      .then((settings) => {
-        if (settings.recordHotkey) setRecordHotkey(settings.recordHotkey)
-        if (settings.pasteHotkey) setPasteHotkey(settings.pasteHotkey)
-      })
-      .catch((err) => {
-        console.error('Failed to load shortcut settings:', err)
-      })
+    initializeApp()
   }, [])
 
   return {
