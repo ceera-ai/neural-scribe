@@ -37,35 +37,22 @@ export function useAppInitialization(): AppInitializationState {
       // Check at runtime inside useEffect to avoid race conditions
       const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
 
-      console.log('[AppInit] Checking for electronAPI:', {
-        hasWindow: typeof window !== 'undefined',
-        hasElectronAPI: window.electronAPI !== undefined,
-        electronAPI: window.electronAPI
-      })
-
       if (!isElectron) {
-        console.log('[AppInit] electronAPI not ready, retrying in 100ms...')
         // If electronAPI isn't ready yet, wait a bit and retry
         const retryTimer = setTimeout(() => {
           const stillNotElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
-          console.log('[AppInit] Retry check:', {
-            hasWindow: typeof window !== 'undefined',
-            hasElectronAPI: window.electronAPI !== undefined
-          })
           if (!stillNotElectron) {
-            console.error('[AppInit] electronAPI still not available after retry')
-            setInitError('This app requires Electron. The preload script may not have loaded correctly.')
+            setInitError(
+              'This app requires Electron. The preload script may not have loaded correctly.'
+            )
             setHasApiKey(false) // Set to false instead of leaving as null
           } else {
-            console.log('[AppInit] electronAPI now available, initializing...')
             // Retry initialization
             initializeApp()
           }
         }, 100)
         return () => clearTimeout(retryTimer)
       }
-
-      console.log('[AppInit] electronAPI available, proceeding with initialization')
 
       // Check API key
       window.electronAPI
