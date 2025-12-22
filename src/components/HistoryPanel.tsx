@@ -5,6 +5,9 @@ import { ReformatDialog } from './ReformatDialog'
 import type { TranscriptionRecord, FormattedVersion } from '../types/electron'
 import './HistoryPanel.css'
 
+// Check if running in Electron
+const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+
 interface HistoryPanelProps {
   onSelectTranscription?: (text: string) => void
 }
@@ -183,6 +186,10 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
 
   const handleDoReformat = async (sourceVersionId: string, customInstructions?: string) => {
     if (!reformatRecord) return
+
+    if (!isElectron) {
+      throw new Error('Not in Electron environment')
+    }
 
     let sourceText: string
     if (sourceVersionId === 'original') {

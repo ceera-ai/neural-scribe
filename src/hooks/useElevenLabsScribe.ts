@@ -170,6 +170,8 @@ export const useElevenLabsScribe = (
     onSaveTranscript,
   } = options
 
+  const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+
   const [isConnected, setIsConnected] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>([])
@@ -267,7 +269,9 @@ export const useElevenLabsScribe = (
         prevLevel = smoothedLevel
 
         // Send audio level for cloud animations
-        window.electronAPI.sendAudioLevel(smoothedLevel)
+        if (isElectron) {
+          window.electronAPI.sendAudioLevel(smoothedLevel)
+        }
 
         // Extract 24 frequency bins for spectrum visualization
         // Map first 48 bins to 24 bars (averaging pairs)
@@ -292,7 +296,9 @@ export const useElevenLabsScribe = (
         }
 
         // Send frequency data for spectrum bars
-        window.electronAPI.sendFrequencyData(frequencyData)
+        if (isElectron) {
+          window.electronAPI.sendFrequencyData(frequencyData)
+        }
 
         animationFrameRef.current = requestAnimationFrame(analyze)
       }
@@ -324,12 +330,14 @@ export const useElevenLabsScribe = (
     analyserRef.current = null
 
     // Reset overlay to zero level
-    window.electronAPI.sendAudioLevel(0)
-    // Reset spectrum bars
-    window.electronAPI.sendFrequencyData(new Array(24).fill(0))
+    if (isElectron) {
+      window.electronAPI.sendAudioLevel(0)
+      // Reset spectrum bars
+      window.electronAPI.sendFrequencyData(new Array(24).fill(0))
+    }
 
     console.log('[AudioAnalysis] Stopped')
-  }, [])
+  }, [isElectron])
 
   const startRecording = useCallback(async () => {
     try {
@@ -337,13 +345,15 @@ export const useElevenLabsScribe = (
       voiceCommandTriggeredRef.current = false // Reset for new recording
 
       // Load voice commands from store
-      try {
-        const commands = await window.electronAPI.getEnabledVoiceCommands()
-        voiceCommandsRef.current = commands
-        console.log('[VoiceCommand] Loaded triggers:', commands)
-      } catch (err) {
-        console.error('Failed to load voice commands:', err)
-        voiceCommandsRef.current = { send: [], clear: [], cancel: [] }
+      if (isElectron) {
+        try {
+          const commands = await window.electronAPI.getEnabledVoiceCommands()
+          voiceCommandsRef.current = commands
+          console.log('[VoiceCommand] Loaded triggers:', commands)
+        } catch (err) {
+          console.error('Failed to load voice commands:', err)
+          voiceCommandsRef.current = { send: [], clear: [], cancel: [] }
+        }
       }
 
       // Generate session ID only if we don't have one
@@ -356,6 +366,9 @@ export const useElevenLabsScribe = (
       }
 
       // Get token from main process via IPC
+      if (!isElectron) {
+        throw new Error('Cannot get Scribe token: Not in Electron environment')
+      }
       console.log('Getting token from main process...')
       const token = await window.electronAPI.getScribeToken()
       console.log('Token received successfully')
@@ -395,7 +408,9 @@ export const useElevenLabsScribe = (
         setIsRecording(true)
         recordingStartTimeRef.current = Date.now()
         // Notify main process
-        window.electronAPI.notifyRecordingState(true)
+        if (isElectron) {
+          window.electronAPI.notifyRecordingState(true)
+        }
         // Start audio level analysis for overlay visualization
         startAudioAnalysis(selectedMicrophoneId)
       })
@@ -458,7 +473,9 @@ export const useElevenLabsScribe = (
               }
               setIsRecording(false)
               setIsConnected(false)
-              window.electronAPI.notifyRecordingState(false)
+              if (isElectron) {
+                window.electronAPI.notifyRecordingState(false)
+              }
             }, 200)
 
             return // Don't update segment again
@@ -543,7 +560,9 @@ export const useElevenLabsScribe = (
                 }
                 setIsRecording(false)
                 setIsConnected(false)
-                window.electronAPI.notifyRecordingState(false)
+                if (isElectron) {
+                  window.electronAPI.notifyRecordingState(false)
+                }
               }, 100)
             }
             return
@@ -573,7 +592,9 @@ export const useElevenLabsScribe = (
         setError('Authentication failed. Check your API key in settings.')
         setIsConnected(false)
         setIsRecording(false)
-        window.electronAPI.notifyRecordingState(false)
+        if (isElectron) {
+          window.electronAPI.notifyRecordingState(false)
+        }
       })
 
       // Handle general errors
@@ -587,14 +608,18 @@ export const useElevenLabsScribe = (
         console.log('Connection closed')
         setIsConnected(false)
         setIsRecording(false)
-        window.electronAPI.notifyRecordingState(false)
+        if (isElectron) {
+          window.electronAPI.notifyRecordingState(false)
+        }
       })
     } catch (err) {
       console.error('Error starting recording:', err)
       setError(err instanceof Error ? err.message : 'Failed to start recording')
       setIsRecording(false)
       setIsConnected(false)
-      window.electronAPI.notifyRecordingState(false)
+      if (isElectron) {
+        window.electronAPI.notifyRecordingState(false)
+      }
     }
   }, [sessionId, selectedMicrophoneId, startAudioAnalysis])
 
@@ -653,7 +678,9 @@ export const useElevenLabsScribe = (
 
     setIsRecording(false)
     setIsConnected(false)
-    window.electronAPI.notifyRecordingState(false)
+    if (isElectron) {
+      window.electronAPI.notifyRecordingState(false)
+    }
 
     // Call callback if transcript has content (and no voice command was triggered)
     if (transcript && onRecordingStopped) {
@@ -672,6 +699,8 @@ export const useElevenLabsScribe = (
 
   // Listen for toggle recording events from main process
   useEffect(() => {
+    if (!isElectron) return
+
     window.electronAPI.onToggleRecording(async () => {
       if (isRecording) {
         stopRecording()
@@ -698,6 +727,7 @@ export const useElevenLabsScribe = (
       window.electronAPI.removeAllListeners('toggle-recording')
     }
   }, [
+    isElectron,
     isRecording,
     startRecording,
     stopRecording,

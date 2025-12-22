@@ -2,7 +2,10 @@ import { useState, useRef, useCallback } from 'react'
 import { Scribe, RealtimeEvents } from '@elevenlabs/client'
 import './DictateButton.css'
 
-interface DictateButtonProps {
+// Check if running in Electron
+const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+
+interface DictateButtonProps{
   onPartialTranscript: (text: string) => void // Called with real-time updates
   onFinalTranscript: (text: string) => void // Called when recording stops
   onRecordingChange?: (isRecording: boolean) => void // Called when recording state changes
@@ -34,6 +37,11 @@ export function DictateButton({
     setError(null)
     committedTextRef.current = ''
     partialTextRef.current = ''
+
+    if (!isElectron) {
+      setError('Not in Electron environment')
+      return
+    }
 
     try {
       const token = await window.electronAPI.getScribeToken()

@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 
+// Check if running in Electron
+const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+
 interface UseMicrophoneDevicesReturn {
   devices: MediaDeviceInfo[]
   selectedDeviceId: string | null
@@ -28,17 +31,19 @@ export const useMicrophoneDevices = (): UseMicrophoneDevicesReturn => {
       setDevices(audioInputs)
 
       // Load saved selection from settings
-      try {
-        const settings = await window.electronAPI.getSettings()
-        if (settings.selectedMicrophoneId) {
-          // Verify the saved device still exists
-          const deviceExists = audioInputs.some((d) => d.deviceId === settings.selectedMicrophoneId)
-          if (deviceExists) {
-            setSelectedDeviceIdState(settings.selectedMicrophoneId)
+      if (isElectron) {
+        try {
+          const settings = await window.electronAPI.getSettings()
+          if (settings.selectedMicrophoneId) {
+            // Verify the saved device still exists
+            const deviceExists = audioInputs.some((d) => d.deviceId === settings.selectedMicrophoneId)
+            if (deviceExists) {
+              setSelectedDeviceIdState(settings.selectedMicrophoneId)
+            }
           }
+        } catch (err) {
+          console.error('Failed to load saved microphone selection:', err)
         }
-      } catch (err) {
-        console.error('Failed to load saved microphone selection:', err)
       }
     } catch (err) {
       console.error('Failed to enumerate microphone devices:', err)
@@ -58,10 +63,12 @@ export const useMicrophoneDevices = (): UseMicrophoneDevicesReturn => {
   const setSelectedDeviceId = useCallback(async (deviceId: string | null) => {
     setSelectedDeviceIdState(deviceId)
     // Save to settings
-    try {
-      await window.electronAPI.setSettings({ selectedMicrophoneId: deviceId })
-    } catch (err) {
-      console.error('Failed to save microphone selection:', err)
+    if (isElectron) {
+      try {
+        await window.electronAPI.setSettings({ selectedMicrophoneId: deviceId })
+      } catch (err) {
+        console.error('Failed to save microphone selection:', err)
+      }
     }
   }, [])
 
@@ -71,6 +78,7 @@ export const useMicrophoneDevices = (): UseMicrophoneDevicesReturn => {
 
   // Initial enumeration
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     enumerateDevices()
 
     // Listen for device changes

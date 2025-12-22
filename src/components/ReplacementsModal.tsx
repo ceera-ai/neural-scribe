@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react'
 import type { WordReplacement } from '../types/electron'
 import './ReplacementsModal.css'
 
-interface ReplacementsModalProps {
+// Check if running in Electron
+const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+
+interface ReplacementsModalProps{
   isOpen: boolean
   onClose: () => void
   initialFromText?: string
@@ -25,6 +28,8 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
   }, [isOpen, initialFromText])
 
   const loadReplacements = async () => {
+    if (!isElectron) return
+
     setIsLoading(true)
     try {
       const data = await window.electronAPI.getReplacements()
@@ -38,6 +43,7 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
 
   const handleAdd = async () => {
     if (!newFrom.trim() || !newTo.trim()) return
+    if (!isElectron) return
 
     const replacement: WordReplacement = {
       id: Date.now().toString(),
@@ -55,11 +61,13 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
   }
 
   const handleToggle = async (id: string, enabled: boolean) => {
+    if (!isElectron) return
     await window.electronAPI.updateReplacement(id, { enabled })
     setReplacements(replacements.map((r) => (r.id === id ? { ...r, enabled } : r)))
   }
 
   const handleDelete = async (id: string) => {
+    if (!isElectron) return
     await window.electronAPI.deleteReplacement(id)
     setReplacements(replacements.filter((r) => r.id !== id))
   }

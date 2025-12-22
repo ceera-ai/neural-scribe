@@ -1,5 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import './ApiKeySetup.css'
+
+// Check if running in Electron
+const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
 
 interface ApiKeySetupProps {
   onApiKeySet: () => void
@@ -16,6 +19,11 @@ export function ApiKeySetup({ onApiKeySet }: ApiKeySetupProps) {
 
     if (!apiKey.trim()) {
       setError('Please enter an API key')
+      return
+    }
+
+    if (!isElectron) {
+      setError('Not in Electron environment')
       return
     }
 

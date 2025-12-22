@@ -181,7 +181,10 @@ function App() {
 
   const copyToClipboard = async () => {
     const text = getCurrentTranscript()
-    await window.electronAPI.copyToClipboard(text)
+    const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+    if (isElectron) {
+      await window.electronAPI.copyToClipboard(text)
+    }
   }
 
   const handleTranscriptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -248,7 +251,10 @@ function App() {
   // Handler for formatting setting change
   const handleFormattingChange = async (enabled: boolean) => {
     setFormattingEnabled(enabled)
-    await window.electronAPI.setPromptFormattingEnabled(enabled)
+    const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+    if (isElectron) {
+      await window.electronAPI.setPromptFormattingEnabled(enabled)
+    }
   }
 
   // Show loading state while checking for API key

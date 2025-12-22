@@ -1,5 +1,8 @@
 import { useState, useRef, useCallback } from 'react'
 
+// Check if running in Electron
+const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+
 interface UsePasteToTerminalOptions {
   formattingEnabled: boolean
   saveTranscriptionWithFormatting: (data: {
@@ -66,6 +69,12 @@ export function usePasteToTerminal({
 
       isPastingRef.current = true
       console.log('[usePasteToTerminal] Starting paste operation...')
+
+      if (!isElectron) {
+        console.warn('[usePasteToTerminal] Not in Electron environment, skipping paste')
+        isPastingRef.current = false
+        return
+      }
 
       try {
         let textToPaste = text

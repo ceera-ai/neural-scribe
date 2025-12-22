@@ -1,5 +1,8 @@
 import { useCallback, useState } from 'react'
 
+// Check if running in Electron
+const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+
 interface UseRecordingHandlersOptions {
   recordSession: (wordCount: number, duration: number) => Promise<void>
   saveTranscription: (text: string, duration: number) => Promise<void>
@@ -70,13 +73,15 @@ export function useRecordingHandlers({
 
       // Apply word replacements if enabled
       let processedTranscript = transcript
-      try {
-        const settings = await window.electronAPI.getSettings()
-        if (settings.replacementsEnabled) {
-          processedTranscript = await window.electronAPI.applyReplacements(transcript)
+      if (isElectron) {
+        try {
+          const settings = await window.electronAPI.getSettings()
+          if (settings.replacementsEnabled) {
+            processedTranscript = await window.electronAPI.applyReplacements(transcript)
+          }
+        } catch (err) {
+          console.error('Failed to apply replacements:', err)
         }
-      } catch (err) {
-        console.error('Failed to apply replacements:', err)
       }
 
       // CRITICAL: Always record session for gamification (except for cancel)
@@ -177,13 +182,15 @@ export function useRecordingHandlers({
       if (transcript.trim()) {
         // Apply word replacements before saving
         let processedText = transcript
-        try {
-          const settings = await window.electronAPI.getSettings()
-          if (settings.replacementsEnabled) {
-            processedText = await window.electronAPI.applyReplacements(transcript)
+        if (isElectron) {
+          try {
+            const settings = await window.electronAPI.getSettings()
+            if (settings.replacementsEnabled) {
+              processedText = await window.electronAPI.applyReplacements(transcript)
+            }
+          } catch (err) {
+            console.error('Failed to apply replacements:', err)
           }
-        } catch (err) {
-          console.error('Failed to apply replacements:', err)
         }
         // Save to history with 0 duration (since we don't track it for hotkey-triggered saves)
         await saveTranscription(processedText, 0)

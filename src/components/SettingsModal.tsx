@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import type { VoiceCommandTrigger } from '../types/electron'
 import './SettingsModal.css'
 
+// Check if running in Electron
+const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+
 interface SettingsModalProps {
   isOpen: boolean
   onClose: () => void
@@ -82,6 +85,8 @@ export function SettingsModal({
   }
 
   const loadAllSettings = async () => {
+    if (!isElectron) return
+
     try {
       const [key, settings, triggersData, formattingSettings, defaultInstr, cliStatus] =
         await Promise.all([
@@ -121,6 +126,8 @@ export function SettingsModal({
       return
     }
 
+    if (!isElectron) return
+
     setApiKeyError(null)
     setIsValidating(true)
 
@@ -144,13 +151,17 @@ export function SettingsModal({
 
   const handleReplacementsEnabledChange = async (enabled: boolean) => {
     setReplacementsEnabled(enabled)
-    await window.electronAPI.setSettings({ replacementsEnabled: enabled })
+    if (isElectron) {
+      await window.electronAPI.setSettings({ replacementsEnabled: enabled })
+    }
   }
 
   const handleHistoryLimitChange = async (limit: number) => {
     setHistoryLimit(limit)
     setCustomHistoryLimit('')
-    await window.electronAPI.setSettings({ historyLimit: limit })
+    if (isElectron) {
+      await window.electronAPI.setSettings({ historyLimit: limit })
+    }
   }
 
   const handleCustomHistoryLimitSubmit = async () => {
@@ -162,36 +173,50 @@ export function SettingsModal({
 
   const handleVoiceCommandsChange = async (enabled: boolean) => {
     onVoiceCommandsEnabledChange(enabled)
-    await window.electronAPI.setSettings({ voiceCommandsEnabled: enabled })
+    if (isElectron) {
+      await window.electronAPI.setSettings({ voiceCommandsEnabled: enabled })
+    }
   }
 
   const handleFormattingEnabledChange = async (enabled: boolean) => {
     setFormattingEnabled(enabled)
-    await window.electronAPI.setPromptFormattingEnabled(enabled)
+    if (isElectron) {
+      await window.electronAPI.setPromptFormattingEnabled(enabled)
+    }
   }
 
   const handleFormattingModelChange = async (model: 'sonnet' | 'opus' | 'haiku') => {
     setFormattingModel(model)
-    await window.electronAPI.setPromptFormattingModel(model)
+    if (isElectron) {
+      await window.electronAPI.setPromptFormattingModel(model)
+    }
   }
 
   const handleFormattingInstructionsChange = async (instructions: string) => {
     setFormattingInstructions(instructions)
-    await window.electronAPI.setPromptFormattingInstructions(instructions)
+    if (isElectron) {
+      await window.electronAPI.setPromptFormattingInstructions(instructions)
+    }
   }
 
   const handleResetInstructions = async () => {
     setFormattingInstructions('')
-    await window.electronAPI.setPromptFormattingInstructions('')
+    if (isElectron) {
+      await window.electronAPI.setPromptFormattingInstructions('')
+    }
   }
 
   const handleTriggerToggle = async (id: string, enabled: boolean) => {
-    await window.electronAPI.updateVoiceCommandTrigger(id, { enabled })
+    if (isElectron) {
+      await window.electronAPI.updateVoiceCommandTrigger(id, { enabled })
+    }
     setTriggers(triggers.map((t) => (t.id === id ? { ...t, enabled } : t)))
   }
 
   const handleDeleteTrigger = async (id: string) => {
-    await window.electronAPI.deleteVoiceCommandTrigger(id)
+    if (isElectron) {
+      await window.electronAPI.deleteVoiceCommandTrigger(id)
+    }
     setTriggers(triggers.filter((t) => t.id !== id))
   }
 
@@ -206,7 +231,9 @@ export function SettingsModal({
       isCustom: true,
     }
 
-    await window.electronAPI.addVoiceCommandTrigger(newTrigger)
+    if (isElectron) {
+      await window.electronAPI.addVoiceCommandTrigger(newTrigger)
+    }
     setTriggers([...triggers, newTrigger])
     setNewTriggerPhrase('')
     setAddingToCommand(null)
@@ -258,6 +285,8 @@ export function SettingsModal({
       setShortcutError(null)
       return
     }
+
+    if (!isElectron) return
 
     const accelerator = keyEventToAccelerator(e)
     if (!accelerator) return

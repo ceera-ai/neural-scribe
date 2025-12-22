@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import type { TerminalWindow } from '../types/electron'
 import './TerminalSelector.css'
 
+// Check if running in Electron
+const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+
 interface TerminalSelectorProps {
   onPaste: (bundleId: string, windowName?: string) => void
   disabled?: boolean
@@ -13,6 +16,8 @@ export function TerminalSelector({ onPaste, disabled }: TerminalSelectorProps) {
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   const loadWindows = useCallback(async () => {
+    if (!isElectron) return
+
     setIsRefreshing(true)
     try {
       const terminalWindows = await window.electronAPI.getTerminalWindows()
@@ -54,7 +59,9 @@ export function TerminalSelector({ onPaste, disabled }: TerminalSelectorProps) {
 
   const handleWindowChange = async (value: string) => {
     setSelectedWindow(value)
-    await window.electronAPI.setSettings({ selectedTerminalId: value })
+    if (isElectron) {
+      await window.electronAPI.setSettings({ selectedTerminalId: value })
+    }
   }
 
   const handlePaste = async () => {

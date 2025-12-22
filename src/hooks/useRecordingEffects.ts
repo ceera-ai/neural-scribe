@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { TranscriptSegment } from '../hooks/useElevenLabsScribe'
 
+// Check if running in Electron
+const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+
 interface UseRecordingEffectsOptions {
   isRecording: boolean
   isConnected: boolean
@@ -62,18 +65,20 @@ export function useRecordingEffects({
       pendingPasteRef.current = null
 
       // Execute paste to terminal with formatting
-      ;(async () => {
-        try {
-          // Apply replacements first
-          const processedText = await window.electronAPI.applyReplacements(textToPaste)
-          console.log('[useRecordingEffects] Voice command paste:', processedText, 'duration:', duration)
+      if (isElectron) {
+        ;(async () => {
+          try {
+            // Apply replacements first
+            const processedText = await window.electronAPI.applyReplacements(textToPaste)
+            console.log('[useRecordingEffects] Voice command paste:', processedText, 'duration:', duration)
 
-          // Use the formatAndPaste helper with duration
-          await formatAndPaste(processedText, true, duration)
-        } catch (err) {
-          console.error('[useRecordingEffects] Voice command paste error:', err)
-        }
-      })()
+            // Use the formatAndPaste helper with duration
+            await formatAndPaste(processedText, true, duration)
+          } catch (err) {
+            console.error('[useRecordingEffects] Voice command paste error:', err)
+          }
+        })()
+      }
     }
   }, [isRecording, pendingPasteRef, formatAndPaste])
 
@@ -81,12 +86,17 @@ export function useRecordingEffects({
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null
     if (isRecording) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRecordingTime(0)
-      window.electronAPI.sendRecordingTime(0)
+      if (isElectron) {
+        window.electronAPI.sendRecordingTime(0)
+      }
       interval = setInterval(() => {
         setRecordingTime((t) => {
           const newTime = t + 1
-          window.electronAPI.sendRecordingTime(newTime)
+          if (isElectron) {
+            window.electronAPI.sendRecordingTime(newTime)
+          }
           return newTime
         })
       }, 1000)
@@ -98,7 +108,7 @@ export function useRecordingEffects({
 
   // Send voice commands and status to overlay when recording starts
   useEffect(() => {
-    if (isRecording) {
+    if (isRecording && isElectron) {
       // Send voice commands
       window.electronAPI
         .getEnabledVoiceCommands()
@@ -119,7 +129,7 @@ export function useRecordingEffects({
 
   // Send live transcript preview to overlay
   useEffect(() => {
-    if (isRecording) {
+    if (isRecording && isElectron) {
       const fullText = transcriptSegments
         .map((s) => s.text)
         .join(' ')
