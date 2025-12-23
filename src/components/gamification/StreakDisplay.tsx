@@ -66,8 +66,50 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
     return 3
   }
 
+  if (compact) {
+    // Compact mode: Centered badge design
+    return (
+      <div className={`${styles.container} ${styles[streakStatus]} ${styles.compact}`}>
+        {/* Fire Badge */}
+        <div className={styles.badgeContainer}>
+          <div className={styles.fireBadge}>
+            {Array.from({ length: getFireCount() }).map((_, i) => (
+              <span
+                key={i}
+                className={styles.fire}
+                style={{
+                  animationDelay: `${i * 0.2}s`,
+                }}
+              >
+                🔥
+              </span>
+            ))}
+            {currentStreak === 0 && <span className={styles.fireOff}>💨</span>}
+          </div>
+        </div>
+
+        {/* Streak Title */}
+        <div className={styles.streakTitle}>{currentStreak} Day Streak</div>
+
+        {/* Bottom Info Row */}
+        <div className={styles.bottomRow}>
+          {isActiveToday && (
+            <div className={styles.activeToday}>
+              <span className={styles.checkmark}>✓</span> Today
+            </div>
+          )}
+          <div className={styles.divider}></div>
+          <div className={styles.bestStreak}>
+            <span className={styles.trophy}>🏆</span> Best: {longestStreak}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Full mode: Original detailed layout
   return (
-    <div className={`${styles.container} ${styles[streakStatus]} ${compact ? styles.compact : ''}`}>
+    <div className={`${styles.container} ${styles[streakStatus]}`}>
       {/* Current Streak */}
       <div className={styles.currentStreak}>
         <div className={styles.fireContainer}>
@@ -96,11 +138,9 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
       </div>
 
       {/* Status Message */}
-      {!compact && (
-        <div className={styles.status}>
-          <span className={styles.statusMessage}>{getStatusMessage()}</span>
-        </div>
-      )}
+      <div className={styles.status}>
+        <span className={styles.statusMessage}>{getStatusMessage()}</span>
+      </div>
 
       {/* Longest Streak */}
       <div className={styles.longestStreak}>
@@ -112,7 +152,7 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
       </div>
 
       {/* Tips */}
-      {showTips && currentStreak > 0 && !compact && (
+      {showTips && currentStreak > 0 && (
         <div className={styles.tips}>
           <div className={styles.tipsTitle}>💡 Streak Tips</div>
           <ul className={styles.tipsList}>
@@ -124,7 +164,7 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
       )}
 
       {/* Warning if streak is at risk */}
-      {!isActiveToday && currentStreak > 0 && !compact && (
+      {!isActiveToday && currentStreak > 0 && (
         <div className={styles.warning}>
           <span className={styles.warningIcon}>⚠️</span>
           <span className={styles.warningText}>
