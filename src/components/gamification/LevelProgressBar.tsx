@@ -79,15 +79,19 @@ export const LevelProgressBar: React.FC<LevelProgressBarProps> = ({
       {/* XP Details */}
       {showDetails && (
         <div className={styles.details}>
-          <div className={styles.xpCurrent}>
-            <span className={styles.xpValue}>{currentXP.toLocaleString()}</span>
-            <span className={styles.xpLabel}>Current XP</span>
-          </div>
-          <div className={styles.xpDivider}>/</div>
-          <div className={styles.xpNext}>
-            <span className={styles.xpValue}>{totalXPForNextLevel.toLocaleString()}</span>
-            <span className={styles.xpLabel}>Next Level</span>
-          </div>
+          {!compact && (
+            <>
+              <div className={styles.xpCurrent}>
+                <span className={styles.xpValue}>{currentXP.toLocaleString()}</span>
+                <span className={styles.xpLabel}>Current XP</span>
+              </div>
+              <div className={styles.xpDivider}>/</div>
+              <div className={styles.xpNext}>
+                <span className={styles.xpValue}>{totalXPForNextLevel.toLocaleString()}</span>
+                <span className={styles.xpLabel}>Next Level</span>
+              </div>
+            </>
+          )}
           <div className={styles.xpRemaining}>
             <span className={styles.xpRemainingValue}>
               {xpToNextLevel.toLocaleString()} XP to go

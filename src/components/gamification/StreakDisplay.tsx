@@ -96,9 +96,11 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
       </div>
 
       {/* Status Message */}
-      <div className={styles.status}>
-        <span className={styles.statusMessage}>{getStatusMessage()}</span>
-      </div>
+      {!compact && (
+        <div className={styles.status}>
+          <span className={styles.statusMessage}>{getStatusMessage()}</span>
+        </div>
+      )}
 
       {/* Longest Streak */}
       <div className={styles.longestStreak}>

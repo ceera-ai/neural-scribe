@@ -58,6 +58,12 @@
 .compact .details {
   padding-top: 0.5rem;
   gap: 0.5rem;
+  justify-content: center;
+}
+
+.compact .xpRemaining {
+  flex-basis: auto;
+  margin-top: 0;
 }
 
 .compact .xpValue {
