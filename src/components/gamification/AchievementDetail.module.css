@@ -156,7 +156,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #10b981;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -164,6 +164,7 @@
   font-size: 1.25rem;
   font-weight: bold;
   border: 3px solid #ffffff;
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
   animation: pop 0.4s ease;
 }
 
@@ -241,9 +242,10 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: #ecfdf5;
-  border: 2px solid #10b981;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%);
+  border: 2px solid #8b5cf6;
   border-radius: 12px;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
 }
 
 .statusIcon {
@@ -253,7 +255,7 @@
 .statusLabel {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #059669;
+  color: #a78bfa;
 }
 
 .statusDate {
@@ -376,7 +378,7 @@
   right: 0.5rem;
   width: 20px;
   height: 20px;
-  background: #10b981;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -384,6 +386,7 @@
   justify-content: center;
   font-size: 0.75rem;
   font-weight: bold;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
 }
 
 /* Dark mode */
@@ -429,12 +432,13 @@
   }
 
   .statusUnlocked {
-    background: #064e3b;
-    border-color: #10b981;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);
+    border-color: #8b5cf6;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
   }
 
   .statusLabel {
-    color: #10b981;
+    color: #a78bfa;
   }
 
   .statusDate {
