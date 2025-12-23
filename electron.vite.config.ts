@@ -9,10 +9,10 @@ export default defineConfig({
       outDir: 'out/main',
       rollupOptions: {
         input: {
-          index: resolve(__dirname, 'electron/main/index.ts')
-        }
-      }
-    }
+          index: resolve(__dirname, 'electron/main/index.ts'),
+        },
+      },
+    },
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
@@ -20,14 +20,14 @@ export default defineConfig({
       outDir: 'out/preload',
       rollupOptions: {
         input: {
-          index: resolve(__dirname, 'electron/preload/index.ts')
+          index: resolve(__dirname, 'electron/preload/index.ts'),
         },
         output: {
           format: 'cjs', // Output as CommonJS for Electron preload
-          entryFileNames: '[name].js' // Use .js extension instead of .mjs
-        }
-      }
-    }
+          entryFileNames: '[name].js', // Use .js extension instead of .mjs
+        },
+      },
+    },
   },
   renderer: {
     root: '.',
@@ -35,10 +35,11 @@ export default defineConfig({
       outDir: 'out/renderer',
       rollupOptions: {
         input: {
-          index: resolve(__dirname, 'index.html')
-        }
-      }
+          index: resolve(__dirname, 'index.html'),
+          debug: resolve(__dirname, 'electron/debug.html'),
+        },
+      },
     },
-    plugins: [react()]
-  }
+    plugins: [react()],
+  },
 })

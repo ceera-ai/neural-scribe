@@ -211,6 +211,10 @@ const electronAPI = {
   checkGamificationDailyLogin: () => ipcRenderer.invoke('check-gamification-daily-login'),
   resetGamificationProgress: () => ipcRenderer.invoke('reset-gamification-progress'),
   checkAndUnlockAllAchievements: () => ipcRenderer.invoke('check-and-unlock-all-achievements'),
+  trackFeatureUsage: (featureType: string, metadata?: { bundleId?: string }): Promise<string[]> =>
+    ipcRenderer.invoke('track-feature-usage', featureType, metadata),
+  resetAchievement: (achievementId: string): Promise<{ success: boolean; wasUnlocked: boolean }> =>
+    ipcRenderer.invoke('reset-achievement', achievementId),
   onGamificationDataChanged: (callback: () => void): void => {
     ipcRenderer.on('gamification-data-changed', () => callback())
   },

@@ -30,13 +30,20 @@ export function checkAchievements(
 ): string[] {
   const newlyUnlocked: string[] = []
 
-  // Check each achievement category
+  // Check existing achievement categories
   newlyUnlocked.push(...checkMilestoneAchievements(stats, achievements))
   newlyUnlocked.push(...checkWordCountAchievements(stats, achievements))
   newlyUnlocked.push(...checkStreakAchievements(stats, achievements))
   newlyUnlocked.push(...checkSpeedAchievements(stats, achievements))
   newlyUnlocked.push(...checkTimeAchievements(stats, achievements))
   newlyUnlocked.push(...checkLevelAchievements(level, achievements))
+
+  // Check new feature-based achievement categories
+  newlyUnlocked.push(...checkAIMasteryAchievements(stats, achievements))
+  newlyUnlocked.push(...checkCustomizationAchievements(stats, achievements))
+  newlyUnlocked.push(...checkEfficiencyAchievements(stats, achievements))
+  newlyUnlocked.push(...checkIntegrationAchievements(stats, achievements))
+  newlyUnlocked.push(...checkExplorationAchievements(stats, achievements))
 
   return newlyUnlocked
 }
@@ -192,6 +199,333 @@ export function checkLevelAchievements(
       newlyUnlocked.push(milestone.id)
     }
   }
+
+  return newlyUnlocked
+}
+
+/**
+ * Check AI mastery achievements (AI formatting, models, titles)
+ */
+export function checkAIMasteryAchievements(
+  stats: UserStats,
+  achievements: AchievementsState
+): string[] {
+  const newlyUnlocked: string[] = []
+
+  // Guard against missing featureUsage (pre-migration or during migration)
+  if (!stats.featureUsage) {
+    return newlyUnlocked
+  }
+
+  const {
+    formattingOperations,
+    reformattingOperations,
+    titleGenerationsCount,
+    modelUsageCounts,
+    customInstructionsChanges,
+  } = stats.featureUsage
+
+  // AI Formatting progression
+  const formattingTotal = formattingOperations + reformattingOperations
+  const formattingMilestones = [
+    { id: 'ai-assistant', threshold: 10 },
+    { id: 'formatting-pro', threshold: 100 },
+    { id: 'claudes-partner', threshold: 1000 },
+  ]
+
+  for (const milestone of formattingMilestones) {
+    if (
+      formattingTotal >= milestone.threshold &&
+      !isAchievementUnlocked(achievements, milestone.id)
+    ) {
+      newlyUnlocked.push(milestone.id)
+    }
+  }
+
+  // Model exploration
+  const modelsUsed = Object.values(modelUsageCounts).filter((count) => count > 0).length
+  if (modelsUsed >= 3 && !isAchievementUnlocked(achievements, 'model-curious')) {
+    newlyUnlocked.push('model-curious')
+  }
+
+  // Model-specific achievements
+  if (modelUsageCounts.sonnet >= 50 && !isAchievementUnlocked(achievements, 'sonnet-fan')) {
+    newlyUnlocked.push('sonnet-fan')
+  }
+  if (modelUsageCounts.opus >= 25 && !isAchievementUnlocked(achievements, 'opus-enthusiast')) {
+    newlyUnlocked.push('opus-enthusiast')
+  }
+  if (modelUsageCounts.haiku >= 100 && !isAchievementUnlocked(achievements, 'haiku-speedster')) {
+    newlyUnlocked.push('haiku-speedster')
+  }
+
+  // Reformatting achievements
+  if (reformattingOperations >= 5 && !isAchievementUnlocked(achievements, 'perfectionist')) {
+    newlyUnlocked.push('perfectionist')
+  }
+  if (
+    formattingTotal >= 10 &&
+    reformattingOperations >= 10 &&
+    !isAchievementUnlocked(achievements, 'version-control')
+  ) {
+    newlyUnlocked.push('version-control')
+  }
+
+  // Title generation
+  const titleMilestones = [
+    { id: 'title-generator', threshold: 20 },
+    { id: 'librarian', threshold: 100 },
+  ]
+
+  for (const milestone of titleMilestones) {
+    if (
+      titleGenerationsCount >= milestone.threshold &&
+      !isAchievementUnlocked(achievements, milestone.id)
+    ) {
+      newlyUnlocked.push(milestone.id)
+    }
+  }
+
+  // Custom instructions
+  if (customInstructionsChanges >= 1 && !isAchievementUnlocked(achievements, 'instruction-giver')) {
+    newlyUnlocked.push('instruction-giver')
+  }
+
+  return newlyUnlocked
+}
+
+/**
+ * Check customization achievements (voice commands, word replacements, settings)
+ */
+export function checkCustomizationAchievements(
+  stats: UserStats,
+  achievements: AchievementsState
+): string[] {
+  const newlyUnlocked: string[] = []
+
+  // Guard against missing featureUsage (pre-migration or during migration)
+  if (!stats.featureUsage) {
+    return newlyUnlocked
+  }
+
+  const {
+    voiceCommandsUsed,
+    customVoiceCommandsAdded,
+    wordReplacementsAdded,
+    wordReplacementsApplied,
+    settingsChanges,
+    featureToggles,
+    customInstructionsChanges,
+  } = stats.featureUsage
+
+  // Voice commands
+  if (voiceCommandsUsed >= 1 && !isAchievementUnlocked(achievements, 'voice-commander')) {
+    newlyUnlocked.push('voice-commander')
+  }
+  if (voiceCommandsUsed >= 50 && !isAchievementUnlocked(achievements, 'command-master')) {
+    newlyUnlocked.push('command-master')
+  }
+  if (
+    customVoiceCommandsAdded >= 1 &&
+    !isAchievementUnlocked(achievements, 'custom-command-creator')
+  ) {
+    newlyUnlocked.push('custom-command-creator')
+  }
+  if (customVoiceCommandsAdded >= 5 && !isAchievementUnlocked(achievements, 'command-library')) {
+    newlyUnlocked.push('command-library')
+  }
+
+  // Word replacements
+  if (wordReplacementsAdded >= 1 && !isAchievementUnlocked(achievements, 'word-smith-custom')) {
+    newlyUnlocked.push('word-smith-custom')
+  }
+  if (
+    wordReplacementsAdded >= 10 &&
+    !isAchievementUnlocked(achievements, 'replacement-architect')
+  ) {
+    newlyUnlocked.push('replacement-architect')
+  }
+  if (
+    wordReplacementsApplied >= 100 &&
+    !isAchievementUnlocked(achievements, 'replacement-veteran')
+  ) {
+    newlyUnlocked.push('replacement-veteran')
+  }
+
+  // Note: case-sensitive-expert and whole-word-master require tracking replacement rule types
+  // which we don't have yet - these will need special handling in IPC handlers
+
+  // Settings customization
+  if (settingsChanges >= 5 && !isAchievementUnlocked(achievements, 'settings-explorer')) {
+    newlyUnlocked.push('settings-explorer')
+  }
+  if (featureToggles >= 10 && !isAchievementUnlocked(achievements, 'feature-toggler')) {
+    newlyUnlocked.push('feature-toggler')
+  }
+
+  // Note: personalization-master requires tracking unique settings changed
+  // This will need special handling
+
+  // Custom formatting instructions
+  if (
+    customInstructionsChanges >= 3 &&
+    !isAchievementUnlocked(achievements, 'instruction-experimenter')
+  ) {
+    newlyUnlocked.push('instruction-experimenter')
+  }
+
+  return newlyUnlocked
+}
+
+/**
+ * Check efficiency achievements (keyboard shortcuts, quick workflows, history)
+ */
+export function checkEfficiencyAchievements(
+  stats: UserStats,
+  achievements: AchievementsState
+): string[] {
+  const newlyUnlocked: string[] = []
+
+  // Guard against missing featureUsage (pre-migration or during migration)
+  if (!stats.featureUsage) {
+    return newlyUnlocked
+  }
+
+  const {
+    hotkeyUsageCount,
+    pasteHotkeyCount,
+    recordHotkeyCount,
+    hotkeyChanges,
+    historySearchCount,
+  } = stats.featureUsage
+
+  // Keyboard shortcuts
+  if (hotkeyChanges >= 1 && !isAchievementUnlocked(achievements, 'hotkey-hero')) {
+    newlyUnlocked.push('hotkey-hero')
+  }
+  if (hotkeyUsageCount >= 100 && !isAchievementUnlocked(achievements, 'shortcut-master')) {
+    newlyUnlocked.push('shortcut-master')
+  }
+  if (pasteHotkeyCount >= 50 && !isAchievementUnlocked(achievements, 'paste-master')) {
+    newlyUnlocked.push('paste-master')
+  }
+  if (recordHotkeyCount >= 50 && !isAchievementUnlocked(achievements, 'record-ninja')) {
+    newlyUnlocked.push('record-ninja')
+  }
+
+  // Note: one-session-wonder, productivity-streak, and power-hour require session-level tracking
+  // These will need special handling in the session recorder
+
+  // History management
+  if (historySearchCount >= 10 && !isAchievementUnlocked(achievements, 'history-hunter')) {
+    newlyUnlocked.push('history-hunter')
+  }
+
+  // Note: archivist and minimalist require tracking history count and settings
+  // These will need special handling
+
+  return newlyUnlocked
+}
+
+/**
+ * Check integration achievements (terminal paste)
+ */
+export function checkIntegrationAchievements(
+  stats: UserStats,
+  achievements: AchievementsState
+): string[] {
+  const newlyUnlocked: string[] = []
+
+  // Guard against missing featureUsage (pre-migration or during migration)
+  if (!stats.featureUsage) {
+    return newlyUnlocked
+  }
+
+  const { terminalPasteOperations, uniqueTerminalsUsed, terminalUsageCounts } = stats.featureUsage
+
+  // Terminal usage
+  if (terminalPasteOperations >= 1 && !isAchievementUnlocked(achievements, 'terminal-novice')) {
+    newlyUnlocked.push('terminal-novice')
+  }
+  if (terminalPasteOperations >= 50 && !isAchievementUnlocked(achievements, 'terminal-veteran')) {
+    newlyUnlocked.push('terminal-veteran')
+  }
+
+  // Multiple terminals
+  const terminalsUsed = uniqueTerminalsUsed.length
+  if (terminalsUsed >= 3 && !isAchievementUnlocked(achievements, 'multi-terminal-user')) {
+    newlyUnlocked.push('multi-terminal-user')
+  }
+  if (terminalsUsed >= 8 && !isAchievementUnlocked(achievements, 'terminal-collector')) {
+    newlyUnlocked.push('terminal-collector')
+  }
+
+  // Note: window-targeter requires tracking window-specific paste operations
+  // This will need special handling
+
+  // Terminal-specific achievements
+  const vscodeCount =
+    (terminalUsageCounts['com.microsoft.VSCode'] || 0) +
+    (terminalUsageCounts['com.visualstudio.code.oss'] || 0)
+  const cursorCount = terminalUsageCounts['com.todesktop.230313mzl4w4u92'] || 0
+  const itermCount = terminalUsageCounts['com.googlecode.iterm2'] || 0
+
+  if (vscodeCount >= 10 && !isAchievementUnlocked(achievements, 'vscode-coder')) {
+    newlyUnlocked.push('vscode-coder')
+  }
+  if (cursorCount >= 10 && !isAchievementUnlocked(achievements, 'cursor-developer')) {
+    newlyUnlocked.push('cursor-developer')
+  }
+  if (itermCount >= 10 && !isAchievementUnlocked(achievements, 'iterm-enthusiast')) {
+    newlyUnlocked.push('iterm-enthusiast')
+  }
+
+  return newlyUnlocked
+}
+
+/**
+ * Check exploration achievements (feature discovery, combos)
+ */
+export function checkExplorationAchievements(
+  stats: UserStats,
+  achievements: AchievementsState
+): string[] {
+  const newlyUnlocked: string[] = []
+
+  // Guard against missing featureUsage (pre-migration or during migration)
+  if (!stats.featureUsage) {
+    return newlyUnlocked
+  }
+
+  const { featureUsage } = stats
+
+  // Count unique features used (non-zero values)
+  const featuresUsed = [
+    featureUsage.formattingOperations + featureUsage.reformattingOperations > 0,
+    featureUsage.voiceCommandsUsed > 0,
+    featureUsage.wordReplacementsApplied > 0,
+    featureUsage.terminalPasteOperations > 0,
+    featureUsage.hotkeyUsageCount > 0,
+    featureUsage.historySearchCount > 0,
+  ].filter(Boolean).length
+
+  if (featuresUsed >= 5 && !isAchievementUnlocked(achievements, 'feature-discoverer')) {
+    newlyUnlocked.push('feature-discoverer')
+  }
+
+  // Microphone selection
+  if (
+    featureUsage.microphoneChanges >= 1 &&
+    !isAchievementUnlocked(achievements, 'microphone-selector')
+  ) {
+    newlyUnlocked.push('microphone-selector')
+  }
+
+  // Note: jack-of-all-trades, combo-master, experimental-mode, and renaissance-user
+  // require more complex tracking and will need special handling
+
+  // Note: api-key-setup requires one-time event tracking
+  // This will need special handling in settings
 
   return newlyUnlocked
 }

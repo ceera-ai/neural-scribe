@@ -84,4 +84,15 @@ export default defineConfig([
       'max-lines': 'off', // No line limit in tests
     },
   },
+
+  // Exception for large handler/checker files
+  {
+    files: [
+      'electron/main/ipc-handlers.ts',
+      'electron/main/store/gamification/achievementChecker.ts'
+    ],
+    rules: {
+      'max-lines': ['error', { max: 700, skipBlankLines: true, skipComments: true }],
+    },
+  },
 ])

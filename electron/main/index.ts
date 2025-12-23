@@ -5,8 +5,10 @@ import { setupIpcHandlers } from './ipc-handlers'
 import { createTray, updateTrayRecordingState } from './tray'
 import { registerHotkeys, unregisterHotkeys } from './hotkeys'
 import { createOverlayWindow, showOverlay, hideOverlay, destroyOverlay } from './overlay'
+import { createFormattingOverlay, destroyFormattingOverlay } from './formattingOverlay'
 
 let mainWindow: BrowserWindow | null = null
+let debugWindow: BrowserWindow | null = null
 
 export function getMainWindow(): BrowserWindow | null {
   return mainWindow
@@ -57,6 +59,35 @@ function createWindow(): void {
   })
 }
 
+function createDebugWindow(): void {
+  debugWindow = new BrowserWindow({
+    width: 900,
+    height: 700,
+    x: 950, // Position to the right of main window
+    y: 100,
+    show: false,
+    autoHideMenuBar: true,
+    title: 'Debug Tools - Neural Scribe',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  })
+
+  debugWindow.on('ready-to-show', () => {
+    debugWindow?.show()
+  })
+
+  // Load the debug HTML file
+  debugWindow.loadFile(join(__dirname, '../renderer/electron/debug.html'))
+
+  debugWindow.on('closed', () => {
+    debugWindow = null
+  })
+}
+
 app.whenReady().then(() => {
   // Set app name and user model id
   app.setName('Neural Scribe')
@@ -89,8 +120,16 @@ app.whenReady().then(() => {
   // Create window
   createWindow()
 
+  // Create debug window (development only)
+  if (is.dev) {
+    createDebugWindow()
+  }
+
   // Create recording overlay window (pass main window for fallback display detection)
   createOverlayWindow(mainWindow!)
+
+  // Create formatting progress overlay window
+  createFormattingOverlay()
 
   // Create system tray
   createTray(mainWindow!)
@@ -114,6 +153,7 @@ app.on('window-all-closed', () => {
 app.on('will-quit', () => {
   unregisterHotkeys()
   destroyOverlay()
+  destroyFormattingOverlay()
 })
 
 export { updateTrayRecordingState }

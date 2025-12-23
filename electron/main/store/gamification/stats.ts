@@ -7,6 +7,79 @@
  */
 
 /**
+ * Feature usage statistics for tracking app feature interactions
+ *
+ * @interface FeatureUsageStats
+ */
+export interface FeatureUsageStats {
+  // AI Formatting
+  /** Total AI formatting operations (initial formatting) */
+  formattingOperations: number
+  /** Total reformatting operations (re-formatting existing text) */
+  reformattingOperations: number
+  /** Total AI title generations */
+  titleGenerationsCount: number
+  /** AI model usage counts by model type */
+  modelUsageCounts: { sonnet: number; opus: number; haiku: number }
+  /** Number of times custom formatting instructions were changed */
+  customInstructionsChanges: number
+
+  // Voice Commands
+  /** Total voice commands used (send/clear/cancel) */
+  voiceCommandsUsed: number
+  /** Voice command usage by type */
+  voiceCommandsByType: { send: number; clear: number; cancel: number }
+  /** Number of custom voice commands added */
+  customVoiceCommandsAdded: number
+  /** Number of times voice command triggers were modified */
+  voiceCommandTriggersModified: number
+
+  // Word Replacements
+  /** Number of word replacement rules added */
+  wordReplacementsAdded: number
+  /** Number of times word replacements were applied */
+  wordReplacementsApplied: number
+
+  // Terminal Integration
+  /** Total paste-to-terminal operations */
+  terminalPasteOperations: number
+  /** Unique terminal bundle IDs used */
+  uniqueTerminalsUsed: string[]
+  /** Terminal usage counts by bundle ID */
+  terminalUsageCounts: Record<string, number>
+
+  // Keyboard Shortcuts
+  /** Total hotkey usage count */
+  hotkeyUsageCount: number
+  /** Paste hotkey usage count */
+  pasteHotkeyCount: number
+  /** Record hotkey usage count */
+  recordHotkeyCount: number
+  /** Number of hotkey configuration changes */
+  hotkeyChanges: number
+
+  // History & Settings
+  /** Number of history search operations */
+  historySearchCount: number
+  /** Number of settings changes */
+  settingsChanges: number
+  /** Number of feature toggles (enable/disable) */
+  featureToggles: number
+  /** Number of microphone device changes */
+  microphoneChanges: number
+
+  // First-use dates (YYYY-MM-DD format)
+  /** First time AI formatting was used */
+  firstFormattingDate: string
+  /** First time voice command was used */
+  firstVoiceCommandDate: string
+  /** First time word replacement was used */
+  firstReplacementDate: string
+  /** First time terminal paste was used */
+  firstTerminalPasteDate: string
+}
+
+/**
  * User statistics
  *
  * @interface UserStats
@@ -26,6 +99,53 @@ export interface UserStats {
   lastActiveDate: string
   /** First session date (YYYY-MM-DD format) */
   firstSessionDate: string
+  /** Feature usage statistics */
+  featureUsage: FeatureUsageStats
+}
+
+/**
+ * Default feature usage stats for new users
+ */
+export const DEFAULT_FEATURE_USAGE: FeatureUsageStats = {
+  // AI Formatting
+  formattingOperations: 0,
+  reformattingOperations: 0,
+  titleGenerationsCount: 0,
+  modelUsageCounts: { sonnet: 0, opus: 0, haiku: 0 },
+  customInstructionsChanges: 0,
+
+  // Voice Commands
+  voiceCommandsUsed: 0,
+  voiceCommandsByType: { send: 0, clear: 0, cancel: 0 },
+  customVoiceCommandsAdded: 0,
+  voiceCommandTriggersModified: 0,
+
+  // Word Replacements
+  wordReplacementsAdded: 0,
+  wordReplacementsApplied: 0,
+
+  // Terminal Integration
+  terminalPasteOperations: 0,
+  uniqueTerminalsUsed: [],
+  terminalUsageCounts: {},
+
+  // Keyboard Shortcuts
+  hotkeyUsageCount: 0,
+  pasteHotkeyCount: 0,
+  recordHotkeyCount: 0,
+  hotkeyChanges: 0,
+
+  // History & Settings
+  historySearchCount: 0,
+  settingsChanges: 0,
+  featureToggles: 0,
+  microphoneChanges: 0,
+
+  // First-use dates
+  firstFormattingDate: '',
+  firstVoiceCommandDate: '',
+  firstReplacementDate: '',
+  firstTerminalPasteDate: '',
 }
 
 /**
@@ -39,6 +159,7 @@ export const DEFAULT_STATS: UserStats = {
   longestStreak: 0,
   lastActiveDate: '',
   firstSessionDate: new Date().toISOString().split('T')[0],
+  featureUsage: DEFAULT_FEATURE_USAGE,
 }
 
 /**

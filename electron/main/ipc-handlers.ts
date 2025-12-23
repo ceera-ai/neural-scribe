@@ -7,6 +7,7 @@ import {
   updateTranscriptPreview,
   updateOverlayStatus,
 } from './overlay'
+import { showFormattingOverlay, hideFormattingOverlay } from './formattingOverlay'
 import {
   validateIPC,
   AppSettingsSchema,
@@ -60,12 +61,52 @@ import {
   TranscriptionRecord,
   GamificationData,
 } from './store'
-import { checkAndUnlockAllAchievements } from './store/gamification'
+import {
+  checkAndUnlockAllAchievements,
+  getGamificationData,
+  setGamificationData,
+} from './store/gamification'
+import { trackFeatureUsage, type FeatureType } from './store/gamification/featureTracking'
+import { updateLevelFromXP } from './store/gamification/levels'
 import { FormattingService, TerminalService } from './services'
 import { SUPPORTED_TERMINALS } from './terminal'
 import { updateHotkey } from './hotkeys'
 
 let onRecordingStateChange: ((isRecording: boolean) => void) | null = null
+
+/**
+ * Helper function to track feature usage and notify UI about unlocked achievements
+ */
+async function trackFeatureAndNotify(
+  featureType: FeatureType,
+  metadata?: { bundleId?: string }
+): Promise<string[]> {
+  const newlyUnlocked = await trackFeatureUsage(featureType, metadata)
+
+  // Notify all windows if achievements were unlocked
+  if (newlyUnlocked.length > 0) {
+    console.log(
+      '[IPC] Sending gamification-data-changed and achievement-unlocked events:',
+      newlyUnlocked
+    )
+
+    // Small delay to ensure data is persisted before sending notifications
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    BrowserWindow.getAllWindows().forEach((win) => {
+      // Send data-changed event first so UI state is fresh
+      win.webContents.send('gamification-data-changed')
+
+      // Then send individual achievement unlock notifications
+      newlyUnlocked.forEach((id) => {
+        console.log('[IPC] Sending achievement-unlocked event for:', id)
+        win.webContents.send('achievement-unlocked', id)
+      })
+    })
+  }
+
+  return newlyUnlocked
+}
 
 async function fetchScribeToken(apiKey: string): Promise<string> {
   const response = await fetch('https://api.elevenlabs.io/v1/single-use-token/realtime_scribe', {
@@ -102,8 +143,22 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return getSettings()
   })
 
-  ipcMain.handle('set-settings', (_, settings: unknown) => {
+  ipcMain.handle('set-settings', async (_, settings: unknown) => {
     const validated = validateIPC(AppSettingsSchema, settings, 'Invalid settings')
+
+    // Check if microphone was changed
+    if ('selectedMicrophoneId' in validated) {
+      const currentSettings = getSettings()
+      const microphoneChanged =
+        validated.selectedMicrophoneId !== currentSettings.selectedMicrophoneId
+
+      if (microphoneChanged) {
+        console.log('[IPC] Microphone device changed, tracking...')
+        await trackFeatureAndNotify('microphone-change')
+        console.log('[IPC] Microphone change tracking complete')
+      }
+    }
+
     setSettings(validated)
     return getSettings()
   })
@@ -224,7 +279,19 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
       { text, bundleId },
       'Invalid paste to terminal params'
     )
-    return TerminalService.getInstance().pasteToTerminal(validated.text, validated.bundleId)
+    console.log('[IPC] paste-to-terminal called with bundleId:', validated.bundleId)
+    const result = await TerminalService.getInstance().pasteToTerminal(
+      validated.text,
+      validated.bundleId
+    )
+    console.log('[IPC] Terminal paste result:', result)
+    // Track terminal paste operation
+    if (result) {
+      console.log('[IPC] Tracking terminal paste...')
+      await trackFeatureAndNotify('terminal-paste', { bundleId: validated.bundleId })
+      console.log('[IPC] Terminal paste tracking complete')
+    }
+    return result
   })
 
   // Terminal window operations
@@ -240,16 +307,26 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
         { text, bundleId, windowName },
         'Invalid paste to terminal window params'
       )
-      return TerminalService.getInstance().pasteToWindow(
+      const result = await TerminalService.getInstance().pasteToWindow(
         validated.text,
         validated.bundleId,
         validated.windowName
       )
+      // Track terminal paste operation
+      if (result) {
+        await trackFeatureAndNotify('terminal-paste', { bundleId: validated.bundleId })
+      }
+      return result
     }
   )
 
   ipcMain.handle('paste-to-last-active-terminal', async (_, text: string) => {
-    return TerminalService.getInstance().pasteToActiveTerminal(text)
+    const result = await TerminalService.getInstance().pasteToActiveTerminal(text)
+    // Track terminal paste operation (no bundleId available for last active)
+    if (result) {
+      await trackFeatureAndNotify('terminal-paste')
+    }
+    return result
   })
 
   // Word replacement operations
@@ -257,9 +334,11 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return getReplacements()
   })
 
-  ipcMain.handle('add-replacement', (_, replacement: unknown) => {
+  ipcMain.handle('add-replacement', async (_, replacement: unknown) => {
     const validated = validateIPC(WordReplacementSchema, replacement, 'Invalid word replacement')
     addReplacement(validated)
+    // Track word replacement addition
+    await trackFeatureAndNotify('word-replacement-add')
     return true
   })
 
@@ -281,8 +360,13 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return true
   })
 
-  ipcMain.handle('apply-replacements', (_, text: string) => {
-    return applyReplacements(text)
+  ipcMain.handle('apply-replacements', async (_, text: string) => {
+    const result = applyReplacements(text)
+    // Track if any replacements were applied
+    if (result !== text) {
+      await trackFeatureAndNotify('word-replacement-apply')
+    }
+    return result
   })
 
   // Voice command trigger operations
@@ -290,7 +374,7 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return getVoiceCommandTriggers()
   })
 
-  ipcMain.handle('update-voice-command-trigger', (_, id: unknown, updates: unknown) => {
+  ipcMain.handle('update-voice-command-trigger', async (_, id: unknown, updates: unknown) => {
     if (typeof id !== 'string' || !id) {
       throw new Error('Invalid voice command trigger ID')
     }
@@ -300,16 +384,20 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
       'Invalid voice command trigger updates'
     )
     updateVoiceCommandTrigger(id, validated)
+    // Track voice trigger modification
+    await trackFeatureAndNotify('voice-trigger-modify')
     return true
   })
 
-  ipcMain.handle('add-voice-command-trigger', (_, trigger: unknown) => {
+  ipcMain.handle('add-voice-command-trigger', async (_, trigger: unknown) => {
     const validated = validateIPC(
       VoiceCommandTriggerSchema,
       trigger,
       'Invalid voice command trigger'
     )
     addVoiceCommandTrigger(validated)
+    // Track custom voice command addition
+    await trackFeatureAndNotify('custom-voice-command-add')
     return true
   })
 
@@ -328,14 +416,40 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   })
 
   // Hotkey operations
-  ipcMain.handle('update-hotkey', (_, type: 'paste' | 'record', newHotkey: string) => {
-    return updateHotkey(type, newHotkey)
+  ipcMain.handle('update-hotkey', async (_, type: 'paste' | 'record', newHotkey: string) => {
+    const result = updateHotkey(type, newHotkey)
+    // Track hotkey change
+    await trackFeatureAndNotify('hotkey-change')
+    return result
   })
 
   // Prompt formatting operations
   ipcMain.handle('format-prompt', async (_, text: unknown) => {
     const validated = validateIPC(FormatPromptSchema, { text }, 'Invalid format prompt params')
-    return FormattingService.getInstance().formatPrompt(validated.text)
+
+    console.log('[IPC] format-prompt called')
+
+    // Show formatting overlay before starting
+    showFormattingOverlay()
+
+    try {
+      const result = await FormattingService.getInstance().formatPrompt(validated.text)
+      console.log('[IPC] Format result:', { success: result.success, skipped: result.skipped })
+
+      // Track formatting usage if successful
+      if (result.success && !result.skipped) {
+        const settings = getPromptFormattingSettings()
+        const modelFeatureType = `formatting-${settings.model}` as FeatureType
+        console.log('[IPC] Tracking formatting with model:', settings.model)
+        await trackFeatureAndNotify(modelFeatureType)
+        console.log('[IPC] Formatting tracking complete')
+      }
+
+      return result
+    } finally {
+      // Always hide overlay (even on error)
+      hideFormattingOverlay()
+    }
   })
 
   ipcMain.handle('get-prompt-formatting-settings', () => {
@@ -347,8 +461,10 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return true
   })
 
-  ipcMain.handle('set-prompt-formatting-instructions', (_, instructions: string) => {
+  ipcMain.handle('set-prompt-formatting-instructions', async (_, instructions: string) => {
     setPromptFormattingInstructions(instructions)
+    // Track custom instructions change
+    await trackFeatureAndNotify('custom-instructions-change')
     return true
   })
 
@@ -367,7 +483,14 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
 
   ipcMain.handle('generate-title', async (_, text: unknown) => {
     const validated = validateIPC(GenerateTitleSchema, { text }, 'Invalid generate title params')
-    return FormattingService.getInstance().generateTitle(validated.text)
+    const result = await FormattingService.getInstance().generateTitle(validated.text)
+
+    // Track title generation if successful
+    if (result.success) {
+      await trackFeatureAndNotify('title-generation')
+    }
+
+    return result
   })
 
   // Reformat text with optional custom instructions (for reformat dialog)
@@ -377,10 +500,19 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
       { text, customInstructions },
       'Invalid reformat text params'
     )
-    return FormattingService.getInstance().reformatText(
+    const result = await FormattingService.getInstance().reformatText(
       validated.text,
       validated.customInstructions
     )
+
+    // Track reformatting usage if successful
+    if (result.success && !result.skipped) {
+      const settings = getPromptFormattingSettings()
+      const modelFeatureType = `reformatting-${settings.model}` as FeatureType
+      await trackFeatureAndNotify(modelFeatureType)
+    }
+
+    return result
   })
 
   // Gamification operations
@@ -464,6 +596,74 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
       })
     })
     return unlockedIds
+  })
+
+  // Development: Reset specific achievement (for testing)
+  ipcMain.handle('reset-achievement', (_, achievementId: unknown) => {
+    if (typeof achievementId !== 'string') {
+      throw new Error('Invalid achievement ID')
+    }
+
+    const data = getGamificationData()
+
+    // Check if achievement is unlocked
+    const wasUnlocked = !!data.achievements.unlocked[achievementId]
+
+    if (wasUnlocked) {
+      // Get XP that was awarded
+      const xpAwarded = data.achievements.unlocked[achievementId].xpAwarded
+
+      // Remove achievement
+      delete data.achievements.unlocked[achievementId]
+
+      // Subtract XP
+      const newXP = Math.max(0, data.level.currentXP - xpAwarded)
+      const updatedLevel = updateLevelFromXP(newXP)
+      data.level = updatedLevel
+
+      console.log(`[Dev] Reset achievement: ${achievementId} (-${xpAwarded} XP)`)
+    }
+
+    // Reset related counter based on achievement ID
+    if (achievementId === 'microphone-selector' && data.stats.featureUsage) {
+      data.stats.featureUsage.microphoneChanges = 0
+      console.log('[Dev] Reset microphoneChanges counter')
+    }
+
+    // Save changes
+    setGamificationData(data)
+
+    // Notify UI
+    BrowserWindow.getAllWindows().forEach((win) => {
+      win.webContents.send('gamification-data-changed')
+    })
+
+    return { success: true, wasUnlocked }
+  })
+
+  // Feature tracking
+  ipcMain.handle('track-feature-usage', async (_, featureType: unknown, metadata?: unknown) => {
+    if (typeof featureType !== 'string') {
+      throw new Error('Invalid feature type')
+    }
+
+    const newlyUnlocked = await trackFeatureUsage(
+      featureType as FeatureType,
+      metadata as { bundleId?: string } | undefined
+    )
+
+    // Notify all windows that gamification data changed
+    if (newlyUnlocked.length > 0) {
+      BrowserWindow.getAllWindows().forEach((win) => {
+        win.webContents.send('gamification-data-changed')
+        // Notify about each newly unlocked achievement
+        newlyUnlocked.forEach((id) => {
+          win.webContents.send('achievement-unlocked', id)
+        })
+      })
+    }
+
+    return newlyUnlocked
   })
 
   // Error logging
