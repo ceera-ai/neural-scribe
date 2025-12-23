@@ -1,5 +1,4 @@
 import type { Achievement, UserStats, LevelSystem } from '../../types/gamification'
-import { getRarityColor } from '../../types/gamification'
 import './AchievementDetailModal.css'
 
 interface AchievementDetailModalProps {
@@ -22,7 +21,6 @@ export function AchievementDetailModal({
   if (!isOpen || !achievement) return null
 
   const isUnlocked = achievement.unlockedAt !== undefined || achievement.progress === 1
-  const rarityColor = getRarityColor(achievement.rarity)
 
   // Calculate current progress toward requirement
   const getProgressInfo = () => {
@@ -72,11 +70,24 @@ export function AchievementDetailModal({
   const progress = achievement.progress || 0
 
   return (
-    <div className="achievement-detail-overlay" onClick={onClose}>
+    <div
+      className="achievement-detail-overlay"
+      onClick={onClose}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onClose()
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label="Close achievement modal"
+    >
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <div
         className="achievement-detail-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="achievement-name"
         onClick={(e) => e.stopPropagation()}
-        style={{ '--rarity-color': rarityColor } as React.CSSProperties}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         {/* Close button */}
         <button className="achievement-detail-close-btn" onClick={onClose}>
@@ -93,10 +104,14 @@ export function AchievementDetailModal({
         </button>
 
         {/* Icon */}
-        <div className="achievement-detail-icon">{isUnlocked ? achievement.icon : '🔒'}</div>
+        <div className="achievement-detail-icon-container">
+          <div className="achievement-detail-icon-badge">
+            <div className="achievement-detail-icon">{isUnlocked ? achievement.icon : '🔒'}</div>
+          </div>
+        </div>
 
         {/* Name */}
-        <h2 className="achievement-detail-name">
+        <h2 id="achievement-name" className="achievement-detail-name">
           {isUnlocked ? achievement.name : '??? ????????'}
         </h2>
 
