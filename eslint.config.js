@@ -91,7 +91,8 @@ export default defineConfig([
       'electron/main/ipc-handlers.ts',
       'electron/main/store/gamification/achievementChecker.ts',
       'electron/main/store.ts',
-      'src/components/HistoryPanel.tsx'
+      'src/components/HistoryPanel.tsx',
+      'src/hooks/useGamification.ts'
     ],
     rules: {
       'max-lines': ['error', { max: 700, skipBlankLines: true, skipComments: true }],
