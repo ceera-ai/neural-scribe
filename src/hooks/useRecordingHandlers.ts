@@ -15,7 +15,14 @@ interface UseRecordingHandlersReturn {
   handleRecordingComplete: (
     transcript: string,
     duration: number,
-    source: 'stop_button' | 'voice_send' | 'voice_clear' | 'voice_cancel' | 'hotkey' | 'paste' | 'auto'
+    source:
+      | 'stop_button'
+      | 'voice_send'
+      | 'voice_clear'
+      | 'voice_cancel'
+      | 'hotkey'
+      | 'paste'
+      | 'auto'
   ) => Promise<string>
   handleRecordingStopped: (transcript: string, duration: number) => Promise<string>
   handleVoiceCommand: (command: 'send' | 'clear' | 'cancel', transcript: string) => Promise<void>
@@ -71,7 +78,9 @@ export function useRecordingHandlers({
         | 'paste'
         | 'auto'
     ): Promise<string> => {
-      console.log(`[useRecordingHandlers] Recording complete via: ${source}, duration: ${duration}s`)
+      console.log(
+        `[useRecordingHandlers] Recording complete via: ${source}, duration: ${duration}s`
+      )
 
       // Apply word replacements if enabled
       let processedTranscript = transcript
@@ -155,6 +164,15 @@ export function useRecordingHandlers({
 
       setLastVoiceCommand(command)
       setTimeout(() => setLastVoiceCommand(null), 2000)
+
+      // Track voice command usage for gamification
+      if (typeof window !== 'undefined' && window.electronAPI) {
+        try {
+          await window.electronAPI.trackFeatureUsage(`voice-command-${command}`)
+        } catch (err) {
+          console.error('[useRecordingHandlers] Failed to track voice command usage:', err)
+        }
+      }
 
       switch (command) {
         case 'send':

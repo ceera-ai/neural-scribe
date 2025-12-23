@@ -65,8 +65,8 @@ export const GamificationDashboard: React.FC<GamificationDashboardProps> = ({
         <p className={styles.subtitle}>Track your transcription journey and unlock achievements</p>
       </div>
 
-      {/* Level Progress */}
-      <div className={styles.section}>
+      {/* Level and Streak - Compact Side by Side */}
+      <div className={styles.compactRow}>
         <LevelProgressBar
           currentLevel={level.currentLevel}
           currentXP={level.currentXP}
@@ -74,17 +74,18 @@ export const GamificationDashboard: React.FC<GamificationDashboardProps> = ({
           xpForCurrentLevel={level.xpForCurrentLevel}
           totalXPForNextLevel={level.totalXPForNextLevel}
           xpToNextLevel={level.xpToNextLevel}
+          compact
         />
-      </div>
-
-      {/* Streak and Quick Stats */}
-      <div className={styles.twoColumn}>
         <StreakDisplay
           currentStreak={stats.currentStreak}
           longestStreak={stats.longestStreak}
           lastActiveDate={stats.lastActiveDate}
+          compact
         />
+      </div>
 
+      {/* Quick Stats */}
+      <div className={styles.section}>
         <div className={styles.quickStats}>
           <h2 className={styles.sectionTitle}>Quick Stats</h2>
           <div className={styles.statsGrid}>

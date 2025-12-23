@@ -14,7 +14,18 @@ export interface Achievement {
   description: string
   icon: string
   xpReward: number
-  category: 'milestone' | 'words' | 'streak' | 'speed' | 'time' | 'level'
+  category:
+    | 'milestone'
+    | 'words'
+    | 'streak'
+    | 'speed'
+    | 'time'
+    | 'level'
+    | 'ai-mastery'
+    | 'customization'
+    | 'efficiency'
+    | 'integration'
+    | 'exploration'
   order: number
 }
 
@@ -93,6 +104,47 @@ export const AchievementGrid: React.FC<AchievementGridProps> = ({
     return result
   }, [achievements, filter, sort, unlockedAchievements, progressMap])
 
+  // Group achievements by category (only when filter is 'all')
+  const groupedByCategory = useMemo(() => {
+    if (filter !== 'all') return null
+
+    const groups: Record<Achievement['category'], Achievement[]> = {
+      milestone: [],
+      words: [],
+      streak: [],
+      speed: [],
+      time: [],
+      level: [],
+      'ai-mastery': [],
+      customization: [],
+      efficiency: [],
+      integration: [],
+      exploration: [],
+    }
+
+    filteredAndSorted.forEach((achievement) => {
+      groups[achievement.category].push(achievement)
+    })
+
+    // Filter out empty categories and return in order
+    return Object.entries(groups).filter(([_category, achievements]) => achievements.length > 0)
+  }, [filter, filteredAndSorted])
+
+  // Category display names
+  const categoryNames: Record<Achievement['category'], string> = {
+    milestone: 'Milestone',
+    words: 'Words',
+    streak: 'Streak',
+    speed: 'Speed',
+    time: 'Time',
+    level: 'Level',
+    'ai-mastery': 'AI Mastery',
+    customization: 'Customization',
+    efficiency: 'Efficiency',
+    integration: 'Integration',
+    exploration: 'Exploration',
+  }
+
   // Stats
   const totalAchievements = achievements.length
   const unlockedCount = Object.keys(unlockedAchievements).length
@@ -134,6 +186,11 @@ export const AchievementGrid: React.FC<AchievementGridProps> = ({
             <option value="speed">Speed</option>
             <option value="time">Time</option>
             <option value="level">Level</option>
+            <option value="ai-mastery">AI Mastery</option>
+            <option value="customization">Customization</option>
+            <option value="efficiency">Efficiency</option>
+            <option value="integration">Integration</option>
+            <option value="exploration">Exploration</option>
           </select>
         </div>
 
@@ -158,27 +215,62 @@ export const AchievementGrid: React.FC<AchievementGridProps> = ({
 
       {/* Achievement Grid */}
       {filteredAndSorted.length > 0 ? (
-        <div className={styles.grid}>
-          {filteredAndSorted.map((achievement) => {
-            const unlocked = unlockedAchievements[achievement.id]
-            return (
-              <AchievementCard
-                key={achievement.id}
-                id={achievement.id}
-                name={achievement.name}
-                description={achievement.description}
-                icon={achievement.icon}
-                xpReward={achievement.xpReward}
-                category={achievement.category}
-                isUnlocked={!!unlocked}
-                unlockedAt={unlocked?.unlockedAt}
-                progress={progressMap[achievement.id]}
-                onClick={() => onAchievementClick?.(achievement)}
-                size={cardSize}
-              />
-            )
-          })}
-        </div>
+        groupedByCategory ? (
+          // Show grouped sections when filter is 'all'
+          <div className={styles.sectionsContainer}>
+            {groupedByCategory.map(([category, categoryAchievements]) => (
+              <div key={category} className={styles.section}>
+                <h3 className={styles.sectionTitle}>
+                  {categoryNames[category as Achievement['category']]}
+                </h3>
+                <div className={styles.grid}>
+                  {categoryAchievements.map((achievement) => {
+                    const unlocked = unlockedAchievements[achievement.id]
+                    return (
+                      <AchievementCard
+                        key={achievement.id}
+                        id={achievement.id}
+                        name={achievement.name}
+                        description={achievement.description}
+                        icon={achievement.icon}
+                        xpReward={achievement.xpReward}
+                        category={achievement.category}
+                        isUnlocked={!!unlocked}
+                        unlockedAt={unlocked?.unlockedAt}
+                        progress={progressMap[achievement.id]}
+                        onClick={() => onAchievementClick?.(achievement)}
+                        size={cardSize}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          // Show flat grid for filtered views
+          <div className={styles.grid}>
+            {filteredAndSorted.map((achievement) => {
+              const unlocked = unlockedAchievements[achievement.id]
+              return (
+                <AchievementCard
+                  key={achievement.id}
+                  id={achievement.id}
+                  name={achievement.name}
+                  description={achievement.description}
+                  icon={achievement.icon}
+                  xpReward={achievement.xpReward}
+                  category={achievement.category}
+                  isUnlocked={!!unlocked}
+                  unlockedAt={unlocked?.unlockedAt}
+                  progress={progressMap[achievement.id]}
+                  onClick={() => onAchievementClick?.(achievement)}
+                  size={cardSize}
+                />
+              )
+            })}
+          </div>
+        )
       ) : (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>🏆</div>

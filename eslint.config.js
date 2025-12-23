@@ -32,6 +32,7 @@ export default defineConfig([
     rules: {
       'prettier/prettier': 'error',
       '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'max-lines': ['error', { max: 400, skipBlankLines: true, skipComments: true }],
@@ -58,6 +59,7 @@ export default defineConfig([
     rules: {
       'prettier/prettier': 'error',
       '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-console': 'off', // Allow console in main process
       'max-lines': ['error', { max: 400, skipBlankLines: true, skipComments: true }],
     },
@@ -91,8 +93,10 @@ export default defineConfig([
       'electron/main/ipc-handlers.ts',
       'electron/main/store/gamification/achievementChecker.ts',
       'electron/main/store.ts',
+      'electron/main/gamification/achievementDefinitions.ts',
       'src/components/HistoryPanel.tsx',
-      'src/hooks/useGamification.ts'
+      'src/hooks/useGamification.ts',
+      'src/types/gamification.ts'
     ],
     rules: {
       'max-lines': ['error', { max: 700, skipBlankLines: true, skipComments: true }],

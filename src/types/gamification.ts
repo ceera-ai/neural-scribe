@@ -21,7 +21,18 @@ export interface LevelSystem {
 
 export type AchievementRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
 
-export type AchievementCategory = 'words' | 'time' | 'sessions' | 'streaks' | 'special'
+export type AchievementCategory =
+  | 'milestone'
+  | 'words'
+  | 'streak'
+  | 'speed'
+  | 'time'
+  | 'level'
+  | 'ai-mastery'
+  | 'customization'
+  | 'efficiency'
+  | 'integration'
+  | 'exploration'
 
 export interface AchievementRequirement {
   type: 'words' | 'time_minutes' | 'sessions' | 'streak_days' | 'level' | 'special'

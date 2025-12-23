@@ -5,10 +5,11 @@
 .notification {
   position: relative;
   width: 400px;
-  background: linear-gradient(135deg, #fefce8 0%, #ffffff 100%);
-  border: 2px solid #fbbf24;
+  background: linear-gradient(135deg, rgba(10, 10, 20, 0.98) 0%, rgba(18, 18, 26, 0.95) 100%);
+  border: 2px solid transparent;
+  border-image: linear-gradient(135deg, #00ffff 0%, #ff00ff 100%) 1;
   border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(251, 191, 36, 0.3), 0 0 0 1px rgba(251, 191, 36, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 255, 255, 0.3), 0 0 20px rgba(255, 0, 255, 0.2);
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -16,7 +17,7 @@
 
 .notification:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 48px rgba(251, 191, 36, 0.4), 0 0 0 1px rgba(251, 191, 36, 0.2);
+  box-shadow: 0 12px 48px rgba(0, 255, 255, 0.4), 0 0 30px rgba(255, 0, 255, 0.3);
 }
 
 /* Animations */
@@ -53,8 +54,8 @@
 /* Badge */
 .badge {
   padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-  color: white;
+  background: linear-gradient(135deg, #00ffff 0%, #ff00ff 100%);
+  color: #0a0a0f;
   text-align: center;
 }
 
@@ -80,13 +81,14 @@
   width: 70px;
   height: 70px;
   border-radius: 12px;
-  background: #ffffff;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(255, 0, 255, 0.15) 100%);
+  border: 1px solid rgba(0, 255, 255, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4), inset 0 0 20px rgba(255, 0, 255, 0.1);
 }
 
 .icon {
@@ -144,7 +146,7 @@
   position: absolute;
   inset: 0;
   border-radius: 12px;
-  background: radial-gradient(circle, rgba(251, 191, 36, 0.3) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 255, 255, 0.3) 0%, rgba(255, 0, 255, 0.2) 50%, transparent 70%);
   animation: pulse 2s ease-in-out infinite;
   z-index: 0;
 }
@@ -195,13 +197,13 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.375rem 0.75rem;
-  background: #f59e0b;
-  color: white;
+  background: linear-gradient(135deg, #00ffff 0%, #ff00ff 100%);
+  color: #0a0a0f;
   border-radius: 999px;
   font-size: 0.875rem;
   font-weight: 600;
   align-self: flex-start;
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5), 0 0 20px rgba(255, 0, 255, 0.3);
   animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.2s backwards;
 }
 
@@ -281,9 +283,10 @@
 
 .progressFill {
   height: 100%;
-  background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+  background: linear-gradient(90deg, #00ffff 0%, #ff00ff 100%);
   width: 100%;
   transform-origin: left;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
 }
 
 @keyframes shrink {
@@ -295,37 +298,18 @@
   }
 }
 
-/* Dark mode */
+/* Dark mode - keep consistent with cyberpunk theme */
 @media (prefers-color-scheme: dark) {
   .notification {
-    background: linear-gradient(135deg, #422006 0%, #1f2937 100%);
-    border-color: #f59e0b;
-  }
-
-  .iconContainer {
-    background: #374151;
+    /* Already dark themed, no override needed */
   }
 
   .name {
-    color: #f9fafb;
+    color: #e0e0e0;
   }
 
   .description {
-    color: #d1d5db;
-  }
-
-  .closeBtn {
-    background: rgba(255, 255, 255, 0.05);
-    color: #d1d5db;
-  }
-
-  .closeBtn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #f9fafb;
-  }
-
-  .progressBar {
-    background: rgba(255, 255, 255, 0.1);
+    color: #a0a0a0;
   }
 }
 

@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Formatting</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        font-family: 'Rajdhani', sans-serif;
+        background: linear-gradient(135deg, rgba(10, 5, 20, 0.98) 0%, rgba(20, 10, 30, 0.98) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        animation: fadeIn 300ms ease-out forwards;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      /* Hide body when fading out */
+      body.hiding {
+        animation: fadeOut 200ms ease-in forwards;
+      }
+
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+
+      /* Background Grid Overlay */
+      .grid-overlay {
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        perspective: 1000px;
+        animation: gridShift 30s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      @keyframes gridShift {
+        0%, 100% {
+          transform: perspective(1000px) rotateX(0deg);
+        }
+        50% {
+          transform: perspective(1000px) rotateX(0.5deg);
+        }
+      }
+
+      /* Scanlines */
+      .scanlines {
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(
+          rgba(0, 255, 255, 0.03) 50%,
+          transparent 50%
+        );
+        background-size: 100% 4px;
+        animation: scanlinesDrift 8s linear infinite;
+        pointer-events: none;
+      }
+
+      @keyframes scanlinesDrift {
+        from {
+          background-position: 0 0;
+        }
+        to {
+          background-position: 0 8px;
+        }
+      }
+
+      /* Glitch ripple effect */
+      .glitch-ripple {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 255, 255, 0.02);
+        opacity: 0;
+        animation: glitchRipple 15s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      @keyframes glitchRipple {
+        0%, 90%, 100% {
+          opacity: 0;
+        }
+        93% {
+          opacity: 1;
+          transform: scaleX(1);
+        }
+        96% {
+          opacity: 0;
+          transform: scaleX(1.02);
+        }
+      }
+
+      /* Main Card */
+      .formatting-card {
+        width: 500px;
+        height: 400px;
+        background: rgba(12, 12, 26, 0.85);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        border-radius: 12px;
+        box-shadow:
+          0 0 40px rgba(0, 200, 255, 0.15),
+          inset 0 0 20px rgba(0, 100, 255, 0.05);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 32px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Corner decorations */
+      .corner-accent {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(0, 255, 255, 0.5);
+      }
+
+      .corner-accent.top-left {
+        top: 8px;
+        left: 8px;
+        border-right: none;
+        border-bottom: none;
+      }
+
+      .corner-accent.top-right {
+        top: 8px;
+        right: 8px;
+        border-left: none;
+        border-bottom: none;
+      }
+
+      .corner-accent.bottom-left {
+        bottom: 8px;
+        left: 8px;
+        border-right: none;
+        border-top: none;
+      }
+
+      .corner-accent.bottom-right {
+        bottom: 8px;
+        right: 8px;
+        border-left: none;
+        border-top: none;
+      }
+
+      /* Noise texture overlay */
+      .noise-overlay {
+        position: absolute;
+        inset: 0;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="n"><feTurbulence baseFrequency="0.9" numOctaves="3"/></filter><rect width="100" height="100" filter="url(%23n)" opacity="0.05"/></svg>');
+        opacity: 0.3;
+        pointer-events: none;
+      }
+
+      /* Robot Container */
+      .robot-container {
+        width: 180px;
+        height: 180px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* AI Core */
+      .ai-core {
+        width: 120px;
+        height: 120px;
+        position: relative;
+        filter: drop-shadow(0 0 20px rgba(0, 170, 255, 0.5));
+      }
+
+      /* Center dot with breathing animation */
+      .core-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 16px;
+        height: 16px;
+        background: radial-gradient(circle, #00ffff 0%, #00aaff 100%);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+        animation: breathe 2s ease-in-out infinite;
+      }
+
+      @keyframes breathe {
+        0%, 100% {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.2);
+          opacity: 0.8;
+        }
+      }
+
+      /* Hexagonal structure */
+      .hexagon-structure {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 100%;
+        height: 100%;
+        transform: translate(-50%, -50%);
+        animation: rotateHexagon 20s linear infinite;
+      }
+
+      @keyframes rotateHexagon {
+        from {
+          transform: translate(-50%, -50%) rotate(0deg);
+        }
+        to {
+          transform: translate(-50%, -50%) rotate(360deg);
+        }
+      }
+
+      .hexagon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 80px;
+        height: 80px;
+        transform: translate(-50%, -50%);
+      }
+
+      .hexagon-inner {
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(0, 170, 255, 0.2) 0%, rgba(0, 255, 255, 0.1) 100%);
+        border: 2px solid rgba(0, 255, 255, 0.5);
+      }
+
+      /* Energy Rings */
+      .energy-ring {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        border: 2px solid rgba(0, 255, 255, 0.4);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .energy-ring-1 {
+        width: 140px;
+        height: 140px;
+        animation: rotateRing1 15s linear infinite;
+        border-top-color: rgba(136, 0, 255, 0.6);
+        border-right-color: rgba(136, 0, 255, 0.6);
+      }
+
+      .energy-ring-2 {
+        width: 160px;
+        height: 160px;
+        animation: rotateRing2 18s linear infinite reverse;
+        border-left-color: rgba(0, 170, 255, 0.6);
+        border-bottom-color: rgba(0, 170, 255, 0.6);
+      }
+
+      @keyframes rotateRing1 {
+        from {
+          transform: translate(-50%, -50%) rotate(0deg);
+        }
+        to {
+          transform: translate(-50%, -50%) rotate(360deg);
+        }
+      }
+
+      @keyframes rotateRing2 {
+        from {
+          transform: translate(-50%, -50%) rotate(0deg);
+        }
+        to {
+          transform: translate(-50%, -50%) rotate(360deg);
+        }
+      }
+
+      /* Particles */
+      .particle {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        background: #00ffff;
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(0, 255, 255, 0.8);
+      }
+
+      .particle-orbit-1 { animation: orbit1 8s linear infinite; }
+      .particle-orbit-2 { animation: orbit2 8s linear infinite 1s; }
+      .particle-orbit-3 { animation: orbit3 8s linear infinite 2s; }
+      .particle-orbit-4 { animation: orbit4 8s linear infinite 3s; }
+      .particle-orbit-5 { animation: orbit5 8s linear infinite 4s; }
+      .particle-orbit-6 { animation: orbit6 8s linear infinite 5s; }
+
+      @keyframes orbit1 {
+        from {
+          transform: translate(-50%, -50%) rotate(0deg) translateX(70px) rotate(0deg);
+        }
+        to {
+          transform: translate(-50%, -50%) rotate(360deg) translateX(70px) rotate(-360deg);
+        }
+      }
+
+      @keyframes orbit2 {
+        from {
+          transform: translate(-50%, -50%) rotate(60deg) translateX(70px) rotate(-60deg);
+        }
+        to {
+          transform: translate(-50%, -50%) rotate(420deg) translateX(70px) rotate(-420deg);
+        }
+      }
+
+      @keyframes orbit3 {
+        from {
+          transform: translate(-50%, -50%) rotate(120deg) translateX(70px) rotate(-120deg);
+        }
+        to {
+          transform: translate(-50%, -50%) rotate(480deg) translateX(70px) rotate(-480deg);
+        }
+      }
+
+      @keyframes orbit4 {
+        from {
+          transform: translate(-50%, -50%) rotate(180deg) translateX(70px) rotate(-180deg);
+        }
+        to {
+          transform: translate(-50%, -50%) rotate(540deg) translateX(70px) rotate(-540deg);
+        }
+      }
+
+      @keyframes orbit5 {
+        from {
+          transform: translate(-50%, -50%) rotate(240deg) translateX(70px) rotate(-240deg);
+        }
+        to {
+          transform: translate(-50%, -50%) rotate(600deg) translateX(70px) rotate(-600deg);
+        }
+      }
+
+      @keyframes orbit6 {
+        from {
+          transform: translate(-50%, -50%) rotate(300deg) translateX(70px) rotate(-300deg);
+        }
+        to {
+          transform: translate(-50%, -50%) rotate(660deg) translateX(70px) rotate(-660deg);
+        }
+      }
+
+      /* Status Text */
+      .status-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .status-title {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+        color: #00ffff;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        letter-spacing: 2px;
+      }
+
+      .status-subtitle {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 14px;
+        font-weight: 400;
+        color: rgba(100, 150, 255, 0.8);
+        letter-spacing: 1px;
+      }
+
+      .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: rgba(0, 170, 255, 0.1);
+        border: 1px solid rgba(0, 170, 255, 0.3);
+        border-radius: 20px;
+        margin-top: 8px;
+      }
+
+      .status-badge-text {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        color: #00aaff;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+
+      .processing-dots {
+        display: inline-block;
+        animation: dots 1.5s steps(4, end) infinite;
+      }
+
+      @keyframes dots {
+        0%, 20% {
+          content: '';
+        }
+        40% {
+          content: '.';
+        }
+        60% {
+          content: '..';
+        }
+        80%, 100% {
+          content: '...';
+        }
+      }
+
+      .processing-dots::after {
+        content: '';
+        animation: dots 1.5s steps(4, end) infinite;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Background effects -->
+    <div class="grid-overlay"></div>
+    <div class="scanlines"></div>
+    <div class="glitch-ripple"></div>
+
+    <!-- Main Card -->
+    <div class="formatting-card">
+      <!-- Corner decorations -->
+      <div class="corner-accent top-left"></div>
+      <div class="corner-accent top-right"></div>
+      <div class="corner-accent bottom-left"></div>
+      <div class="corner-accent bottom-right"></div>
+
+      <!-- Noise overlay -->
+      <div class="noise-overlay"></div>
+
+      <!-- Robot Container -->
+      <div class="robot-container">
+        <!-- Energy Rings -->
+        <div class="energy-ring energy-ring-1"></div>
+        <div class="energy-ring energy-ring-2"></div>
+
+        <!-- AI Core -->
+        <div class="ai-core">
+          <!-- Hexagonal structure -->
+          <div class="hexagon-structure">
+            <div class="hexagon">
+              <div class="hexagon-inner"></div>
+            </div>
+          </div>
+
+          <!-- Particles -->
+          <div class="particle particle-orbit-1" style="top: 50%; left: 50%;"></div>
+          <div class="particle particle-orbit-2" style="top: 50%; left: 50%;"></div>
+          <div class="particle particle-orbit-3" style="top: 50%; left: 50%;"></div>
+          <div class="particle particle-orbit-4" style="top: 50%; left: 50%;"></div>
+          <div class="particle particle-orbit-5" style="top: 50%; left: 50%;"></div>
+          <div class="particle particle-orbit-6" style="top: 50%; left: 50%;"></div>
+
+          <!-- Center dot -->
+          <div class="core-center"></div>
+        </div>
+      </div>
+
+      <!-- Status Text -->
+      <div class="status-container">
+        <div class="status-title">FORMATTING YOUR INPUT</div>
+        <div class="status-subtitle">AI is processing</div>
+        <div class="status-badge">
+          <div class="status-badge-text">
+            AI PROCESSING<span class="processing-dots"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Window management functions
+      window.showFormattingOverlay = function() {
+        // Fade-in is handled by CSS animation
+        console.log('[FormattingOverlay] Showing');
+      };
+
+      window.hideFormattingOverlay = function() {
+        // Trigger fade-out
+        document.body.classList.add('hiding');
+        console.log('[FormattingOverlay] Hiding');
+      };
+
+      // Prevent context menu
+      document.addEventListener('contextmenu', (e) => e.preventDefault());
+    </script>
+  </body>
+</html>

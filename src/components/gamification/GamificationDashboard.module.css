@@ -77,6 +77,13 @@
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
 }
 
+/* Compact row for Level and Streak */
+.compactRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
 /* Two column layout */
 .twoColumn {
   display: grid;
@@ -276,6 +283,10 @@
 @media (max-width: 1024px) {
   .dashboard {
     padding: 1.5rem;
+  }
+
+  .compactRow {
+    grid-template-columns: 1fr;
   }
 
   .twoColumn {

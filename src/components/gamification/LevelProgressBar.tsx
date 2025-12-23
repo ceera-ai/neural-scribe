@@ -24,6 +24,8 @@ export interface LevelProgressBarProps {
   size?: 'small' | 'medium' | 'large'
   /** Show detailed stats */
   showDetails?: boolean
+  /** Compact mode for side-by-side layouts */
+  compact?: boolean
 }
 
 export const LevelProgressBar: React.FC<LevelProgressBarProps> = ({
@@ -35,6 +37,7 @@ export const LevelProgressBar: React.FC<LevelProgressBarProps> = ({
   xpToNextLevel,
   size = 'medium',
   showDetails = true,
+  compact = false,
 }) => {
   // Calculate progress percentage
   const progress = Math.min(
@@ -43,7 +46,7 @@ export const LevelProgressBar: React.FC<LevelProgressBarProps> = ({
   )
 
   return (
-    <div className={`${styles.container} ${styles[size]}`}>
+    <div className={`${styles.container} ${styles[size]} ${compact ? styles.compact : ''}`}>
       {/* Level and Rank Header */}
       <div className={styles.header}>
         <div className={styles.levelBadge}>

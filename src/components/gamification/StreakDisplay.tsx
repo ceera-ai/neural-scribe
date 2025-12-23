@@ -16,6 +16,8 @@ export interface StreakDisplayProps {
   lastActiveDate: string
   /** Show tips for maintaining streak */
   showTips?: boolean
+  /** Compact mode for side-by-side layouts */
+  compact?: boolean
 }
 
 export const StreakDisplay: React.FC<StreakDisplayProps> = ({
@@ -23,6 +25,7 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
   longestStreak,
   lastActiveDate,
   showTips = false,
+  compact = false,
 }) => {
   // Check if active today
   const today = new Date().toISOString().split('T')[0]
@@ -64,7 +67,7 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
   }
 
   return (
-    <div className={`${styles.container} ${styles[streakStatus]}`}>
+    <div className={`${styles.container} ${styles[streakStatus]} ${compact ? styles.compact : ''}`}>
       {/* Current Streak */}
       <div className={styles.currentStreak}>
         <div className={styles.fireContainer}>
@@ -107,7 +110,7 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
       </div>
 
       {/* Tips */}
-      {showTips && currentStreak > 0 && (
+      {showTips && currentStreak > 0 && !compact && (
         <div className={styles.tips}>
           <div className={styles.tipsTitle}>💡 Streak Tips</div>
           <ul className={styles.tipsList}>
@@ -119,7 +122,7 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
       )}
 
       {/* Warning if streak is at risk */}
-      {!isActiveToday && currentStreak > 0 && (
+      {!isActiveToday && currentStreak > 0 && !compact && (
         <div className={styles.warning}>
           <span className={styles.warningIcon}>⚠️</span>
           <span className={styles.warningText}>

@@ -20,6 +20,7 @@ import {
 import { unlockAchievement, type AchievementsState, DEFAULT_ACHIEVEMENTS } from './achievements'
 import { checkAchievements } from './achievementChecker'
 import { getAchievementById } from '../../gamification/achievementDefinitions'
+import { migrateGamificationData, needsMigration, getDataVersion } from './migration'
 
 // Re-export types from sub-modules
 export type { LevelSystem, Rank } from './levels'
@@ -91,6 +92,8 @@ const store = new Store<GamificationStore>({
 /**
  * Gets all gamification data
  *
+ * Automatically migrates data from older versions if needed.
+ *
  * @returns {GamificationData} Complete gamification state
  *
  * @example
@@ -101,8 +104,35 @@ const store = new Store<GamificationStore>({
  * ```
  */
 export function getGamificationData(): GamificationData {
-  const data = store.get('gamification', DEFAULT_GAMIFICATION_DATA)
-  return data
+  const rawData = store.get('gamification', DEFAULT_GAMIFICATION_DATA)
+
+  // Check if migration is needed
+  if (needsMigration(rawData)) {
+    const version = getDataVersion(rawData)
+    console.log(`[Gamification] Migrating data from version ${version} to 2.0`)
+
+    const migratedData = migrateGamificationData(rawData)
+
+    // Save migrated data
+    store.set('gamification', migratedData)
+
+    console.log('[Gamification] Migration complete, data saved')
+    return migratedData
+  }
+
+  return rawData
+}
+
+/**
+ * Sets gamification data directly
+ *
+ * This is a low-level function used by feature tracking and other internal modules.
+ * Use saveGamificationData() for partial updates with automatic metadata handling.
+ *
+ * @param {GamificationData} data - Complete gamification data to save
+ */
+export function setGamificationData(data: GamificationData): void {
+  store.set('gamification', data)
 }
 
 /**
@@ -390,7 +420,9 @@ export function checkAndUnlockAllAchievements(): string[] {
     level: updatedLevel,
   })
 
-  console.log(`[Gamification] Unlocked ${newAchievementIds.length} achievements, awarded ${totalXP} XP`)
+  console.log(
+    `[Gamification] Unlocked ${newAchievementIds.length} achievements, awarded ${totalXP} XP`
+  )
 
   return newAchievementIds
 }
