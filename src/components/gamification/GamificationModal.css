@@ -94,7 +94,333 @@
 }
 
 .gamification-modal-content {
-  padding: 0;
+  padding: 20px;
   overflow-y: auto;
-  max-height: calc(85vh - 80px);
+  max-height: calc(85vh - 120px);
+}
+
+/* Override GamificationDashboard styles for modal context */
+.gamification-modal-content > div[class*='dashboard'] {
+  padding: 0 !important;
+  gap: 1.25rem !important;
+  max-width: 100% !important;
+}
+
+/* Hide redundant dashboard header - modal already has "Your Progress" title */
+.gamification-modal-content div[class*='dashboard'] > div[class*='header'] {
+  display: none !important;
+}
+
+.gamification-modal-content div[class*='section'] {
+  margin: 0 !important;
+}
+
+/* LevelProgressBar overrides for modal - make it smaller and cyberpunk-themed */
+.gamification-modal-content div[class*='LevelProgressBar'] {
+  padding: 1rem !important;
+  gap: 0.75rem !important;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.3) 100%) !important;
+  border: 1px solid var(--neon-cyan, #00ffff) !important;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2) !important;
+}
+
+.gamification-modal-content div[class*='levelBadge'] {
+  width: 60px !important;
+  height: 60px !important;
+  background: linear-gradient(135deg, var(--neon-cyan, #00ffff) 0%, #0088ff 100%) !important;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5) !important;
+}
+
+.gamification-modal-content span[class*='levelNumber'] {
+  font-size: 1.75rem !important;
+}
+
+.gamification-modal-content span[class*='rank'] {
+  font-size: 1.25rem !important;
+  color: var(--neon-cyan, #00ffff) !important;
+}
+
+.gamification-modal-content span[class*='nextLevel'] {
+  font-size: 0.75rem !important;
+  color: #808080 !important;
+}
+
+.gamification-modal-content div[class*='progressBar'] {
+  height: 16px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.gamification-modal-content div[class*='progressFill'] {
+  background: linear-gradient(90deg, var(--neon-cyan, #00ffff) 0%, #00aaff 100%) !important;
+}
+
+.gamification-modal-content span[class*='progressLabel'] {
+  font-size: 0.75rem !important;
+  color: var(--neon-cyan, #00ffff) !important;
+}
+
+.gamification-modal-content div[class*='details'] {
+  border-top-color: rgba(0, 255, 255, 0.2) !important;
+}
+
+.gamification-modal-content span[class*='xpValue'] {
+  font-size: 1rem !important;
+  color: #fff !important;
+}
+
+.gamification-modal-content span[class*='xpLabel'] {
+  font-size: 0.625rem !important;
+  color: #808080 !important;
+}
+
+.gamification-modal-content span[class*='xpRemainingValue'] {
+  font-size: 0.75rem !important;
+  padding: 0.375rem 0.75rem !important;
+  background: rgba(0, 255, 255, 0.1) !important;
+  color: var(--neon-cyan, #00ffff) !important;
+  border: 1px solid var(--neon-cyan, #00ffff) !important;
+}
+
+/* Force single column layout in modal */
+.gamification-modal-content div[class*='twoColumn'] {
+  grid-template-columns: 1fr !important;
+  gap: 1rem !important;
+}
+
+/* Streak Display overrides */
+.gamification-modal-content div[class*='StreakDisplay'] {
+  background: linear-gradient(135deg, rgba(255, 100, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%) !important;
+  border: 1px solid rgba(255, 100, 0, 0.5) !important;
+  padding: 1rem !important;
+}
+
+.gamification-modal-content div[class*='StreakDisplay'] h2,
+.gamification-modal-content div[class*='StreakDisplay'] h3 {
+  color: #ff6400 !important;
+}
+
+/* Quick Stats section */
+.gamification-modal-content div[class*='quickStats'] {
+  padding: 0 !important;
+}
+
+.gamification-modal-content div[class*='quickStats'] h2 {
+  font-size: 1.125rem !important;
+  margin-bottom: 0.75rem !important;
+  color: var(--neon-cyan, #00ffff) !important;
+  text-shadow: 0 0 10px var(--neon-cyan, #00ffff);
+}
+
+.gamification-modal-content div[class*='statsGrid'] {
+  grid-template-columns: 1fr 1fr !important;
+  gap: 0.75rem !important;
+}
+
+/* Stats Card overrides - cyberpunk themed */
+.gamification-modal-content div[class*='StatsCard'] {
+  padding: 0.875rem !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(0, 255, 255, 0.3) !important;
+}
+
+.gamification-modal-content div[class*='StatsCard']:hover {
+  border-color: var(--neon-cyan, #00ffff) !important;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3) !important;
+}
+
+.gamification-modal-content div[class*='sectionTitle'] {
+  font-size: 1.125rem !important;
+  color: var(--neon-cyan, #00ffff) !important;
+  text-shadow: 0 0 10px var(--neon-cyan, #00ffff);
+}
+
+/* Recent achievements list - cyberpunk theme */
+.gamification-modal-content div[class*='achievementItem'] {
+  background: rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(0, 255, 255, 0.2) !important;
+  padding: 0.875rem 1rem !important;
+}
+
+.gamification-modal-content div[class*='achievementItem']:hover {
+  border-color: var(--neon-cyan, #00ffff) !important;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2) !important;
+}
+
+.gamification-modal-content span[class*='achievementName'] {
+  color: #fff !important;
+}
+
+.gamification-modal-content span[class*='achievementTime'] {
+  color: #808080 !important;
+}
+
+/* View All button */
+.gamification-modal-content button[class*='viewAllBtn'] {
+  background: var(--neon-cyan, #00ffff) !important;
+  color: #000 !important;
+  font-size: 0.875rem !important;
+  padding: 0.5rem 1rem !important;
+}
+
+.gamification-modal-content button[class*='viewAllBtn']:hover {
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5) !important;
+}
+
+/* Override AchievementGrid styles for modal context */
+.gamification-modal-content > div[class*='container'] {
+  padding: 0 !important;
+  gap: 1rem !important;
+  max-width: 100% !important;
+}
+
+/* Achievement Grid Header */
+.gamification-modal-content div[class*='AchievementGrid'] h2 {
+  font-size: 1.125rem !important;
+  color: var(--neon-cyan, #00ffff) !important;
+  text-shadow: 0 0 10px var(--neon-cyan, #00ffff);
+  margin: 0 0 0.5rem 0 !important;
+}
+
+.gamification-modal-content div[class*='statsBar'] {
+  gap: 1rem !important;
+}
+
+.gamification-modal-content span[class*='statItem'] {
+  font-size: 0.75rem !important;
+  color: #808080 !important;
+}
+
+/* Search input */
+.gamification-modal-content input[class*='searchInput'] {
+  background: rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(0, 255, 255, 0.3) !important;
+  color: #fff !important;
+  font-size: 0.875rem !important;
+  padding: 0.625rem 0.875rem !important;
+}
+
+.gamification-modal-content input[class*='searchInput']:focus {
+  border-color: var(--neon-cyan, #00ffff) !important;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2) !important;
+}
+
+.gamification-modal-content input[class*='searchInput']::placeholder {
+  color: #606060 !important;
+}
+
+/* Controls section */
+.gamification-modal-content div[class*='controls'] {
+  padding: 0.75rem !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(0, 255, 255, 0.1) !important;
+  flex-direction: column !important;
+  gap: 0.75rem !important;
+}
+
+/* Filters - make them wrap and be compact */
+.gamification-modal-content div[class*='filters'] {
+  gap: 0.375rem !important;
+  width: 100% !important;
+  justify-content: flex-start !important;
+}
+
+.gamification-modal-content button[class*='filterBtn'] {
+  padding: 0.375rem 0.75rem !important;
+  font-size: 0.7rem !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(0, 255, 255, 0.3) !important;
+  color: #c0c0c0 !important;
+  white-space: nowrap !important;
+}
+
+.gamification-modal-content button[class*='filterBtn']:hover {
+  background: rgba(0, 255, 255, 0.1) !important;
+  border-color: var(--neon-cyan, #00ffff) !important;
+  color: #fff !important;
+}
+
+.gamification-modal-content button[class*='filterBtn'][class*='active'] {
+  background: var(--neon-cyan, #00ffff) !important;
+  color: #000 !important;
+  border-color: var(--neon-cyan, #00ffff) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5) !important;
+}
+
+/* Sort dropdown - fix multiple arrows issue */
+.gamification-modal-content div[class*='sortContainer'] {
+  width: 100% !important;
+  justify-content: space-between !important;
+}
+
+.gamification-modal-content label[class*='sortLabel'] {
+  font-size: 0.75rem !important;
+  color: var(--neon-cyan, #00ffff) !important;
+}
+
+.gamification-modal-content select[class*='sortSelect'] {
+  flex: 1 !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(0, 255, 255, 0.3) !important;
+  color: #fff !important;
+  font-size: 0.875rem !important;
+  padding: 0.5rem 2rem 0.5rem 0.75rem !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2300ffff'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.5rem center !important;
+  background-size: 1.25rem !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+}
+
+.gamification-modal-content select[class*='sortSelect']:focus {
+  border-color: var(--neon-cyan, #00ffff) !important;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2) !important;
+  outline: none !important;
+}
+
+.gamification-modal-content select[class*='sortSelect'] option {
+  background: #12121a !important;
+  color: #fff !important;
+}
+
+/* Results count */
+.gamification-modal-content div[class*='resultsCount'] {
+  font-size: 0.75rem !important;
+  color: #808080 !important;
+}
+
+/* Fix achievement grid to use compact single-column layout */
+.gamification-modal-content div[class*='AchievementGrid_grid'] {
+  grid-template-columns: 1fr !important;
+  gap: 0.75rem !important;
+}
+
+/* Achievement Cards - make them more compact */
+.gamification-modal-content div[class*='AchievementCard'] {
+  background: rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(0, 255, 255, 0.2) !important;
+  padding: 0.875rem !important;
+}
+
+.gamification-modal-content div[class*='AchievementCard']:hover {
+  border-color: var(--neon-cyan, #00ffff) !important;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2) !important;
+}
+
+/* Empty state */
+.gamification-modal-content div[class*='emptyState'] {
+  padding: 3rem 1.5rem !important;
+  background: rgba(0, 0, 0, 0.2) !important;
+  border: 1px dashed rgba(0, 255, 255, 0.2) !important;
+}
+
+.gamification-modal-content h3[class*='emptyTitle'] {
+  color: var(--neon-cyan, #00ffff) !important;
+  font-size: 1.125rem !important;
+}
+
+.gamification-modal-content p[class*='emptyText'] {
+  color: #808080 !important;
+  font-size: 0.875rem !important;
 }
