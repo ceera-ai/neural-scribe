@@ -91,7 +91,23 @@ export function useGamificationData(): UseGamificationDataReturn {
       setIsLoading(true)
       setError(null)
       const result = await window.electron.ipcRenderer.invoke('get-gamification-data')
-      setData(result)
+
+      // Fetch history stats to ensure consistency with database
+      const historyStats = await window.electronAPI.getHistoryStats()
+
+      // Override gamification stats with actual database values
+      // This ensures stats are always accurate and match what's in the history
+      const mergedData = {
+        ...result,
+        stats: {
+          ...result.stats,
+          totalWordsTranscribed: historyStats.totalWords,
+          totalRecordingTimeMs: historyStats.totalDuration * 1000, // Convert seconds to ms
+          totalSessions: historyStats.totalRecords,
+        },
+      }
+
+      setData(mergedData)
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch gamification data'))
     } finally {

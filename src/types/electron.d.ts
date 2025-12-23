@@ -82,6 +82,16 @@ export interface WordReplacement {
   enabled: boolean
 }
 
+// History stats
+export interface HistoryStats {
+  totalRecords: number
+  totalWords: number
+  totalDuration: number
+  formattedCount: number
+  averageWordCount: number
+  averageDuration: number
+}
+
 // Gamification types
 export interface UserStats {
   totalWordsTranscribed: number
@@ -171,9 +181,7 @@ export interface ElectronAPI {
     bundleId: string,
     windowName: string
   ) => Promise<{ success: boolean; needsPermission: boolean; copied: boolean }>
-  pasteToLastActiveTerminal: (
-    text: string
-  ) => Promise<{
+  pasteToLastActiveTerminal: (text: string) => Promise<{
     success: boolean
     needsPermission: boolean
     copied: boolean

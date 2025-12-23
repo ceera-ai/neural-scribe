@@ -37,6 +37,7 @@ import {
   deleteTranscription,
   clearHistory,
   getLastTranscription,
+  getHistoryStats,
   getReplacements,
   addReplacement,
   updateReplacement,
@@ -212,6 +213,10 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
 
   ipcMain.handle('get-last-transcription', () => {
     return getLastTranscription()
+  })
+
+  ipcMain.handle('get-history-stats', () => {
+    return getHistoryStats()
   })
 
   // Clipboard

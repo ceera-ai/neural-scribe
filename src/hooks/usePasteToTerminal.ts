@@ -60,7 +60,11 @@ export function usePasteToTerminal({
    * @param duration - Recording duration in seconds (default: 0)
    */
   const formatAndPaste = useCallback(
-    async (text: string, shouldSaveToHistory: boolean = true, duration: number = 0): Promise<void> => {
+    async (
+      text: string,
+      shouldSaveToHistory: boolean = true,
+      duration: number = 0
+    ): Promise<void> => {
       // Prevent multiple simultaneous paste operations
       if (isPastingRef.current) {
         console.log('[usePasteToTerminal] Paste already in progress, skipping...')
@@ -93,7 +97,10 @@ export function usePasteToTerminal({
             formattedText = formatResult.formatted
             console.log('[usePasteToTerminal] Formatted text:', textToPaste)
           } else if (formatResult.error) {
-            console.warn('[usePasteToTerminal] Formatting failed, using original text:', formatResult.error)
+            console.warn(
+              '[usePasteToTerminal] Formatting failed, using original text:',
+              formatResult.error
+            )
           }
         }
 
@@ -173,8 +180,8 @@ export function usePasteToTerminal({
       recordingTime: number,
       pendingPasteRef: React.MutableRefObject<string | null>
     ): Promise<void> => {
-      // Clear any pending voice command paste to prevent duplicate
-      pendingPasteRef.current = null
+      // Mark that paste button was clicked to prevent duplicate save in handleRecordingStopped
+      pendingPasteRef.current = 'paste'
 
       // Capture the recording time before stopping
       const currentDuration = recordingTime
@@ -191,6 +198,9 @@ export function usePasteToTerminal({
         console.log('[usePasteToTerminal] Attempting to paste to terminal...')
         await formatAndPaste(text, true, currentDuration)
       }
+
+      // Clear the pending paste after we're done
+      pendingPasteRef.current = null
     },
     [formatAndPaste]
   )

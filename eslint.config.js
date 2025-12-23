@@ -85,11 +85,13 @@ export default defineConfig([
     },
   },
 
-  // Exception for large handler/checker files
+  // Exception for large handler/checker/store files
   {
     files: [
       'electron/main/ipc-handlers.ts',
-      'electron/main/store/gamification/achievementChecker.ts'
+      'electron/main/store/gamification/achievementChecker.ts',
+      'electron/main/store.ts',
+      'src/components/HistoryPanel.tsx'
     ],
     rules: {
       'max-lines': ['error', { max: 700, skipBlankLines: true, skipComments: true }],

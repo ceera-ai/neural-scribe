@@ -239,6 +239,31 @@ export function getLastTranscription(): TranscriptionRecord | null {
   return history.length > 0 ? history[0] : null
 }
 
+export function getHistoryStats(): {
+  totalRecords: number
+  totalWords: number
+  totalDuration: number
+  formattedCount: number
+  averageWordCount: number
+  averageDuration: number
+} {
+  const history = getHistory()
+
+  const totalRecords = history.length
+  const totalWords = history.reduce((sum, r) => sum + r.wordCount, 0)
+  const totalDuration = history.reduce((sum, r) => sum + r.duration, 0)
+  const formattedCount = history.filter((r) => r.wasFormatted).length
+
+  return {
+    totalRecords,
+    totalWords,
+    totalDuration,
+    formattedCount,
+    averageWordCount: totalRecords > 0 ? totalWords / totalRecords : 0,
+    averageDuration: totalRecords > 0 ? totalDuration / totalRecords : 0,
+  }
+}
+
 // Replacement helpers
 export function getReplacements(): WordReplacement[] {
   return store.get('replacements') || []
@@ -479,11 +504,11 @@ export function recordGamificationSession(
   const wordXP = words * 1
   const timeXP = Math.floor(durationMs / 60000) * 10
   const sessionXP = 25
-  let totalXP = wordXP + timeXP + sessionXP
+  const totalXP = wordXP + timeXP + sessionXP
 
   const oldLevel = data.level.level
   const oldXP = data.level.currentXP
-  let newXP = oldXP + totalXP
+  const newXP = oldXP + totalXP
 
   // Check achievements (will be implemented by importing from gamification.ts)
   const newAchievements: string[] = []
@@ -565,6 +590,7 @@ export function unlockGamificationAchievement(achievementId: string, xpReward: n
     const xpToNextLevel = totalXPForNextLevel - data.level.currentXP
 
     data.level.xpToNextLevel = xpToNextLevel
+    data.level.xpForCurrentLevel = xpForCurrentLevel
   }
 
   saveGamificationData(data)

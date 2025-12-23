@@ -87,6 +87,15 @@ export interface WordReplacement {
 export type RecordingToggleCallback = () => void
 export type TranscriptionPastedCallback = (text: string) => void
 
+export interface HistoryStats {
+  totalRecords: number
+  totalWords: number
+  totalDuration: number
+  formattedCount: number
+  averageWordCount: number
+  averageDuration: number
+}
+
 const electronAPI = {
   // Token management
   getScribeToken: (): Promise<string> => ipcRenderer.invoke('get-scribe-token'),
@@ -108,6 +117,7 @@ const electronAPI = {
   clearHistory: (): Promise<boolean> => ipcRenderer.invoke('clear-history'),
   getLastTranscription: (): Promise<TranscriptionRecord | null> =>
     ipcRenderer.invoke('get-last-transcription'),
+  getHistoryStats: (): Promise<HistoryStats> => ipcRenderer.invoke('get-history-stats'),
 
   // Clipboard
   copyToClipboard: (text: string): Promise<boolean> =>
@@ -203,7 +213,7 @@ const electronAPI = {
   // Gamification operations
   getGamificationData: () => ipcRenderer.invoke('get-gamification-data'),
   getAchievementDefinitions: () => ipcRenderer.invoke('get-achievement-definitions'),
-  saveGamificationData: (data: any) => ipcRenderer.invoke('save-gamification-data', data),
+  saveGamificationData: (data: unknown) => ipcRenderer.invoke('save-gamification-data', data),
   recordGamificationSession: (params: { words: number; durationMs: number }) =>
     ipcRenderer.invoke('record-gamification-session', params),
   unlockGamificationAchievement: (params: { achievementId: string; xpReward: number }) =>

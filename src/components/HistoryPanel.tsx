@@ -101,11 +101,13 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
 
       const group = groups.get(dateKey)!
 
-      // Only add records up to the display limit
+      // ALWAYS accumulate totals for ALL records in this day (regardless of display limit)
+      group.totalWords += record.wordCount
+      group.totalDuration += record.duration || 0
+
+      // Only add to display array up to the limit
       if (itemCount < displayLimit) {
         group.records.push(record)
-        group.totalWords += record.wordCount
-        group.totalDuration += record.duration || 0
       }
       itemCount++
     }
@@ -333,6 +335,14 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
                     key={record.id}
                     className="history-card"
                     onClick={() => handleSelect(record)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleSelect(record)
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
                   >
                     <div className="card-content">
                       {record.title ? (
@@ -371,7 +381,13 @@ export function HistoryPanel({ onSelectTranscription }: HistoryPanelProps) {
                       </div>
                     </div>
 
-                    <div className="card-actions" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="card-actions"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      role="toolbar"
+                      aria-label="Card actions"
+                    >
                       {hasVersions && (
                         <button
                           onClick={() => toggleVersion(record.id)}
