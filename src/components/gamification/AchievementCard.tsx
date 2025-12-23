@@ -30,7 +30,7 @@ export interface AchievementCardProps {
   /** Click handler */
   onClick?: () => void
   /** Size variant */
-  size?: 'small' | 'medium' | 'large'
+  size?: 'small' | 'medium' | 'large' | 'compact'
 }
 
 export const AchievementCard: React.FC<AchievementCardProps> = ({
@@ -66,6 +66,11 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
         }
       }}
       aria-label={`${name} achievement, ${isUnlocked ? 'unlocked' : `locked, ${progress}% complete`}`}
+      style={
+        size === 'compact' && !isUnlocked
+          ? ({ '--progress': progress || 0 } as React.CSSProperties)
+          : undefined
+      }
     >
       {/* Icon */}
       <div className={styles.iconContainer}>

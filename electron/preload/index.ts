@@ -202,6 +202,7 @@ const electronAPI = {
 
   // Gamification operations
   getGamificationData: () => ipcRenderer.invoke('get-gamification-data'),
+  getAchievementDefinitions: () => ipcRenderer.invoke('get-achievement-definitions'),
   saveGamificationData: (data: any) => ipcRenderer.invoke('save-gamification-data', data),
   recordGamificationSession: (params: { words: number; durationMs: number }) =>
     ipcRenderer.invoke('record-gamification-session', params),
@@ -209,6 +210,7 @@ const electronAPI = {
     ipcRenderer.invoke('unlock-gamification-achievement', params),
   checkGamificationDailyLogin: () => ipcRenderer.invoke('check-gamification-daily-login'),
   resetGamificationProgress: () => ipcRenderer.invoke('reset-gamification-progress'),
+  checkAndUnlockAllAchievements: () => ipcRenderer.invoke('check-and-unlock-all-achievements'),
   onGamificationDataChanged: (callback: () => void): void => {
     ipcRenderer.on('gamification-data-changed', () => callback())
   },

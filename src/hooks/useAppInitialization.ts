@@ -6,6 +6,7 @@ interface AppInitializationState {
   formattingEnabled: boolean
   recordHotkey: string
   pasteHotkey: string
+  setHasApiKey: (hasKey: boolean) => void
   setFormattingEnabled: (enabled: boolean) => void
   setRecordHotkey: (hotkey: string) => void
   setPasteHotkey: (hotkey: string) => void
@@ -94,6 +95,7 @@ export function useAppInitialization(): AppInitializationState {
     formattingEnabled,
     recordHotkey,
     pasteHotkey,
+    setHasApiKey,
     setFormattingEnabled,
     setRecordHotkey,
     setPasteHotkey,

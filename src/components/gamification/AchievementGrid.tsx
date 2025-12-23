@@ -33,6 +33,8 @@ export interface AchievementGridProps {
   progressMap?: Record<string, number>
   /** Click handler for achievement card */
   onAchievementClick?: (achievement: Achievement) => void
+  /** Card size variant */
+  cardSize?: 'small' | 'medium' | 'large' | 'compact'
 }
 
 type SortOption = 'category' | 'xp-high' | 'xp-low' | 'unlock-date' | 'progress'
@@ -43,24 +45,14 @@ export const AchievementGrid: React.FC<AchievementGridProps> = ({
   unlockedAchievements,
   progressMap = {},
   onAchievementClick,
+  cardSize = 'medium',
 }) => {
   const [filter, setFilter] = useState<FilterOption>('all')
   const [sort, setSort] = useState<SortOption>('category')
-  const [searchQuery, setSearchQuery] = useState('')
 
   // Filter and sort achievements
   const filteredAndSorted = useMemo(() => {
     let result = [...achievements]
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      result = result.filter(
-        (achievement) =>
-          achievement.name.toLowerCase().includes(query) ||
-          achievement.description.toLowerCase().includes(query)
-      )
-    }
 
     // Category/status filter
     if (filter === 'unlocked') {
@@ -99,7 +91,7 @@ export const AchievementGrid: React.FC<AchievementGridProps> = ({
     })
 
     return result
-  }, [achievements, filter, sort, searchQuery, unlockedAchievements, progressMap])
+  }, [achievements, filter, sort, unlockedAchievements, progressMap])
 
   // Stats
   const totalAchievements = achievements.length
@@ -119,92 +111,35 @@ export const AchievementGrid: React.FC<AchievementGridProps> = ({
             <span className={styles.statItem}>{completionPercentage}% Complete</span>
           </div>
         </div>
-
-        {/* Search */}
-        <div className={styles.searchContainer}>
-          <input
-            type="text"
-            placeholder="Search achievements..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={styles.searchInput}
-            aria-label="Search achievements"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className={styles.clearSearch}
-              aria-label="Clear search"
-            >
-              ✕
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Filters and Sort */}
       <div className={styles.controls}>
-        <div className={styles.filters}>
-          <button
-            className={`${styles.filterBtn} ${filter === 'all' ? styles.active : ''}`}
-            onClick={() => setFilter('all')}
+        <div className={styles.filterContainer}>
+          <label htmlFor="filter-select" className={styles.filterLabel}>
+            Filter:
+          </label>
+          <select
+            id="filter-select"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as FilterOption)}
+            className={styles.filterSelect}
           >
-            All
-          </button>
-          <button
-            className={`${styles.filterBtn} ${filter === 'unlocked' ? styles.active : ''}`}
-            onClick={() => setFilter('unlocked')}
-          >
-            Unlocked
-          </button>
-          <button
-            className={`${styles.filterBtn} ${filter === 'locked' ? styles.active : ''}`}
-            onClick={() => setFilter('locked')}
-          >
-            Locked
-          </button>
-          <div className={styles.divider} />
-          <button
-            className={`${styles.filterBtn} ${filter === 'milestone' ? styles.active : ''}`}
-            onClick={() => setFilter('milestone')}
-          >
-            Milestone
-          </button>
-          <button
-            className={`${styles.filterBtn} ${filter === 'words' ? styles.active : ''}`}
-            onClick={() => setFilter('words')}
-          >
-            Words
-          </button>
-          <button
-            className={`${styles.filterBtn} ${filter === 'streak' ? styles.active : ''}`}
-            onClick={() => setFilter('streak')}
-          >
-            Streak
-          </button>
-          <button
-            className={`${styles.filterBtn} ${filter === 'speed' ? styles.active : ''}`}
-            onClick={() => setFilter('speed')}
-          >
-            Speed
-          </button>
-          <button
-            className={`${styles.filterBtn} ${filter === 'time' ? styles.active : ''}`}
-            onClick={() => setFilter('time')}
-          >
-            Time
-          </button>
-          <button
-            className={`${styles.filterBtn} ${filter === 'level' ? styles.active : ''}`}
-            onClick={() => setFilter('level')}
-          >
-            Level
-          </button>
+            <option value="all">All</option>
+            <option value="unlocked">Unlocked</option>
+            <option value="locked">Locked</option>
+            <option value="milestone">Milestone</option>
+            <option value="words">Words</option>
+            <option value="streak">Streak</option>
+            <option value="speed">Speed</option>
+            <option value="time">Time</option>
+            <option value="level">Level</option>
+          </select>
         </div>
 
         <div className={styles.sortContainer}>
           <label htmlFor="sort-select" className={styles.sortLabel}>
-            Sort by:
+            Sort:
           </label>
           <select
             id="sort-select"
@@ -220,13 +155,6 @@ export const AchievementGrid: React.FC<AchievementGridProps> = ({
           </select>
         </div>
       </div>
-
-      {/* Results count */}
-      {searchQuery && (
-        <div className={styles.resultsCount}>
-          {filteredAndSorted.length} result{filteredAndSorted.length !== 1 ? 's' : ''} found
-        </div>
-      )}
 
       {/* Achievement Grid */}
       {filteredAndSorted.length > 0 ? (
@@ -246,6 +174,7 @@ export const AchievementGrid: React.FC<AchievementGridProps> = ({
                 unlockedAt={unlocked?.unlockedAt}
                 progress={progressMap[achievement.id]}
                 onClick={() => onAchievementClick?.(achievement)}
+                size={cardSize}
               />
             )
           })}
@@ -254,11 +183,7 @@ export const AchievementGrid: React.FC<AchievementGridProps> = ({
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>🏆</div>
           <h3 className={styles.emptyTitle}>No achievements found</h3>
-          <p className={styles.emptyText}>
-            {searchQuery
-              ? 'Try adjusting your search or filters'
-              : 'Start using the app to unlock achievements!'}
-          </p>
+          <p className={styles.emptyText}>Try adjusting your filters</p>
         </div>
       )}
     </div>

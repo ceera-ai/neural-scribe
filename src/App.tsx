@@ -17,6 +17,7 @@ import {
   NotificationQueue,
   showAchievementNotification,
 } from './components/gamification/NotificationQueue'
+import { XPNotification } from './components/gamification/XPNotification'
 import { RecordingControls } from './components/controls/RecordingControls'
 import { TranscriptDisplay } from './components/transcript/TranscriptDisplay'
 import { AppHeader } from './components/header/AppHeader'
@@ -34,6 +35,7 @@ function App() {
     formattingEnabled,
     recordHotkey,
     pasteHotkey,
+    setHasApiKey,
     setFormattingEnabled,
   } = useAppInitialization()
 
@@ -77,12 +79,17 @@ function App() {
   })
 
   // Recording handlers
-  const { lastVoiceCommand, handleRecordingStopped, handleVoiceCommand, handleSaveTranscript } =
-    useRecordingHandlers({
-      recordSession,
-      saveTranscription,
-      pendingPasteRef,
-    })
+  const {
+    lastVoiceCommand,
+    lastXpGained,
+    handleRecordingStopped,
+    handleVoiceCommand,
+    handleSaveTranscript,
+  } = useRecordingHandlers({
+    recordSession,
+    saveTranscription,
+    pendingPasteRef,
+  })
 
   // Check daily login on mount
   useEffect(() => {
@@ -294,6 +301,19 @@ function App() {
         staggerDelay={500}
         onNotificationClick={() => setShowGamification(true)}
       />
+
+      {/* XP Notification */}
+      {lastXpGained !== null && lastXpGained > 0 && (
+        <div style={{ position: 'fixed', top: '5rem', right: '1rem', zIndex: 1000 }}>
+          <XPNotification
+            xpGained={lastXpGained}
+            isVisible={true}
+            duration={3000}
+            onDismiss={() => {}}
+            onClick={() => setShowGamification(true)}
+          />
+        </div>
+      )}
 
       <AppHeader
         isRecording={isRecording}

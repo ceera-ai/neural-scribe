@@ -390,22 +390,136 @@
   color: #808080 !important;
 }
 
-/* Fix achievement grid to use compact single-column layout */
+/* Achievement grid - responsive column layout */
 .gamification-modal-content div[class*='AchievementGrid_grid'] {
-  grid-template-columns: 1fr !important;
-  gap: 0.75rem !important;
+  gap: 0.625rem !important;
 }
 
-/* Achievement Cards - make them more compact */
-.gamification-modal-content div[class*='AchievementCard'] {
-  background: rgba(0, 0, 0, 0.4) !important;
+/* Controls - keep filter and sort on one line */
+.gamification-modal-content div[class*='controls'] {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 0.5rem !important;
+  padding: 0.5rem 0.75rem !important;
+  background: rgba(0, 0, 0, 0.3) !important;
   border: 1px solid rgba(0, 255, 255, 0.2) !important;
-  padding: 0.875rem !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
-.gamification-modal-content div[class*='AchievementCard']:hover {
+.gamification-modal-content div[class*='filterContainer'],
+.gamification-modal-content div[class*='sortContainer'] {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.gamification-modal-content label[class*='filterLabel'],
+.gamification-modal-content label[class*='sortLabel'] {
+  color: var(--neon-cyan, #00ffff) !important;
+  font-size: 0.7rem !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+.gamification-modal-content select[class*='filterSelect'] {
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(0, 255, 255, 0.3) !important;
+  color: var(--neon-cyan, #00ffff) !important;
+  font-size: 0.7rem !important;
+  padding: 0.35rem 1.25rem 0.35rem 0.5rem !important;
+  border-radius: 4px !important;
+  width: 100% !important;
+  max-width: 90px !important;
+  box-sizing: border-box !important;
+}
+
+.gamification-modal-content select[class*='sortSelect'] {
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(0, 255, 255, 0.3) !important;
+  color: var(--neon-cyan, #00ffff) !important;
+  font-size: 0.7rem !important;
+  padding: 0.35rem 1.25rem 0.35rem 0.5rem !important;
+  border-radius: 4px !important;
+  width: 100% !important;
+  max-width: 130px !important;
+  box-sizing: border-box !important;
+}
+
+.gamification-modal-content select[class*='filterSelect']:focus,
+.gamification-modal-content select[class*='sortSelect']:focus {
   border-color: var(--neon-cyan, #00ffff) !important;
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3) !important;
+}
+
+/* Achievement Cards - compact square cards with cyberpunk styling */
+.gamification-modal-content div[class*='AchievementCard'][class*='compact'] {
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 2px solid rgba(0, 255, 255, 0.3) !important;
+  padding: 0.75rem 0.5rem !important;
+  min-height: 105px !important;
+  color: var(--neon-cyan, #00ffff) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Locked cards - cyan progress gradient background */
+.gamification-modal-content div[class*='AchievementCard'][class*='compact'][class*='locked']::before {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 255, 255, 0.2) 0%,
+    rgba(0, 255, 255, 0.3) calc(var(--progress, 0) * 1%),
+    transparent calc(var(--progress, 0) * 1%)
+  ) !important;
+}
+
+.gamification-modal-content div[class*='AchievementCard'][class*='compact']:hover {
+  border-color: var(--neon-cyan, #00ffff) !important;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3) !important;
+  transform: translateY(-2px);
+}
+
+/* Unlocked cards - gold gradient background */
+.gamification-modal-content div[class*='AchievementCard'][class*='compact'][class*='unlocked'] {
+  border-color: rgba(251, 191, 36, 0.6) !important;
+  color: #fbbf24 !important;
+}
+
+.gamification-modal-content div[class*='AchievementCard'][class*='compact'][class*='unlocked']::before {
+  background: linear-gradient(
+    90deg,
+    rgba(251, 191, 36, 0.2) 0%,
+    rgba(251, 191, 36, 0.3) 100%
+  ) !important;
+}
+
+.gamification-modal-content div[class*='AchievementCard'][class*='compact'][class*='unlocked']:hover {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3) !important;
+}
+
+/* Icon container - compact size with cyberpunk styling */
+.gamification-modal-content div[class*='compact'] div[class*='iconContainer'] {
+  background: rgba(0, 255, 255, 0.1) !important;
+  border: 1px solid rgba(0, 255, 255, 0.4) !important;
+}
+
+.gamification-modal-content div[class*='compact'][class*='unlocked'] div[class*='iconContainer'] {
+  background: rgba(251, 191, 36, 0.2) !important;
+  border-color: rgba(251, 191, 36, 0.6) !important;
+}
+
+/* Card name text */
+.gamification-modal-content div[class*='compact'] h3[class*='name'] {
+  color: #fff !important;
+  font-size: 0.65rem !important;
+  line-height: 1.3 !important;
 }
 
 /* Empty state */

@@ -1,11 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { UserStats, LevelSystem, Achievement } from '../types/gamification'
 import {
-  ACHIEVEMENTS,
   getDefaultStats,
   getDefaultLevelSystem,
   calculateXPForLevel,
 } from '../types/gamification'
+
+// Backend achievement type (simpler structure from main process)
+interface BackendAchievement {
+  id: string
+  name: string
+  description: string
+  icon: string
+  xpReward: number
+  category: 'milestone' | 'words' | 'streak' | 'speed' | 'time' | 'level'
+  order: number
+}
 
 interface UseGamificationReturn {
   stats: UserStats
@@ -26,10 +36,29 @@ export function useGamification(): UseGamificationReturn {
   const [stats, setStats] = useState<UserStats>(getDefaultStats)
   const [level, setLevel] = useState<LevelSystem>(getDefaultLevelSystem)
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set())
+  const [unlockedData, setUnlockedData] = useState<Record<string, { unlockedAt: number; xpAwarded: number }>>({})
   const [recentUnlocks, setRecentUnlocks] = useState<Achievement[]>([])
+  const [backendAchievements, setBackendAchievements] = useState<BackendAchievement[]>([])
 
   const isInitialized = useRef(false)
   const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
+
+  // Load achievement definitions from backend on mount
+  useEffect(() => {
+    if (!isElectron) return
+
+    async function loadAchievements() {
+      try {
+        const achievements = await window.electronAPI.getAchievementDefinitions()
+        setBackendAchievements(achievements)
+        console.log('[Gamification] Loaded achievement definitions from backend:', achievements.length)
+      } catch (err) {
+        console.error('[Gamification] Failed to load achievement definitions:', err)
+      }
+    }
+
+    loadAchievements()
+  }, [isElectron])
 
   // Load saved state from Electron store on mount
   useEffect(() => {
@@ -42,8 +71,20 @@ export function useGamification(): UseGamificationReturn {
         setStats(data.stats)
         setLevel(data.level)
         setUnlockedIds(new Set(Object.keys(data.achievements.unlocked)))
+        setUnlockedData(data.achievements.unlocked)
 
         console.log('[Gamification] Loaded data from Electron store:', data)
+
+        // Check and unlock any achievements that should already be unlocked based on current stats
+        // This handles retroactive unlocking for existing progress
+        try {
+          const unlockedIds = await window.electronAPI.checkAndUnlockAllAchievements()
+          if (unlockedIds.length > 0) {
+            console.log('[Gamification] Retroactively unlocked achievements:', unlockedIds)
+          }
+        } catch (err) {
+          console.error('[Gamification] Failed to check retroactive achievements:', err)
+        }
       } catch (err) {
         console.error('[Gamification] Failed to load data:', err)
       }
@@ -63,6 +104,7 @@ export function useGamification(): UseGamificationReturn {
         setStats(data.stats)
         setLevel(data.level)
         setUnlockedIds(new Set(Object.keys(data.achievements.unlocked)))
+        setUnlockedData(data.achievements.unlocked)
         console.log('[Gamification] Data updated from external change')
       } catch (err) {
         console.error('[Gamification] Failed to refresh data:', err)
@@ -78,12 +120,24 @@ export function useGamification(): UseGamificationReturn {
 
   // Listen for achievement unlocks
   useEffect(() => {
-    if (!isElectron) return
+    if (!isElectron || backendAchievements.length === 0) return
 
     const handleAchievementUnlocked = (achievementId: string) => {
-      const achievement = ACHIEVEMENTS.find((a) => a.id === achievementId)
-      if (achievement && !recentUnlocks.find((a) => a.id === achievementId)) {
-        setRecentUnlocks((prev) => [...prev, { ...achievement, unlockedAt: Date.now() }])
+      const backendAchievement = backendAchievements.find((a) => a.id === achievementId)
+      if (backendAchievement && !recentUnlocks.find((a) => a.id === achievementId)) {
+        // Create achievement from backend achievement data
+        const achievement: Achievement = {
+          id: backendAchievement.id,
+          name: backendAchievement.name,
+          description: backendAchievement.description,
+          icon: backendAchievement.icon,
+          xpReward: backendAchievement.xpReward,
+          category: 'special', // Will be properly set when we map all achievements
+          requirement: { type: 'special', value: 1 },
+          rarity: 'uncommon',
+          unlockedAt: Date.now(),
+        }
+        setRecentUnlocks((prev) => [...prev, achievement])
         console.log('[Gamification] Achievement unlocked:', achievementId)
       }
     }
@@ -93,165 +147,56 @@ export function useGamification(): UseGamificationReturn {
     return () => {
       window.electronAPI.removeAllListeners('achievement-unlocked')
     }
-  }, [isElectron, recentUnlocks])
+  }, [isElectron, recentUnlocks, backendAchievements])
 
-  // Debug: Track stats changes
-  useEffect(() => {
-    console.log('🎮 [STATE] Stats state updated:', {
-      totalSessions: stats.totalSessions,
-      totalWords: stats.totalWordsTranscribed,
-      totalTime: stats.totalRecordingTimeMs,
-      currentStreak: stats.currentStreak,
-      lastActive: stats.lastActiveDate,
-    })
-  }, [stats])
 
-  // Debug: Track level changes
-  useEffect(() => {
-    console.log('🎮 [STATE] Level state updated:', {
-      currentXP: level.currentXP,
-      level: level.level,
-      rank: level.rank,
-      xpToNext: level.xpToNextLevel,
-    })
-  }, [level])
-
-  // Check and unlock achievements (client-side checking, server-side unlocking)
+  // Check and unlock achievements (now handled by backend, this just updates UI state)
   const checkAchievements = useCallback(
-    async (currentStats: UserStats, currentLevel: number) => {
-      if (!isElectron) return
+    async () => {
+      if (!isElectron || backendAchievements.length === 0) return
 
-      const newUnlocks: Achievement[] = []
-
-      for (const achievement of ACHIEVEMENTS) {
-        if (unlockedIds.has(achievement.id)) continue
-
-        let shouldUnlock = false
-        const { type, value } = achievement.requirement
-
-        switch (type) {
-          case 'words':
-            shouldUnlock = currentStats.totalWordsTranscribed >= value
-            break
-          case 'time_minutes':
-            shouldUnlock = currentStats.totalRecordingTimeMs >= value * 60 * 1000
-            break
-          case 'sessions':
-            shouldUnlock = currentStats.totalSessions >= value
-            break
-          case 'streak_days':
-            shouldUnlock = currentStats.currentStreak >= value
-            break
-          case 'level':
-            shouldUnlock = currentLevel >= value
-            break
-        }
-
-        if (shouldUnlock) {
-          newUnlocks.push({
-            ...achievement,
-            unlockedAt: Date.now(),
-          })
-        }
-      }
-
-      if (newUnlocks.length > 0) {
-        console.log(
-          '[Gamification] Unlocking achievements:',
-          newUnlocks.map((a) => a.id)
-        )
-
-        // Unlock achievements via Electron store
-        for (const achievement of newUnlocks) {
-          try {
-            await window.electronAPI.unlockGamificationAchievement({
-              achievementId: achievement.id,
-              xpReward: achievement.xpReward,
-            })
-          } catch (err) {
-            console.error(`[Gamification] Failed to unlock achievement ${achievement.id}:`, err)
-          }
-        }
-
-        // Update local state
-        setUnlockedIds((prev) => {
-          const newSet = new Set(prev)
-          newUnlocks.forEach((a) => newSet.add(a.id))
-          return newSet
-        })
-
-        // Add to recent unlocks for popup display
-        setRecentUnlocks((prev) => [...prev, ...newUnlocks])
-      }
+      // Backend now handles achievement checking and unlocking
+      // This function just ensures UI state is in sync
     },
-    [unlockedIds, isElectron]
+    [isElectron, backendAchievements]
   )
 
   // Record a completed session
   const recordSession = useCallback(
-    async (words: number, durationMs: number) => {
-      console.log('🎮 [DEBUG] recordSession called:', {
-        words,
-        durationMs,
-        isElectron,
-        currentStats: {
-          totalSessions: stats.totalSessions,
-          totalWords: stats.totalWordsTranscribed,
-        },
-        currentLevel: {
-          currentXP: level.currentXP,
-          level: level.level,
-        },
-      })
-
+    async (words: number, durationMs: number): Promise<number> => {
       if (!isElectron) {
         console.warn('[Gamification] Not in Electron environment, skipping')
-        return
+        return 0
       }
 
       try {
-        console.log('🎮 [DEBUG] Calling IPC record-gamification-session...')
-
         // Record session via Electron store
         const result = await window.electronAPI.recordGamificationSession({
           words,
           durationMs,
         })
 
-        console.log('🎮 [DEBUG] IPC returned:', result)
         console.log('[Gamification] Session recorded:', result)
-
-        console.log('🎮 [DEBUG] Reloading data from store...')
 
         // Reload data from store to get updated stats and level
         const data = await window.electronAPI.getGamificationData()
 
-        console.log('🎮 [DEBUG] Data reloaded from store:', {
-          totalSessions: data.stats.totalSessions,
-          totalWords: data.stats.totalWordsTranscribed,
-          totalTime: data.stats.totalRecordingTimeMs,
-          currentXP: data.level.currentXP,
-          level: data.level.level,
-          rank: data.level.rank,
-          unlockedAchievements: Object.keys(data.achievements.unlocked).length,
-        })
-
         setStats(data.stats)
         setLevel(data.level)
 
-        console.log('🎮 [DEBUG] React state updated')
-
         // Check for new achievements
-        await checkAchievements(data.stats, data.level.level)
+        await checkAchievements()
 
         // Show level up notification if applicable
         if (result.leveledUp) {
           console.log(`[Gamification] LEVEL UP! ${result.oldLevel} → ${result.newLevel}`)
           // TODO: Could show a level up notification here
         }
+
+        return result.xpGained
       } catch (err) {
-        console.error('🎮 [DEBUG] recordSession ERROR:', err)
         console.error('[Gamification] Failed to record session:', err)
+        return 0
       }
     },
     [isElectron, checkAchievements, stats, level]
@@ -273,7 +218,7 @@ export function useGamification(): UseGamificationReturn {
         setLevel(data.level)
 
         // Check for streak-based achievements
-        await checkAchievements(data.stats, data.level.level)
+        await checkAchievements()
       }
     } catch (err) {
       console.error('[Gamification] Failed to check daily login:', err)
@@ -315,41 +260,111 @@ export function useGamification(): UseGamificationReturn {
       ? (level.currentXP - xpForCurrentLevel) / (xpForNextLevel - xpForCurrentLevel)
       : 0
 
-  // Map achievements with progress and unlock status
-  const achievements: Achievement[] = ACHIEVEMENTS.map((achievement) => {
-    const isUnlocked = unlockedIds.has(achievement.id)
-    let progress = 0
+  // Helper to map backend achievements to frontend Achievement type with progress
+  const mapBackendAchievement = (backend: BackendAchievement): Achievement => {
+    const isUnlocked = unlockedIds.has(backend.id)
 
+    // Map backend achievement to requirement structure
+    // These thresholds match the backend achievement checker
+    const requirementMap: Record<string, { type: Achievement['requirement']['type']; value: number }> = {
+      // Milestones (sessions)
+      'first-steps': { type: 'sessions', value: 1 },
+      'getting-started': { type: 'sessions', value: 10 },
+      'veteran': { type: 'sessions', value: 100 },
+      'legend': { type: 'sessions', value: 500 },
+      // Words
+      'chatterbox': { type: 'words', value: 1000 },
+      'wordsmith': { type: 'words', value: 10000 },
+      'eloquent': { type: 'words', value: 50000 },
+      'voice-master': { type: 'words', value: 100000 },
+      'word-wizard': { type: 'words', value: 500000 },
+      // Streaks
+      'committed': { type: 'streak_days', value: 3 },
+      'dedicated': { type: 'streak_days', value: 7 },
+      'unstoppable': { type: 'streak_days', value: 30 },
+      'legendary-streak': { type: 'streak_days', value: 100 },
+      // Speed (words per minute) - special calculation
+      'fast-talker': { type: 'special', value: 150 },
+      'speed-demon': { type: 'special', value: 200 },
+      'lightning': { type: 'special', value: 250 },
+      // Time (total hours)
+      'marathon': { type: 'time_minutes', value: 60 },
+      'endurance': { type: 'time_minutes', value: 600 },
+      'time-lord': { type: 'time_minutes', value: 3000 },
+      'timeless': { type: 'time_minutes', value: 6000 },
+      // Level
+      'rising-star': { type: 'level', value: 10 },
+      'power-user': { type: 'level', value: 25 },
+      'elite': { type: 'level', value: 50 },
+      'transcendent': { type: 'level', value: 100 },
+    }
+
+    const requirement = requirementMap[backend.id] || { type: 'special', value: 1 }
+
+    // Calculate progress
+    let progress = 0
     if (!isUnlocked) {
-      const { type, value } = achievement.requirement
-      switch (type) {
+      switch (requirement.type) {
         case 'words':
-          progress = Math.min(1, stats.totalWordsTranscribed / value)
+          progress = Math.min(1, stats.totalWordsTranscribed / requirement.value)
           break
         case 'time_minutes':
-          progress = Math.min(1, stats.totalRecordingTimeMs / (value * 60 * 1000))
+          progress = Math.min(1, stats.totalRecordingTimeMs / (requirement.value * 60 * 1000))
           break
         case 'sessions':
-          progress = Math.min(1, stats.totalSessions / value)
+          progress = Math.min(1, stats.totalSessions / requirement.value)
           break
         case 'streak_days':
-          progress = Math.min(1, stats.currentStreak / value)
+          progress = Math.min(1, stats.longestStreak / requirement.value)
           break
         case 'level':
-          progress = Math.min(1, level.level / value)
+          progress = Math.min(1, level.level / requirement.value)
+          break
+        case 'special':
+          // WPM calculation
+          if (stats.totalRecordingTimeMs > 0) {
+            const wpm = (stats.totalWordsTranscribed / (stats.totalRecordingTimeMs / 60000))
+            progress = Math.min(1, wpm / requirement.value)
+          }
           break
       }
     } else {
       progress = 1
     }
 
-    return {
-      ...achievement,
-      progress,
-      // NOTE: unlockedAt is NOT set here to avoid regenerating timestamps
-      // It's loaded from Electron store when needed for display
+    // Map category to frontend category type
+    const categoryMap: Record<BackendAchievement['category'], Achievement['category']> = {
+      'milestone': 'sessions',
+      'words': 'words',
+      'streak': 'streaks',
+      'speed': 'special',
+      'time': 'time',
+      'level': 'special',
     }
-  })
+
+    // Determine rarity based on XP reward
+    let rarity: Achievement['rarity'] = 'common'
+    if (backend.xpReward >= 2000) rarity = 'legendary'
+    else if (backend.xpReward >= 1000) rarity = 'epic'
+    else if (backend.xpReward >= 500) rarity = 'rare'
+    else if (backend.xpReward >= 100) rarity = 'uncommon'
+
+    return {
+      id: backend.id,
+      name: backend.name,
+      description: backend.description,
+      icon: backend.icon,
+      category: categoryMap[backend.category] || 'special',
+      requirement,
+      xpReward: backend.xpReward,
+      rarity,
+      progress,
+      unlockedAt: isUnlocked ? unlockedData[backend.id]?.unlockedAt : undefined,
+    }
+  }
+
+  // Map backend achievements to frontend Achievement type
+  const achievements: Achievement[] = backendAchievements.map(mapBackendAchievement)
 
   const unlockedAchievements = achievements.filter((a) => unlockedIds.has(a.id))
 

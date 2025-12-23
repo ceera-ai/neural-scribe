@@ -22,7 +22,7 @@ export const StreakDisplay: React.FC<StreakDisplayProps> = ({
   currentStreak,
   longestStreak,
   lastActiveDate,
-  showTips = true,
+  showTips = false,
 }) => {
   // Check if active today
   const today = new Date().toISOString().split('T')[0]

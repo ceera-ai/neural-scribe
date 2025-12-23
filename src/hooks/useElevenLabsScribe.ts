@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Scribe, RealtimeEvents } from '@elevenlabs/client'
-import type { TranscriptionRecord } from '../types/electron'
 
 interface TranscriptSegment {
   text: string
@@ -214,6 +213,89 @@ export const useElevenLabsScribe = (
       .trim()
   }, [])
 
+  // Stop audio level analysis
+  const stopAudioAnalysis = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = null
+    }
+
+    if (audioStreamRef.current) {
+      audioStreamRef.current.getTracks().forEach((track) => track.stop())
+      audioStreamRef.current = null
+    }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close()
+      audioContextRef.current = null
+    }
+
+    analyserRef.current = null
+
+    // Reset overlay to zero level
+    if (isElectron) {
+      window.electronAPI.sendAudioLevel(0)
+      // Reset spectrum bars
+      window.electronAPI.sendFrequencyData(new Array(24).fill(0))
+    }
+
+    console.log('[AudioAnalysis] Stopped')
+  }, [isElectron])
+
+  // Helper function to perform the actual stop logic (avoids circular dependencies)
+  const performStopRecording = useCallback(async () => {
+    console.log('[CRITICAL] performStopRecording - IMMEDIATELY updating state')
+
+    // IMMEDIATELY update state to prevent any further processing
+    setIsRecording(false)
+    setIsConnected(false)
+
+    // Notify main process IMMEDIATELY
+    if (isElectron) {
+      window.electronAPI.notifyRecordingState(false)
+    }
+
+    // Stop audio level analysis IMMEDIATELY
+    stopAudioAnalysis()
+
+    // Close the WebSocket connection IMMEDIATELY and aggressively
+    if (connectionRef.current) {
+      console.log('[CRITICAL] Closing WebSocket connection NOW')
+      const connection = connectionRef.current
+      connectionRef.current = null // Clear ref FIRST to prevent any race conditions
+
+      try {
+        // Force close the connection
+        connection.close()
+        console.log('[CRITICAL] WebSocket connection.close() called')
+      } catch (err) {
+        console.error('[CRITICAL] Error closing connection:', err)
+      }
+    }
+
+    // Get the full transcript and duration
+    const transcript = getFullTranscript()
+    const duration =
+      recordingStartTimeRef.current > 0
+        ? Math.floor((Date.now() - recordingStartTimeRef.current) / 1000)
+        : 0
+
+    // Call callback if transcript has content
+    if (transcript && onRecordingStopped) {
+      console.log('[CRITICAL] Calling onRecordingStopped callback')
+      try {
+        const result = await onRecordingStopped(transcript, duration)
+        if (typeof result === 'string' && result !== transcript) {
+          setEditedTranscript(result)
+        }
+      } catch (err) {
+        console.error('[CRITICAL] Error in onRecordingStopped callback:', err)
+      }
+    }
+
+    console.log('[CRITICAL] performStopRecording complete')
+  }, [stopAudioAnalysis, getFullTranscript, onRecordingStopped, isElectron])
+
   // Start audio level analysis for overlay visualization
   const startAudioAnalysis = useCallback(async (microphoneId?: string | null) => {
     try {
@@ -309,35 +391,6 @@ export const useElevenLabsScribe = (
       console.error('[AudioAnalysis] Failed to start:', err)
     }
   }, [])
-
-  // Stop audio level analysis
-  const stopAudioAnalysis = useCallback(() => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current)
-      animationFrameRef.current = null
-    }
-
-    if (audioStreamRef.current) {
-      audioStreamRef.current.getTracks().forEach((track) => track.stop())
-      audioStreamRef.current = null
-    }
-
-    if (audioContextRef.current) {
-      audioContextRef.current.close()
-      audioContextRef.current = null
-    }
-
-    analyserRef.current = null
-
-    // Reset overlay to zero level
-    if (isElectron) {
-      window.electronAPI.sendAudioLevel(0)
-      // Reset spectrum bars
-      window.electronAPI.sendFrequencyData(new Array(24).fill(0))
-    }
-
-    console.log('[AudioAnalysis] Stopped')
-  }, [isElectron])
 
   const startRecording = useCallback(async () => {
     try {
@@ -461,21 +514,8 @@ export const useElevenLabsScribe = (
 
             // Auto-stop recording after voice command
             setTimeout(() => {
-              console.log('[VoiceCommand] Auto-stopping recording...')
-              stopAudioAnalysis()
-              if (connectionRef.current) {
-                try {
-                  connectionRef.current.close()
-                } catch (err) {
-                  console.error('Error closing connection:', err)
-                }
-                connectionRef.current = null
-              }
-              setIsRecording(false)
-              setIsConnected(false)
-              if (isElectron) {
-                window.electronAPI.notifyRecordingState(false)
-              }
+              console.log('[VoiceCommand] Auto-stopping recording via performStopRecording()...')
+              performStopRecording()
             }, 200)
 
             return // Don't update segment again
@@ -546,23 +586,10 @@ export const useElevenLabsScribe = (
 
               onVoiceCommandRef.current(command, fullTranscript)
 
-              // Auto-stop recording after voice command (with small delay)
+              // Auto-stop recording after voice command
               setTimeout(() => {
-                stopAudioAnalysis()
-                if (connectionRef.current) {
-                  console.log('[VoiceCommand] Auto-stopping recording...')
-                  try {
-                    connectionRef.current.close()
-                  } catch (err) {
-                    console.error('Error closing connection:', err)
-                  }
-                  connectionRef.current = null
-                }
-                setIsRecording(false)
-                setIsConnected(false)
-                if (isElectron) {
-                  window.electronAPI.notifyRecordingState(false)
-                }
+                console.log('[VoiceCommand] Auto-stopping recording via performStopRecording()...')
+                performStopRecording()
               }, 100)
             }
             return
@@ -604,13 +631,20 @@ export const useElevenLabsScribe = (
       })
 
       // Handle connection close
-      connection.on(RealtimeEvents.CLOSE, () => {
-        console.log('Connection closed')
-        setIsConnected(false)
-        setIsRecording(false)
-        if (isElectron) {
-          window.electronAPI.notifyRecordingState(false)
+      connection.on(RealtimeEvents.CLOSE, async () => {
+        console.log('[WebSocket] CLOSE event received')
+
+        // Check if this was already handled by stopRecording (connection ref is null)
+        if (!connectionRef.current) {
+          console.log('[WebSocket] CLOSE event already handled by performStopRecording, skipping')
+          return
         }
+
+        // This path is only reached if the connection closed unexpectedly
+        // (not via manual stopRecording call)
+        console.log('[WebSocket] Unexpected connection close - cleaning up via performStopRecording')
+
+        await performStopRecording()
       })
     } catch (err) {
       console.error('Error starting recording:', err)
@@ -621,76 +655,12 @@ export const useElevenLabsScribe = (
         window.electronAPI.notifyRecordingState(false)
       }
     }
-  }, [sessionId, selectedMicrophoneId, startAudioAnalysis])
+  }, [sessionId, selectedMicrophoneId, startAudioAnalysis, performStopRecording])
 
   const stopRecording = useCallback(async () => {
-    // Stop audio level analysis
-    stopAudioAnalysis()
-
-    if (connectionRef.current) {
-      console.log('Stopping recording and closing connection...')
-      try {
-        connectionRef.current.close()
-      } catch (err) {
-        console.error('Error closing connection:', err)
-      }
-      connectionRef.current = null
-    }
-
-    // Get the full transcript before clearing state
-    let transcript = getFullTranscript()
-
-    // Calculate recording duration in seconds
-    const duration =
-      recordingStartTimeRef.current > 0
-        ? Math.floor((Date.now() - recordingStartTimeRef.current) / 1000)
-        : 0
-
-    // Check for voice commands in the final transcript (in case it wasn't committed yet)
-    // Use refs to get current values
-    if (voiceCommandsEnabledRef.current && transcript && !voiceCommandTriggeredRef.current) {
-      const { command, cleanedText } = detectVoiceCommand(transcript, voiceCommandsRef.current)
-      if (command) {
-        console.log(`[VoiceCommand] Detected on stop: "${command}", cleaned text: "${cleanedText}"`)
-        voiceCommandTriggeredRef.current = true
-        transcript = cleanedText // Use cleaned transcript
-
-        // Update the last segment with cleaned text
-        if (cleanedText) {
-          setTranscriptSegments((prev) => {
-            if (prev.length > 0) {
-              const updated = [...prev]
-              updated[updated.length - 1] = {
-                ...updated[updated.length - 1],
-                text: cleanedText,
-              }
-              return updated
-            }
-            return prev
-          })
-        }
-
-        if (onVoiceCommandRef.current) {
-          onVoiceCommandRef.current(command, cleanedText)
-        }
-      }
-    }
-
-    setIsRecording(false)
-    setIsConnected(false)
-    if (isElectron) {
-      window.electronAPI.notifyRecordingState(false)
-    }
-
-    // Call callback if transcript has content (and no voice command was triggered)
-    if (transcript && onRecordingStopped) {
-      const result = await onRecordingStopped(transcript, duration)
-      // If callback returns a modified transcript, update the edited state
-      if (typeof result === 'string' && result !== transcript) {
-        setEditedTranscript(result)
-      }
-    }
-  }, [getFullTranscript, onRecordingStopped, stopAudioAnalysis])
+    console.log('[CRITICAL] stopRecording called')
+    await performStopRecording()
+  }, [performStopRecording])
 
   const clearTranscript = useCallback(() => {
     setTranscriptSegments([])

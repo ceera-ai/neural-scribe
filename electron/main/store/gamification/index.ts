@@ -101,26 +101,7 @@ const store = new Store<GamificationStore>({
  * ```
  */
 export function getGamificationData(): GamificationData {
-  console.log('🎮 [STORE] Reading from store...')
-  console.log('🎮 [STORE] Store path:', store.path)
   const data = store.get('gamification', DEFAULT_GAMIFICATION_DATA)
-  console.log('🎮 [STORE] Data read:', {
-    version: data.version,
-    stats: {
-      totalSessions: data.stats.totalSessions,
-      totalWords: data.stats.totalWordsTranscribed,
-      totalTime: data.stats.totalRecordingTimeMs,
-    },
-    level: {
-      currentXP: data.level.currentXP,
-      level: data.level.level,
-      rank: data.level.rank,
-    },
-    achievements: {
-      unlocked: Object.keys(data.achievements.unlocked).length,
-    },
-    metadata: data.metadata,
-  })
   return data
 }
 
@@ -140,12 +121,6 @@ export function getGamificationData(): GamificationData {
  * ```
  */
 export function saveGamificationData(data: Partial<GamificationData>): void {
-  console.log('🎮 [STORE] saveGamificationData called with:', {
-    hasStats: !!data.stats,
-    hasLevel: !!data.level,
-    hasAchievements: !!data.achievements,
-  })
-
   const current = getGamificationData()
   const updated: GamificationData = {
     ...current,
@@ -158,31 +133,7 @@ export function saveGamificationData(data: Partial<GamificationData>): void {
     },
   }
 
-  console.log('🎮 [STORE] Writing to store...')
-  console.log('🎮 [STORE] Updated data to save:', {
-    version: updated.version,
-    stats: {
-      totalSessions: updated.stats.totalSessions,
-      totalWords: updated.stats.totalWordsTranscribed,
-      totalTime: updated.stats.totalRecordingTimeMs,
-    },
-    level: {
-      currentXP: updated.level.currentXP,
-      level: updated.level.level,
-      rank: updated.level.rank,
-    },
-    achievements: {
-      unlocked: Object.keys(updated.achievements.unlocked).length,
-    },
-    metadata: {
-      lastSaved: updated.metadata.lastSaved,
-      totalSaves: updated.metadata.totalSaves,
-    },
-  })
-
   store.set('gamification', updated)
-
-  console.log('🎮 [STORE] ✅ Write complete to:', store.path)
 
   // TODO: Create backup every 10 saves
   // if (updated.metadata.totalSaves % 10 === 0) {
@@ -222,120 +173,49 @@ export function recordGamificationSession(
   oldLevel: number
   newLevel: number
 } {
-  console.log('🎮 [STORE] ========== recordGamificationSession START ==========')
-  console.log('🎮 [STORE] Input:', { words, durationMs })
-
   const data = getGamificationData()
 
-  console.log('🎮 [STORE] Current data loaded:', {
-    stats: {
-      totalSessions: data.stats.totalSessions,
-      totalWords: data.stats.totalWordsTranscribed,
-      totalTime: data.stats.totalRecordingTimeMs,
-    },
-    level: {
-      currentXP: data.level.currentXP,
-      level: data.level.level,
-      rank: data.level.rank,
-    },
-    achievements: {
-      unlocked: Object.keys(data.achievements.unlocked).length,
-    },
-  })
-
   // Update stats
-  console.log('🎮 [STORE] Updating session stats...')
   let updatedStats = updateSessionStats(data.stats, words, durationMs)
-  console.log('🎮 [STORE] Stats updated:', {
-    totalSessions: updatedStats.totalSessions,
-    totalWords: updatedStats.totalWordsTranscribed,
-    totalTime: updatedStats.totalRecordingTimeMs,
-    delta: {
-      sessions: updatedStats.totalSessions - data.stats.totalSessions,
-      words: updatedStats.totalWordsTranscribed - data.stats.totalWordsTranscribed,
-      time: updatedStats.totalRecordingTimeMs - data.stats.totalRecordingTimeMs,
-    },
-  })
 
   // Update streak
   const today = getTodayString()
-  console.log('🎮 [STORE] Checking streak (today:', today, ')')
   if (!isActiveToday(data.stats)) {
-    console.log('🎮 [STORE] Not active today, updating streak...')
     updatedStats = updateStreak(updatedStats, today)
-    console.log('🎮 [STORE] Streak updated:', {
-      currentStreak: updatedStats.currentStreak,
-      longestStreak: updatedStats.longestStreak,
-      lastActive: updatedStats.lastActiveDate,
-    })
-  } else {
-    console.log('🎮 [STORE] Already active today, streak unchanged')
   }
 
   // Calculate XP
-  console.log('🎮 [STORE] Calculating XP...')
   const rewards = getXPRewards()
-  console.log('🎮 [STORE] XP Rewards config:', rewards)
   const wordXP = words * rewards.perWord
   const timeXP = Math.floor(durationMs / 60000) * rewards.perMinute
   const sessionXP = rewards.sessionBonus
   const totalXP = wordXP + timeXP + sessionXP
 
-  console.log('🎮 [STORE] XP breakdown:', {
-    wordXP: `${words} words × ${rewards.perWord} = ${wordXP}`,
-    timeXP: `${Math.floor(durationMs / 60000)} min × ${rewards.perMinute} = ${timeXP}`,
-    sessionXP,
-    totalXP,
-  })
-
   const oldLevel = data.level.level
   const oldXP = data.level.currentXP
   const newXP = oldXP + totalXP
 
-  console.log('🎮 [STORE] XP progression:', {
-    oldXP,
-    gainedXP: totalXP,
-    newXP,
-  })
-
   // Update level
-  console.log('🎮 [STORE] Updating level from XP...')
   const updatedLevel = updateLevelFromXP(newXP)
-  console.log('🎮 [STORE] Level calculated:', {
-    oldLevel,
-    newLevel: updatedLevel.level,
-    rank: updatedLevel.rank,
-    leveledUp: updatedLevel.level > oldLevel,
-  })
 
   // Check achievements
-  console.log('🎮 [STORE] Checking achievements...')
   const newAchievementIds = checkAchievements(updatedStats, updatedLevel, data.achievements)
-  console.log('🎮 [STORE] New achievements unlocked:', newAchievementIds)
 
   // Unlock and award XP for new achievements
   let achievementXP = 0
   let updatedAchievements = data.achievements
 
   if (newAchievementIds.length > 0) {
-    console.log('🎮 [STORE] Processing achievement unlocks...')
     for (const achievementId of newAchievementIds) {
       const achievement = getAchievementById(achievementId)
       if (achievement) {
-        console.log('🎮 [STORE] Unlocking achievement:', {
-          id: achievementId,
-          name: achievement.name,
-          xpReward: achievement.xpReward,
-        })
         const result = unlockAchievement(updatedAchievements, achievementId, achievement.xpReward)
         if (result.newlyUnlocked) {
           updatedAchievements = result.achievements
           achievementXP += result.xpAwarded
-          console.log('🎮 [STORE] Achievement unlocked, XP awarded:', result.xpAwarded)
         }
       }
     }
-    console.log('🎮 [STORE] Total achievement XP:', achievementXP)
   }
 
   // Recalculate level with achievement XP bonus
@@ -344,34 +224,20 @@ export function recordGamificationSession(
   const finalLevel = updatedLevelWithBonus.level
   const finalLeveledUp = finalLevel > oldLevel
 
-  console.log('🎮 [STORE] Final level (with achievement XP):', {
-    finalXP,
-    finalLevel,
-    rank: updatedLevelWithBonus.rank,
-    leveledUp: finalLeveledUp,
-  })
-
   // Save everything
-  console.log('🎮 [STORE] Saving to store...')
   saveGamificationData({
     stats: updatedStats,
     level: updatedLevelWithBonus,
     achievements: updatedAchievements,
   })
-  console.log('🎮 [STORE] ✅ Data SAVED to store')
 
-  const returnValue = {
+  return {
     xpGained: totalXP + achievementXP,
     newAchievements: newAchievementIds,
     leveledUp: finalLeveledUp,
     oldLevel,
     newLevel: finalLevel,
   }
-
-  console.log('🎮 [STORE] ========== recordGamificationSession COMPLETE ==========')
-  console.log('🎮 [STORE] Return value:', returnValue)
-
-  return returnValue
 }
 
 // ============================================================================
@@ -473,6 +339,60 @@ export function checkDailyLoginBonus(): {
     streakUpdated: true,
     currentStreak: updatedStats.currentStreak,
   }
+}
+
+// ============================================================================
+// Retroactive Achievement Checking
+// ============================================================================
+
+/**
+ * Checks all achievements based on current stats and unlocks eligible ones
+ *
+ * This is useful for retroactively unlocking achievements for existing progress
+ * or when the achievement system is first initialized.
+ *
+ * @returns Array of newly unlocked achievement IDs
+ */
+export function checkAndUnlockAllAchievements(): string[] {
+  const data = getGamificationData()
+
+  // Check which achievements should be unlocked
+  const newAchievementIds = checkAchievements(data.stats, data.level, data.achievements)
+
+  if (newAchievementIds.length === 0) {
+    return []
+  }
+
+  console.log('[Gamification] Retroactively unlocking achievements:', newAchievementIds)
+
+  // Unlock each achievement and award XP
+  let totalXP = 0
+  let updatedAchievements = data.achievements
+
+  for (const achievementId of newAchievementIds) {
+    const achievement = getAchievementById(achievementId)
+    if (achievement) {
+      const result = unlockAchievement(updatedAchievements, achievementId, achievement.xpReward)
+      if (result.newlyUnlocked) {
+        updatedAchievements = result.achievements
+        totalXP += result.xpAwarded
+      }
+    }
+  }
+
+  // Update level with bonus XP
+  const newXP = data.level.currentXP + totalXP
+  const updatedLevel = updateLevelFromXP(newXP)
+
+  // Save updated data
+  saveGamificationData({
+    achievements: updatedAchievements,
+    level: updatedLevel,
+  })
+
+  console.log(`[Gamification] Unlocked ${newAchievementIds.length} achievements, awarded ${totalXP} XP`)
+
+  return newAchievementIds
 }
 
 // ============================================================================

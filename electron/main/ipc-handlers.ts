@@ -25,6 +25,7 @@ import {
   GenerateTitleSchema,
   ErrorLogSchema,
 } from './validation'
+import { ACHIEVEMENTS } from './gamification/achievementDefinitions'
 import {
   getSettings,
   setSettings,
@@ -59,6 +60,7 @@ import {
   TranscriptionRecord,
   GamificationData,
 } from './store'
+import { checkAndUnlockAllAchievements } from './store/gamification'
 import { FormattingService, TerminalService } from './services'
 import { SUPPORTED_TERMINALS } from './terminal'
 import { updateHotkey } from './hotkeys'
@@ -386,6 +388,11 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return getGamificationData()
   })
 
+  ipcMain.handle('get-achievement-definitions', () => {
+    // Return achievements from the backend (single source of truth)
+    return ACHIEVEMENTS
+  })
+
   ipcMain.handle('save-gamification-data', (_, data: Partial<GamificationData>) => {
     saveGamificationData(data)
     // Notify all windows that gamification data changed
@@ -396,28 +403,19 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   })
 
   ipcMain.handle('record-gamification-session', (_, params: unknown) => {
-    console.log('🎮 [MAIN] IPC record-gamification-session received:', params)
-
     const validated = validateIPC(
       GamificationSessionSchema,
       params,
       'Invalid gamification session params'
     )
 
-    console.log('🎮 [MAIN] Validation passed:', validated)
-    console.log('🎮 [MAIN] Calling recordGamificationSession...')
-
     const result = recordGamificationSession(validated.words, validated.durationMs)
 
-    console.log('🎮 [MAIN] recordGamificationSession result:', result)
-
     // Notify all windows that gamification data changed
-    console.log('🎮 [MAIN] Notifying all windows of gamification-data-changed event')
     BrowserWindow.getAllWindows().forEach((win) => {
       win.webContents.send('gamification-data-changed')
     })
 
-    console.log('🎮 [MAIN] Returning result to renderer')
     return result
   })
 
@@ -453,6 +451,19 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
       win.webContents.send('gamification-data-changed')
     })
     return true
+  })
+
+  ipcMain.handle('check-and-unlock-all-achievements', () => {
+    const unlockedIds = checkAndUnlockAllAchievements()
+    // Notify all windows that gamification data changed
+    BrowserWindow.getAllWindows().forEach((win) => {
+      win.webContents.send('gamification-data-changed')
+      // Notify about each newly unlocked achievement
+      unlockedIds.forEach((id) => {
+        win.webContents.send('achievement-unlocked', id)
+      })
+    })
+    return unlockedIds
   })
 
   // Error logging

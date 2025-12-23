@@ -11,6 +11,7 @@ interface UseRecordingHandlersOptions {
 
 interface UseRecordingHandlersReturn {
   lastVoiceCommand: string | null
+  lastXpGained: number | null
   handleRecordingComplete: (
     transcript: string,
     duration: number,
@@ -43,6 +44,7 @@ export function useRecordingHandlers({
   pendingPasteRef,
 }: UseRecordingHandlersOptions): UseRecordingHandlersReturn {
   const [lastVoiceCommand, setLastVoiceCommand] = useState<string | null>(null)
+  const [lastXpGained, setLastXpGained] = useState<number | null>(null)
 
   /**
    * Centralized recording completion handler
@@ -92,15 +94,10 @@ export function useRecordingHandlers({
           console.log(
             `[useRecordingHandlers] Recording gamification: ${wordCount} words, ${duration}s`
           )
-          console.log('🎮 [DEBUG] About to record session:', {
-            wordCount,
-            durationMs: duration * 1000,
-            source,
-            transcriptPreview: processedTranscript.substring(0, 50) + '...',
-            transcriptLength: processedTranscript.length,
-          })
-          await recordSession(wordCount, duration * 1000) // Convert to milliseconds
-          console.log('🎮 [DEBUG] recordSession call completed')
+          const xpGained = await recordSession(wordCount, duration * 1000) // Convert to milliseconds
+          setLastXpGained(xpGained)
+          // Clear XP notification after 4 seconds
+          setTimeout(() => setLastXpGained(null), 4000)
         }
       }
 
@@ -122,37 +119,16 @@ export function useRecordingHandlers({
    */
   const handleRecordingStopped = useCallback(
     async (transcript: string, duration: number): Promise<string> => {
-      console.log('🎮 [HANDLERS] handleRecordingStopped called:', {
-        transcriptLength: transcript.length,
-        duration,
-        hasPendingPaste: !!pendingPasteRef.current,
-        transcriptPreview: transcript.substring(0, 50) + '...',
-      })
-
       // Determine source based on context
       const source = pendingPasteRef.current ? 'voice_send' : 'auto'
-
-      console.log('🎮 [HANDLERS] Determined source:', source)
-      console.log('🎮 [HANDLERS] Calling handleRecordingComplete...')
 
       // Always trigger gamification via centralized handler
       const processedTranscript = await handleRecordingComplete(transcript, duration, source)
 
-      console.log('🎮 [HANDLERS] handleRecordingComplete returned')
-      console.log('🎮 [HANDLERS] Checking if should save to history:', {
-        hasTranscript: !!processedTranscript.trim(),
-        noPendingPaste: !pendingPasteRef.current,
-        willSave: processedTranscript.trim() && !pendingPasteRef.current,
-      })
-
       // Only auto-save if there's no pending paste operation
       // If there's a pending paste, formatAndPaste will handle saving with formatting
       if (processedTranscript.trim() && !pendingPasteRef.current) {
-        console.log('🎮 [HANDLERS] Saving to history...')
         await saveTranscription(processedTranscript, duration)
-        console.log('🎮 [HANDLERS] Saved to history')
-      } else {
-        console.log('🎮 [HANDLERS] NOT saving to history (will be handled by formatAndPaste)')
       }
 
       // Return the processed transcript to update the UI
@@ -176,11 +152,6 @@ export function useRecordingHandlers({
       console.log(
         `[useRecordingHandlers] Voice command received: ${command}, transcript: "${transcript}"`
       )
-      console.log(`🎮 [HANDLERS] handleVoiceCommand called:`, {
-        command,
-        transcriptLength: transcript.length,
-        transcriptPreview: transcript.substring(0, 50) + '...',
-      })
 
       setLastVoiceCommand(command)
       setTimeout(() => setLastVoiceCommand(null), 2000)
@@ -190,15 +161,12 @@ export function useRecordingHandlers({
           // Store transcript for paste, will be executed after recording stops
           if (transcript.trim()) {
             pendingPasteRef.current = transcript
-            console.log('🎮 [HANDLERS] pendingPasteRef.current SET for voice_send')
           }
           break
         case 'clear':
-          console.log('🎮 [HANDLERS] voice_clear command - will clear after stop')
           // Will be handled after recording stops
           break
         case 'cancel':
-          console.log('🎮 [HANDLERS] voice_cancel command - will cancel after stop')
           // Will be handled after recording stops
           break
       }
@@ -239,6 +207,7 @@ export function useRecordingHandlers({
 
   return {
     lastVoiceCommand,
+    lastXpGained,
     handleRecordingComplete,
     handleRecordingStopped,
     handleVoiceCommand,

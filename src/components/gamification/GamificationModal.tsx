@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { UserStats, LevelSystem, Achievement } from '../../types/gamification'
-import { ACHIEVEMENTS } from '../../types/gamification'
 import { GamificationDashboard } from './GamificationDashboard'
 import { AchievementGrid } from './AchievementGrid'
 import type { UnlockedAchievement } from './AchievementGrid'
@@ -28,37 +27,6 @@ export function GamificationModal({
   const [activeTab, setActiveTab] = useState<'stats' | 'achievements'>('stats')
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null)
 
-  // Debug: Log modal state when opened
-  useEffect(() => {
-    if (isOpen) {
-      console.log('🎮 [MODAL] Gamification modal opened with data:', {
-        stats: {
-          totalSessions: stats.totalSessions,
-          totalWords: stats.totalWordsTranscribed,
-          totalTime: stats.totalRecordingTimeMs,
-          currentStreak: stats.currentStreak,
-          longestStreak: stats.longestStreak,
-          lastActive: stats.lastActiveDate,
-          firstSession: stats.firstSessionDate,
-        },
-        level: {
-          currentXP: level.currentXP,
-          level: level.level,
-          rank: level.rank,
-          xpToNext: level.xpToNextLevel,
-          xpForCurrent: level.xpForCurrentLevel,
-          totalForNext: level.totalXPForNextLevel,
-        },
-        achievements: {
-          total: achievements.length,
-          unlocked: achievements.filter((a) => a.unlockedAt).length,
-          unlockedList: achievements
-            .filter((a) => a.unlockedAt)
-            .map((a) => ({ id: a.id, name: a.name })),
-        },
-      })
-    }
-  }, [isOpen, stats, level, achievements])
 
   if (!isOpen) return null
 
@@ -110,14 +78,14 @@ export function GamificationModal({
     {} as Record<string, number>
   )
 
-  const gridAchievements = ACHIEVEMENTS.map((a) => ({
+  const gridAchievements = achievements.map((a, index) => ({
     id: a.id,
     name: a.name,
     description: a.description,
     icon: a.icon,
     xpReward: a.xpReward,
     category: a.category,
-    order: ACHIEVEMENTS.indexOf(a),
+    order: index,
   }))
 
   return (
@@ -193,6 +161,7 @@ export function GamificationModal({
                 const fullAchievement = achievements.find((a) => a.id === achievement.id)
                 if (fullAchievement) setSelectedAchievement(fullAchievement)
               }}
+              cardSize="compact"
             />
           )}
         </div>
