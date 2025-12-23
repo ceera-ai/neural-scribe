@@ -8,6 +8,7 @@ import {
   updateOverlayStatus,
 } from './overlay'
 import { showFormattingOverlay, hideFormattingOverlay } from './formattingOverlay'
+import { getAnalyticsData } from './services/analytics'
 import {
   validateIPC,
   AppSettingsSchema,
@@ -644,6 +645,37 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     })
 
     return { success: true, wasUnlocked }
+  })
+
+  // Analytics
+  ipcMain.handle('get-analytics-data', (_, range: unknown) => {
+    if (typeof range !== 'string') {
+      throw new Error('Invalid time range')
+    }
+
+    const validRanges = ['today', 'week', 'month', 'quarter', 'year', 'all']
+    if (!validRanges.includes(range)) {
+      throw new Error(`Invalid time range: ${range}`)
+    }
+
+    const history = getHistory()
+    const records = history.map((record) => ({
+      id: record.id,
+      timestamp: record.timestamp,
+      wordCount: record.wordCount,
+      duration: record.duration || 0,
+    }))
+
+    const aggregatedData = getAnalyticsData(
+      records,
+      range as 'today' | 'week' | 'month' | 'quarter' | 'year' | 'all'
+    )
+
+    return {
+      words: aggregatedData.map((d) => ({ date: d.date, value: d.words })),
+      sessions: aggregatedData.map((d) => ({ date: d.date, value: d.sessions })),
+      timeSpent: aggregatedData.map((d) => ({ date: d.date, value: d.timeSpent })),
+    }
   })
 
   // Feature tracking

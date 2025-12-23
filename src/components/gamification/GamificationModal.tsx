@@ -4,6 +4,7 @@ import { GamificationDashboard } from './GamificationDashboard'
 import { AchievementGrid } from './AchievementGrid'
 import type { UnlockedAchievement } from './AchievementGrid'
 import { AchievementDetail } from './AchievementDetail'
+import { Analytics } from '../../pages/Analytics'
 import './GamificationModal.css'
 
 interface GamificationModalProps {
@@ -20,13 +21,12 @@ export function GamificationModal({
   onClose,
   stats,
   level,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   xpProgress: _xpProgress,
   achievements,
 }: GamificationModalProps) {
-  const [activeTab, setActiveTab] = useState<'stats' | 'achievements'>('stats')
+  const [activeTab, setActiveTab] = useState<'stats' | 'achievements' | 'analytics'>('stats')
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null)
-
 
   if (!isOpen) return null
 
@@ -136,6 +136,12 @@ export function GamificationModal({
           >
             🏆 Achievements ({unlockedCount}/{achievements.length})
           </button>
+          <button
+            className={`gamification-tab ${activeTab === 'analytics' ? 'active' : ''}`}
+            onClick={() => setActiveTab('analytics')}
+          >
+            📈 Analytics
+          </button>
         </div>
 
         <div className="gamification-modal-content">
@@ -164,6 +170,8 @@ export function GamificationModal({
               cardSize="compact"
             />
           )}
+
+          {activeTab === 'analytics' && <Analytics />}
         </div>
 
         {/* Achievement Detail Modal */}

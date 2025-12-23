@@ -1,0 +1,75 @@
+/**
+ * TimeSpentChart Styles
+ */
+
+.container {
+  background: rgba(31, 41, 55, 0.5);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.container:hover {
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
+.title {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+.tooltip {
+  background: #1f2937;
+  border: 2px solid #6366f1;
+  border-radius: 8px;
+  padding: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tooltipLabel {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.tooltipValue {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #a78bfa;
+}
+
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 250px;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .container {
+    background: rgba(17, 24, 39, 0.6);
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 1rem;
+  }
+
+  .emptyState {
+    height: 200px;
+  }
+}
