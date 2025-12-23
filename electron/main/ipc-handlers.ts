@@ -396,16 +396,28 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   })
 
   ipcMain.handle('record-gamification-session', (_, params: unknown) => {
+    console.log('🎮 [MAIN] IPC record-gamification-session received:', params)
+
     const validated = validateIPC(
       GamificationSessionSchema,
       params,
       'Invalid gamification session params'
     )
+
+    console.log('🎮 [MAIN] Validation passed:', validated)
+    console.log('🎮 [MAIN] Calling recordGamificationSession...')
+
     const result = recordGamificationSession(validated.words, validated.durationMs)
+
+    console.log('🎮 [MAIN] recordGamificationSession result:', result)
+
     // Notify all windows that gamification data changed
+    console.log('🎮 [MAIN] Notifying all windows of gamification-data-changed event')
     BrowserWindow.getAllWindows().forEach((win) => {
       win.webContents.send('gamification-data-changed')
     })
+
+    console.log('🎮 [MAIN] Returning result to renderer')
     return result
   })
 

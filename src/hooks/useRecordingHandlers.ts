@@ -92,7 +92,15 @@ export function useRecordingHandlers({
           console.log(
             `[useRecordingHandlers] Recording gamification: ${wordCount} words, ${duration}s`
           )
+          console.log('🎮 [DEBUG] About to record session:', {
+            wordCount,
+            durationMs: duration * 1000,
+            source,
+            transcriptPreview: processedTranscript.substring(0, 50) + '...',
+            transcriptLength: processedTranscript.length,
+          })
           await recordSession(wordCount, duration * 1000) // Convert to milliseconds
+          console.log('🎮 [DEBUG] recordSession call completed')
         }
       }
 

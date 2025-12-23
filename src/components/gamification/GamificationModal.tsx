@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { UserStats, LevelSystem, Achievement } from '../../types/gamification'
 import { ACHIEVEMENTS } from '../../types/gamification'
 import { GamificationDashboard } from './GamificationDashboard'
@@ -27,6 +27,38 @@ export function GamificationModal({
 }: GamificationModalProps) {
   const [activeTab, setActiveTab] = useState<'stats' | 'achievements'>('stats')
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null)
+
+  // Debug: Log modal state when opened
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🎮 [MODAL] Gamification modal opened with data:', {
+        stats: {
+          totalSessions: stats.totalSessions,
+          totalWords: stats.totalWordsTranscribed,
+          totalTime: stats.totalRecordingTimeMs,
+          currentStreak: stats.currentStreak,
+          longestStreak: stats.longestStreak,
+          lastActive: stats.lastActiveDate,
+          firstSession: stats.firstSessionDate,
+        },
+        level: {
+          currentXP: level.currentXP,
+          level: level.level,
+          rank: level.rank,
+          xpToNext: level.xpToNextLevel,
+          xpForCurrent: level.xpForCurrentLevel,
+          totalForNext: level.totalXPForNextLevel,
+        },
+        achievements: {
+          total: achievements.length,
+          unlocked: achievements.filter((a) => a.unlockedAt).length,
+          unlockedList: achievements
+            .filter((a) => a.unlockedAt)
+            .map((a) => ({ id: a.id, name: a.name })),
+        },
+      })
+    }
+  }, [isOpen, stats, level, achievements])
 
   if (!isOpen) return null
 

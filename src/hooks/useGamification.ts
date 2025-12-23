@@ -1,14 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { UserStats, LevelSystem, Achievement, GamificationState } from '../types/gamification'
+import type { UserStats, LevelSystem, Achievement } from '../types/gamification'
 import {
   ACHIEVEMENTS,
-  DEFAULT_XP_CONFIG,
-  DEFAULT_LEVEL_CONFIG,
   getDefaultStats,
   getDefaultLevelSystem,
-  calculateLevelFromXP,
   calculateXPForLevel,
-  getRankForLevel,
 } from '../types/gamification'
 
 interface UseGamificationReturn {
@@ -99,6 +95,27 @@ export function useGamification(): UseGamificationReturn {
     }
   }, [isElectron, recentUnlocks])
 
+  // Debug: Track stats changes
+  useEffect(() => {
+    console.log('🎮 [STATE] Stats state updated:', {
+      totalSessions: stats.totalSessions,
+      totalWords: stats.totalWordsTranscribed,
+      totalTime: stats.totalRecordingTimeMs,
+      currentStreak: stats.currentStreak,
+      lastActive: stats.lastActiveDate,
+    })
+  }, [stats])
+
+  // Debug: Track level changes
+  useEffect(() => {
+    console.log('🎮 [STATE] Level state updated:', {
+      currentXP: level.currentXP,
+      level: level.level,
+      rank: level.rank,
+      xpToNext: level.xpToNextLevel,
+    })
+  }, [level])
+
   // Check and unlock achievements (client-side checking, server-side unlocking)
   const checkAchievements = useCallback(
     async (currentStats: UserStats, currentLevel: number) => {
@@ -173,24 +190,56 @@ export function useGamification(): UseGamificationReturn {
   // Record a completed session
   const recordSession = useCallback(
     async (words: number, durationMs: number) => {
+      console.log('🎮 [DEBUG] recordSession called:', {
+        words,
+        durationMs,
+        isElectron,
+        currentStats: {
+          totalSessions: stats.totalSessions,
+          totalWords: stats.totalWordsTranscribed,
+        },
+        currentLevel: {
+          currentXP: level.currentXP,
+          level: level.level,
+        },
+      })
+
       if (!isElectron) {
         console.warn('[Gamification] Not in Electron environment, skipping')
         return
       }
 
       try {
+        console.log('🎮 [DEBUG] Calling IPC record-gamification-session...')
+
         // Record session via Electron store
         const result = await window.electronAPI.recordGamificationSession({
           words,
           durationMs,
         })
 
+        console.log('🎮 [DEBUG] IPC returned:', result)
         console.log('[Gamification] Session recorded:', result)
+
+        console.log('🎮 [DEBUG] Reloading data from store...')
 
         // Reload data from store to get updated stats and level
         const data = await window.electronAPI.getGamificationData()
+
+        console.log('🎮 [DEBUG] Data reloaded from store:', {
+          totalSessions: data.stats.totalSessions,
+          totalWords: data.stats.totalWordsTranscribed,
+          totalTime: data.stats.totalRecordingTimeMs,
+          currentXP: data.level.currentXP,
+          level: data.level.level,
+          rank: data.level.rank,
+          unlockedAchievements: Object.keys(data.achievements.unlocked).length,
+        })
+
         setStats(data.stats)
         setLevel(data.level)
+
+        console.log('🎮 [DEBUG] React state updated')
 
         // Check for new achievements
         await checkAchievements(data.stats, data.level.level)
@@ -201,10 +250,11 @@ export function useGamification(): UseGamificationReturn {
           // TODO: Could show a level up notification here
         }
       } catch (err) {
+        console.error('🎮 [DEBUG] recordSession ERROR:', err)
         console.error('[Gamification] Failed to record session:', err)
       }
     },
-    [isElectron, checkAchievements]
+    [isElectron, checkAchievements, stats, level]
   )
 
   // Check daily login bonus
