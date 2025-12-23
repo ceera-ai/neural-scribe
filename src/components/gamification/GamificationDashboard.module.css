@@ -285,10 +285,6 @@
     padding: 1.5rem;
   }
 
-  .compactRow {
-    grid-template-columns: 1fr;
-  }
-
   .twoColumn {
     grid-template-columns: 1fr;
   }
@@ -306,6 +302,10 @@
 
   .header {
     margin-bottom: 0.5rem;
+  }
+
+  .compactRow {
+    grid-template-columns: 1fr;
   }
 
   .title {
