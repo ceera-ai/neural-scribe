@@ -59,10 +59,24 @@ export function useRecordingEffects({
 
   // Handle pending paste after recording stops (triggered by "send it" voice command)
   useEffect(() => {
+    console.log('🎮 [EFFECTS] useRecordingEffects paste check:', {
+      isRecording,
+      hasPendingPaste: !!pendingPasteRef.current,
+      pendingText: pendingPasteRef.current?.substring(0, 50),
+    })
+
     if (!isRecording && pendingPasteRef.current) {
       const textToPaste = pendingPasteRef.current
       const duration = previousRecordingTime.current // Use captured duration from before recording stopped
+
+      console.log('🎮 [EFFECTS] Voice command paste triggered:', {
+        textLength: textToPaste.length,
+        duration,
+        textPreview: textToPaste.substring(0, 50) + '...',
+      })
+
       pendingPasteRef.current = null
+      console.log('🎮 [EFFECTS] pendingPasteRef cleared')
 
       // Execute paste to terminal with formatting
       if (isElectron) {
@@ -71,11 +85,15 @@ export function useRecordingEffects({
             // Apply replacements first
             const processedText = await window.electronAPI.applyReplacements(textToPaste)
             console.log('[useRecordingEffects] Voice command paste:', processedText, 'duration:', duration)
+            console.log('🎮 [EFFECTS] About to call formatAndPaste')
 
             // Use the formatAndPaste helper with duration
             await formatAndPaste(processedText, true, duration)
+
+            console.log('🎮 [EFFECTS] formatAndPaste completed')
           } catch (err) {
             console.error('[useRecordingEffects] Voice command paste error:', err)
+            console.error('🎮 [EFFECTS] formatAndPaste ERROR:', err)
           }
         })()
       }
