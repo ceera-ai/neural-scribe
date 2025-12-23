@@ -330,18 +330,27 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   })
 
   // Hotkey operations
-  ipcMain.handle('update-hotkey', (_, type: 'paste' | 'record', newHotkey: string) => {
-    return updateHotkey(type, newHotkey)
-  })
+  ipcMain.handle(
+    'update-hotkey',
+    (_, type: 'paste' | 'record' | 'recordWithFormatting', newHotkey: string) => {
+      return updateHotkey(type, newHotkey)
+    }
+  )
 
   // Prompt formatting operations
   ipcMain.handle('format-prompt', async (_, text: unknown) => {
     const validated = validateIPC(FormatPromptSchema, { text }, 'Invalid format prompt params')
+    console.log('[IPC] format-prompt called with text length:', validated.text.length)
     showFormattingOverlay()
     try {
-      const result = await FormattingService.getInstance().formatPrompt(validated.text)
+      // Call the underlying formatPromptImpl directly to bypass the enabled check
+      // The frontend decides whether to call this based on its override logic
+      const { formatPrompt: formatPromptImpl } = await import('./prompt-formatter')
+      const result = await formatPromptImpl(validated.text)
+      console.log('[IPC] Formatting result:', { success: result.success, skipped: result.skipped })
       hideFormattingOverlay()
       const selectedText = await showComparisonOverlay(validated.text, result.formatted)
+      console.log('[IPC] User selected text length:', selectedText?.length || 0)
 
       // Return a FormatResult object with the selected text
       return {
@@ -350,6 +359,7 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
         skipped: false,
       }
     } catch (error) {
+      console.error('[IPC] format-prompt error:', error)
       hideFormattingOverlay()
       throw error
     }

@@ -27,6 +27,8 @@ export interface AppSettings {
   selectedTerminalId: string | null
   pasteHotkey: string
   recordHotkey: string
+  recordWithFormattingHotkey: string
+  submitAfterPaste: boolean
   replacementsEnabled: boolean
   voiceCommandsEnabled: boolean
   promptFormattingEnabled: boolean
@@ -84,7 +86,7 @@ export interface WordReplacement {
   enabled: boolean
 }
 
-export type RecordingToggleCallback = () => void
+export type RecordingToggleCallback = (withFormatting: boolean) => void
 export type TranscriptionPastedCallback = (text: string) => void
 
 const electronAPI = {
@@ -167,7 +169,7 @@ const electronAPI = {
 
   // Hotkey operations
   updateHotkey: (
-    type: 'paste' | 'record',
+    type: 'paste' | 'record' | 'recordWithFormatting',
     newHotkey: string
   ): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('update-hotkey', type, newHotkey),
@@ -220,7 +222,7 @@ const electronAPI = {
 
   // Events from main process
   onToggleRecording: (callback: RecordingToggleCallback): void => {
-    ipcRenderer.on('toggle-recording', () => callback())
+    ipcRenderer.on('toggle-recording', (_, withFormatting: boolean) => callback(withFormatting))
   },
   onTranscriptionPasted: (callback: TranscriptionPastedCallback): void => {
     ipcRenderer.on('transcription-pasted', (_, text: string) => callback(text))

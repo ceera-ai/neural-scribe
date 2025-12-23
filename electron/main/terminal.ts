@@ -1,6 +1,7 @@
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { clipboard } from 'electron'
+import { getSubmitAfterPaste } from './store'
 
 const execAsync = promisify(exec)
 
@@ -197,17 +198,27 @@ delay 0.3
       console.log('[Paste] Window activation had issues, continuing anyway:', activateErr)
     }
 
-    // Step 3: Send paste keystroke followed by Enter (with longer delay for large pastes)
+    // Step 3: Send paste keystroke (and optionally Enter based on settings)
     try {
-      const pasteScript = `
+      const submitAfterPaste = getSubmitAfterPaste()
+      console.log('[Paste] submitAfterPaste setting:', submitAfterPaste)
+      const pasteScript = submitAfterPaste
+        ? `
 tell application "System Events"
   keystroke "v" using command down
   delay 0.5
   keystroke return
 end tell
 `
+        : `
+tell application "System Events"
+  keystroke "v" using command down
+end tell
+`
       await execAsync(`osascript -e '${pasteScript}'`)
-      console.log('[Paste] Paste keystroke sent successfully')
+      console.log(
+        `[Paste] Paste keystroke sent successfully${submitAfterPaste ? ' with Enter' : ' without Enter'}`
+      )
       return { success: true, needsPermission: false, copied: true }
     } catch (pasteError: any) {
       console.error('[Paste] Keystroke error:', pasteError.stderr || pasteError.message)
@@ -405,17 +416,27 @@ delay 0.3
       console.log('[Paste] Terminal activation had issues, continuing anyway:', activateErr)
     }
 
-    // Step 4: Send paste keystroke followed by Enter (with longer delay for large pastes)
+    // Step 4: Send paste keystroke (and optionally Enter based on settings)
     try {
-      const pasteScript = `
+      const submitAfterPaste = getSubmitAfterPaste()
+      console.log('[Paste] submitAfterPaste setting:', submitAfterPaste)
+      const pasteScript = submitAfterPaste
+        ? `
 tell application "System Events"
   keystroke "v" using command down
   delay 0.5
   keystroke return
 end tell
 `
+        : `
+tell application "System Events"
+  keystroke "v" using command down
+end tell
+`
       await execAsync(`osascript -e '${pasteScript}'`)
-      console.log('[Paste] Paste keystroke sent successfully')
+      console.log(
+        `[Paste] Paste keystroke sent successfully${submitAfterPaste ? ' with Enter' : ' without Enter'}`
+      )
       return { success: true, needsPermission: false, copied: true, targetApp: appName }
     } catch (pasteError: any) {
       console.error('[Paste] Keystroke error:', pasteError.stderr || pasteError.message)

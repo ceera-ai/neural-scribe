@@ -21,9 +21,9 @@ export function getMainWindow(): BrowserWindow | null {
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 900,
-    height: 700,
-    minWidth: 600,
-    minHeight: 500,
+    height: 800,
+    minWidth: 900,
+    minHeight: 800,
     show: false,
     autoHideMenuBar: true,
     titleBarStyle: 'hiddenInset',

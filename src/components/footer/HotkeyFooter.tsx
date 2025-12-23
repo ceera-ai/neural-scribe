@@ -5,6 +5,7 @@ interface HotkeyFooterProps {
   recordHotkey: string
   pasteHotkey: string
   formattingEnabled: boolean
+  formattingOverride: boolean | null
   voiceCommandsEnabled: boolean
   onFormattingChange: (enabled: boolean) => Promise<void>
   onVoiceCommandsChange: (enabled: boolean) => Promise<void>
@@ -14,10 +15,14 @@ export const HotkeyFooter: FC<HotkeyFooterProps> = ({
   recordHotkey,
   pasteHotkey,
   formattingEnabled,
+  formattingOverride,
   voiceCommandsEnabled,
   onFormattingChange,
   onVoiceCommandsChange,
 }) => {
+  // Determine effective formatting (override takes precedence)
+  const effectiveFormatting = formattingOverride ?? formattingEnabled
+  const hasOverride = formattingOverride !== null
   const formatHotkeyForDisplay = (hotkey: string) => {
     return hotkey
       .replace('CommandOrControl', '⌘')
@@ -43,13 +48,23 @@ export const HotkeyFooter: FC<HotkeyFooterProps> = ({
       <div className="hotkey-right">
         <label
           className="footer-switch"
-          title={formattingEnabled ? 'AI formatting enabled' : 'AI formatting disabled'}
+          title={
+            hasOverride
+              ? `AI formatting ${effectiveFormatting ? 'ON' : 'OFF'} (session override)`
+              : formattingEnabled
+                ? 'AI formatting enabled'
+                : 'AI formatting disabled'
+          }
+          style={hasOverride ? { opacity: 0.7 } : undefined}
         >
-          <span className="switch-label">Format</span>
+          <span className="switch-label">
+            Format{hasOverride && <span style={{ fontSize: '0.8em', marginLeft: '4px' }}>*</span>}
+          </span>
           <input
             type="checkbox"
             checked={formattingEnabled}
             onChange={(e) => onFormattingChange(e.target.checked)}
+            disabled={hasOverride}
           />
           <span className="switch-track">
             <span className="switch-thumb"></span>

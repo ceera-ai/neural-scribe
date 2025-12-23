@@ -4,6 +4,7 @@ import { getSettings, getLastTranscription, setSettings } from './store'
 let mainWindow: BrowserWindow | null = null
 let currentPasteHotkey: string | null = null
 let currentRecordHotkey: string | null = null
+let currentRecordWithFormattingHotkey: string | null = null
 
 export function registerHotkeys(window: BrowserWindow): void {
   mainWindow = window
@@ -22,11 +23,11 @@ export function registerHotkeys(window: BrowserWindow): void {
     console.error('Failed to register paste hotkey:', err)
   }
 
-  // Register record toggle hotkey (Cmd+Shift+R by default)
+  // Register record toggle hotkey without formatting (Cmd+Shift+R by default)
   try {
     if (
       globalShortcut.register(settings.recordHotkey, () => {
-        mainWindow?.webContents.send('toggle-recording')
+        mainWindow?.webContents.send('toggle-recording', false)
       })
     ) {
       currentRecordHotkey = settings.recordHotkey
@@ -34,17 +35,31 @@ export function registerHotkeys(window: BrowserWindow): void {
   } catch (err) {
     console.error('Failed to register record hotkey:', err)
   }
+
+  // Register record toggle hotkey with formatting (Cmd+Shift+F by default)
+  try {
+    if (
+      globalShortcut.register(settings.recordWithFormattingHotkey, () => {
+        mainWindow?.webContents.send('toggle-recording', true)
+      })
+    ) {
+      currentRecordWithFormattingHotkey = settings.recordWithFormattingHotkey
+    }
+  } catch (err) {
+    console.error('Failed to register record with formatting hotkey:', err)
+  }
 }
 
 export function unregisterHotkeys(): void {
   globalShortcut.unregisterAll()
   currentPasteHotkey = null
   currentRecordHotkey = null
+  currentRecordWithFormattingHotkey = null
 }
 
 // Update a specific hotkey
 export function updateHotkey(
-  type: 'paste' | 'record',
+  type: 'paste' | 'record' | 'recordWithFormatting',
   newHotkey: string
 ): { success: boolean; error?: string } {
   // Validate the hotkey format
@@ -57,6 +72,8 @@ export function updateHotkey(
     globalShortcut.unregister(currentPasteHotkey)
   } else if (type === 'record' && currentRecordHotkey) {
     globalShortcut.unregister(currentRecordHotkey)
+  } else if (type === 'recordWithFormatting' && currentRecordWithFormattingHotkey) {
+    globalShortcut.unregister(currentRecordWithFormattingHotkey)
   }
 
   // Try to register the new hotkey
@@ -70,13 +87,21 @@ export function updateHotkey(
         currentPasteHotkey = newHotkey
         setSettings({ pasteHotkey: newHotkey })
       }
-    } else {
+    } else if (type === 'record') {
       success = globalShortcut.register(newHotkey, () => {
-        mainWindow?.webContents.send('toggle-recording')
+        mainWindow?.webContents.send('toggle-recording', false)
       })
       if (success) {
         currentRecordHotkey = newHotkey
         setSettings({ recordHotkey: newHotkey })
+      }
+    } else if (type === 'recordWithFormatting') {
+      success = globalShortcut.register(newHotkey, () => {
+        mainWindow?.webContents.send('toggle-recording', true)
+      })
+      if (success) {
+        currentRecordWithFormattingHotkey = newHotkey
+        setSettings({ recordWithFormattingHotkey: newHotkey })
       }
     }
 
@@ -88,9 +113,14 @@ export function updateHotkey(
         currentPasteHotkey = settings.pasteHotkey
       } else if (type === 'record' && settings.recordHotkey) {
         globalShortcut.register(settings.recordHotkey, () =>
-          mainWindow?.webContents.send('toggle-recording')
+          mainWindow?.webContents.send('toggle-recording', false)
         )
         currentRecordHotkey = settings.recordHotkey
+      } else if (type === 'recordWithFormatting' && settings.recordWithFormattingHotkey) {
+        globalShortcut.register(settings.recordWithFormattingHotkey, () =>
+          mainWindow?.webContents.send('toggle-recording', true)
+        )
+        currentRecordWithFormattingHotkey = settings.recordWithFormattingHotkey
       }
       return { success: false, error: 'Hotkey is already in use or invalid' }
     }

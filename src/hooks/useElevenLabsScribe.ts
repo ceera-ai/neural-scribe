@@ -33,6 +33,7 @@ interface UseElevenLabsScribeOptions {
   onVoiceCommand?: (command: 'send' | 'clear' | 'cancel', transcript: string) => void
   voiceCommandsEnabled?: boolean
   onSaveTranscript?: (transcript: string) => Promise<void> | void
+  onFormattingOverride?: (override: boolean | null) => void
 }
 
 /**
@@ -167,6 +168,7 @@ export const useElevenLabsScribe = (
     onVoiceCommand,
     voiceCommandsEnabled = true,
     onSaveTranscript,
+    onFormattingOverride,
   } = options
 
   const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
@@ -293,8 +295,13 @@ export const useElevenLabsScribe = (
       }
     }
 
+    // Reset formatting override when recording stops
+    if (onFormattingOverride) {
+      onFormattingOverride(null)
+    }
+
     console.log('[CRITICAL] performStopRecording complete')
-  }, [stopAudioAnalysis, getFullTranscript, onRecordingStopped, isElectron])
+  }, [stopAudioAnalysis, getFullTranscript, onRecordingStopped, isElectron, onFormattingOverride])
 
   // Start audio level analysis for overlay visualization
   const startAudioAnalysis = useCallback(async (microphoneId?: string | null) => {
@@ -671,10 +678,21 @@ export const useElevenLabsScribe = (
   useEffect(() => {
     if (!isElectron) return
 
-    window.electronAPI.onToggleRecording(async () => {
+    window.electronAPI.onToggleRecording(async (withFormatting: boolean) => {
+      console.log('[Recording] Hotkey pressed, withFormatting:', withFormatting)
+
       if (isRecording) {
         stopRecording()
+        // Reset formatting override when stopping
+        if (onFormattingOverride) {
+          onFormattingOverride(null)
+        }
       } else {
+        // Set formatting override based on which hotkey was pressed
+        if (onFormattingOverride) {
+          onFormattingOverride(withFormatting)
+        }
+
         // Save existing transcript to history before starting new recording
         if (transcriptSegments.length > 0 || editedTranscript !== null) {
           const currentText =
@@ -704,6 +722,7 @@ export const useElevenLabsScribe = (
     transcriptSegments,
     editedTranscript,
     onSaveTranscript,
+    onFormattingOverride,
   ])
 
   // Cleanup on unmount

@@ -24,8 +24,12 @@ export interface AppSettings {
   selectedTerminalId: string | null
   /** Global hotkey for paste operation (default: CommandOrControl+Shift+V) */
   pasteHotkey: string
-  /** Global hotkey for record operation (default: CommandOrControl+Shift+R) */
+  /** Global hotkey for record operation without formatting (default: CommandOrControl+Shift+R) */
   recordHotkey: string
+  /** Global hotkey for record operation with formatting (default: CommandOrControl+Shift+F) */
+  recordWithFormattingHotkey: string
+  /** Whether to press Enter after pasting to terminal (submit command) */
+  submitAfterPaste: boolean
   /** Enable/disable word replacements feature */
   replacementsEnabled: boolean
   /** Enable/disable voice command detection */
@@ -66,6 +70,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   selectedTerminalId: null,
   pasteHotkey: 'CommandOrControl+Shift+V',
   recordHotkey: 'CommandOrControl+Shift+R',
+  recordWithFormattingHotkey: 'CommandOrControl+Shift+F',
+  submitAfterPaste: true,
   replacementsEnabled: true,
   voiceCommandsEnabled: true,
   promptFormattingEnabled: true,
@@ -305,6 +311,46 @@ export function getRecordHotkey(): string {
  */
 export function getPasteHotkey(): string {
   return getSettings().pasteHotkey
+}
+
+/**
+ * Gets the current record with formatting hotkey
+ *
+ * @returns {string} Record with formatting hotkey (e.g., "CommandOrControl+Shift+F")
+ */
+export function getRecordWithFormattingHotkey(): string {
+  return getSettings().recordWithFormattingHotkey
+}
+
+// ============================================================================
+// Paste Settings
+// ============================================================================
+
+/**
+ * Gets whether to submit (press Enter) after pasting to terminal
+ *
+ * @returns {boolean} True if Enter should be pressed after paste
+ */
+export function getSubmitAfterPaste(): boolean {
+  return getSettings().submitAfterPaste ?? true
+}
+
+/**
+ * Sets whether to submit (press Enter) after pasting to terminal
+ *
+ * @param {boolean} submit - Whether to press Enter after paste
+ *
+ * @example
+ * ```typescript
+ * // Only paste, don't submit
+ * setSubmitAfterPaste(false)
+ *
+ * // Paste and submit (press Enter)
+ * setSubmitAfterPaste(true)
+ * ```
+ */
+export function setSubmitAfterPaste(submit: boolean): void {
+  setSettings({ submitAfterPaste: submit })
 }
 
 // ============================================================================

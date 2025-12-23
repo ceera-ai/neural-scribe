@@ -25,6 +25,8 @@ export interface AppSettings {
   selectedTerminalId: string | null
   pasteHotkey: string
   recordHotkey: string
+  recordWithFormattingHotkey: string
+  submitAfterPaste: boolean
   replacementsEnabled: boolean
   voiceCommandsEnabled: boolean
   promptFormattingEnabled: boolean
@@ -195,7 +197,7 @@ export interface ElectronAPI {
 
   // Hotkey operations
   updateHotkey: (
-    type: 'paste' | 'record',
+    type: 'paste' | 'record' | 'recordWithFormatting',
     newHotkey: string
   ) => Promise<{ success: boolean; error?: string }>
 
