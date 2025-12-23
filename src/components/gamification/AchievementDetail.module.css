@@ -54,8 +54,8 @@
 
 /* Unlocked modal gets special styling */
 .modal.unlocked {
-  background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
-  border: 2px solid #fbbf24;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, #ffffff 100%);
+  border: 2px solid #6366f1;
 }
 
 /* Close button */
@@ -120,7 +120,7 @@
 }
 
 .unlocked .icon {
-  filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.6));
+  filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6));
   animation: celebrate 1s ease-in-out;
 }
 
@@ -222,7 +222,7 @@
 }
 
 .unlocked .xpBadge {
-  background: #f59e0b;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
 }
 
 .xpIcon {
@@ -393,7 +393,7 @@
   }
 
   .modal.unlocked {
-    background: linear-gradient(135deg, #422006 0%, #1f2937 100%);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, #1f2937 100%);
   }
 
   .closeBtn {
