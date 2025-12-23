@@ -30,10 +30,6 @@ export const HotkeyFooter: FC<HotkeyFooterProps> = ({
       .trim()
   }
 
-  const handleTestOverlay = async () => {
-    await window.electronAPI.testShowComparisonOverlay()
-  }
-
   return (
     <div className="hotkey-bar cyber-hotkey-bar">
       <div className="hotkey-left">
@@ -43,13 +39,6 @@ export const HotkeyFooter: FC<HotkeyFooterProps> = ({
         <span>
           <kbd className="cyber-kbd">{formatHotkeyForDisplay(pasteHotkey)}</kbd> Copy last
         </span>
-        <button
-          onClick={handleTestOverlay}
-          className="test-overlay-btn"
-          title="Test comparison overlay (select original or formatted)"
-        >
-          Test Comparison
-        </button>
       </div>
       <div className="hotkey-right">
         <label

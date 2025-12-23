@@ -147,15 +147,16 @@ export class FormattingService {
    * console.log(result.formatted)  // "pnpm add express"
    * ```
    */
-  public async reformatText(
-    text: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _customInstructions?: string
-  ): Promise<FormatResult> {
+  public async reformatText(text: string, customInstructions?: string): Promise<FormatResult> {
     try {
-      // For now, just use formatPrompt
-      // TODO: Implement custom instructions handling
-      return await this.formatPrompt(text)
+      const settings = getPromptFormattingSettings()
+
+      // Use custom instructions if provided, otherwise use default formatting instructions
+      const instructions = customInstructions || settings.instructions
+      const model = settings.model
+
+      // Call formatPromptImpl with custom instructions
+      return await formatPromptImpl(text, instructions, model)
     } catch (error) {
       return {
         success: false,

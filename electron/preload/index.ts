@@ -281,10 +281,6 @@ const electronAPI = {
     ipcRenderer.send('test-hide-formatting-overlay')
   },
 
-  // Test method for comparison overlay
-  testShowComparisonOverlay: (): Promise<string> =>
-    ipcRenderer.invoke('test-show-comparison-overlay'),
-
   // Send comparison selection from overlay
   sendComparisonSelection: (selectedText: string): void => {
     ipcRenderer.send('comparison-text-selected', selectedText)

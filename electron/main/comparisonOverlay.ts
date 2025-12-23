@@ -69,6 +69,16 @@ export function createComparisonOverlay(): void {
     comparisonOverlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
   }
 
+  // Wait for window to be ready before allowing it to be shown
+  comparisonOverlayWindow.once('ready-to-show', () => {
+    console.log('[ComparisonOverlay] Window ready to show')
+  })
+
+  // Log when page finishes loading
+  comparisonOverlayWindow.webContents.on('did-finish-load', () => {
+    console.log('[ComparisonOverlay] Page finished loading')
+  })
+
   // Load overlay HTML
   if (is.dev) {
     comparisonOverlayWindow.loadFile(join(__dirname, '../../electron/comparison-overlay.html'))
@@ -124,35 +134,71 @@ export function showComparisonOverlay(
         // Get the best display (where cursor is)
         const targetDisplay = getBestDisplay()
 
-        // Position overlay to fill the entire display
+        // Position overlay to fill the entire display BEFORE showing
         positionOverlay(targetDisplay)
 
-        // Show window first
-        console.log('[ComparisonOverlay] Showing window...')
-        comparisonOverlayWindow.show()
-
-        // Send the texts to the overlay
-        console.log('[ComparisonOverlay] Executing JavaScript to set texts...')
-        comparisonOverlayWindow.webContents
-          .executeJavaScript(
-            `
-          if (window.setComparisonTexts) {
-            window.setComparisonTexts(
-              ${JSON.stringify(originalText)},
-              ${JSON.stringify(formattedText)}
-            );
+        // Wait for the bounds to be set, then show and send data
+        setTimeout(() => {
+          if (!comparisonOverlayWindow || comparisonOverlayWindow.isDestroyed()) {
+            console.warn('[ComparisonOverlay] Window destroyed during positioning')
+            resolve('')
+            return
           }
-        `
-          )
-          .then(() => {
-            console.log('[ComparisonOverlay] JavaScript executed successfully')
-          })
-          .catch((err) => {
-            console.error('[ComparisonOverlay] Error setting texts:', err)
-          })
 
-        console.log('[ComparisonOverlay] Shown on display:', targetDisplay.id)
-        console.log('[ComparisonOverlay] Waiting for user selection...')
+          // Show window
+          comparisonOverlayWindow.show()
+
+          // Wait for the module to load and setComparisonTexts to be available
+          const waitForFunction = async (retries = 20, delay = 100) => {
+            for (let i = 0; i < retries; i++) {
+              try {
+                const result = await comparisonOverlayWindow!.webContents.executeJavaScript(
+                  'typeof window.setComparisonTexts === "function"'
+                )
+                if (result) {
+                  console.log('[ComparisonOverlay] setComparisonTexts is ready')
+                  return true
+                }
+                console.log(
+                  `[ComparisonOverlay] Waiting for setComparisonTexts... attempt ${i + 1}/${retries}`
+                )
+                await new Promise((r) => setTimeout(r, delay))
+              } catch (err) {
+                console.error('[ComparisonOverlay] Error checking for function:', err)
+              }
+            }
+            return false
+          }
+
+          // Wait for function to be ready, then call it
+          waitForFunction()
+            .then((ready) => {
+              if (!ready) {
+                console.error('[ComparisonOverlay] setComparisonTexts never became available')
+                return
+              }
+
+              // Send the texts to the overlay
+              console.log('[ComparisonOverlay] Executing JavaScript to set texts...')
+              return comparisonOverlayWindow!.webContents.executeJavaScript(
+                `
+              console.log('[ComparisonOverlay executeJS] Calling setComparisonTexts...');
+              window.setComparisonTexts(
+                ${JSON.stringify(originalText)},
+                ${JSON.stringify(formattedText)}
+              );
+              console.log('[ComparisonOverlay executeJS] setComparisonTexts called');
+            `
+              )
+            })
+            .then(() => {
+              console.log('[ComparisonOverlay] JavaScript executed successfully')
+              console.log('[ComparisonOverlay] Waiting for user selection...')
+            })
+            .catch((err) => {
+              console.error('[ComparisonOverlay] Error setting texts:', err)
+            })
+        }, 50)
       } else {
         console.warn('[ComparisonOverlay] Window not available or destroyed')
         resolve('') // Return empty if window not available

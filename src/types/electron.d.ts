@@ -262,7 +262,6 @@ export interface ElectronAPI {
   // Test methods for formatting overlay
   testShowFormattingOverlay: () => void
   testHideFormattingOverlay: () => void
-  testShowComparisonOverlay: () => Promise<string>
 
   // Comparison overlay communication
   sendComparisonSelection: (selectedText: string) => void
