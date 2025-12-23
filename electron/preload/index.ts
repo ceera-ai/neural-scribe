@@ -272,6 +272,24 @@ const electronAPI = {
     ipcRenderer.send('overlay-status', status)
   },
 
+  // Test methods for formatting overlay
+  testShowFormattingOverlay: (): void => {
+    ipcRenderer.send('test-show-formatting-overlay')
+  },
+
+  testHideFormattingOverlay: (): void => {
+    ipcRenderer.send('test-hide-formatting-overlay')
+  },
+
+  // Test method for comparison overlay
+  testShowComparisonOverlay: (): Promise<string> =>
+    ipcRenderer.invoke('test-show-comparison-overlay'),
+
+  // Send comparison selection from overlay
+  sendComparisonSelection: (selectedText: string): void => {
+    ipcRenderer.send('comparison-text-selected', selectedText)
+  },
+
   // Error logging
   logError: (error: { message: string; stack: string; componentStack?: string }): void => {
     ipcRenderer.send('log-error', error)

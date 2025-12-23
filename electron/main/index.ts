@@ -5,6 +5,12 @@ import { setupIpcHandlers } from './ipc-handlers'
 import { createTray, updateTrayRecordingState } from './tray'
 import { registerHotkeys, unregisterHotkeys } from './hotkeys'
 import { createOverlayWindow, showOverlay, hideOverlay, destroyOverlay } from './overlay'
+import { createFormattingOverlay, destroyFormattingOverlay } from './formattingOverlay'
+import {
+  createComparisonOverlay,
+  destroyComparisonOverlay,
+  setupComparisonIpcHandlers,
+} from './comparisonOverlay'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -92,6 +98,15 @@ app.whenReady().then(() => {
   // Create recording overlay window (pass main window for fallback display detection)
   createOverlayWindow(mainWindow!)
 
+  // Create formatting progress overlay window
+  createFormattingOverlay()
+
+  // Create comparison overlay window
+  createComparisonOverlay()
+
+  // Setup comparison overlay IPC handlers
+  setupComparisonIpcHandlers()
+
   // Create system tray
   createTray(mainWindow!)
 
@@ -114,6 +129,8 @@ app.on('window-all-closed', () => {
 app.on('will-quit', () => {
   unregisterHotkeys()
   destroyOverlay()
+  destroyFormattingOverlay()
+  destroyComparisonOverlay()
 })
 
 export { updateTrayRecordingState }

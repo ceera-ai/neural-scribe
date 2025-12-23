@@ -171,9 +171,7 @@ export interface ElectronAPI {
     bundleId: string,
     windowName: string
   ) => Promise<{ success: boolean; needsPermission: boolean; copied: boolean }>
-  pasteToLastActiveTerminal: (
-    text: string
-  ) => Promise<{
+  pasteToLastActiveTerminal: (text: string) => Promise<{
     success: boolean
     needsPermission: boolean
     copied: boolean
@@ -260,6 +258,14 @@ export interface ElectronAPI {
 
   // Send overlay status info to main process
   sendOverlayStatus: (status: { connected: boolean; formattingEnabled: boolean }) => void
+
+  // Test methods for formatting overlay
+  testShowFormattingOverlay: () => void
+  testHideFormattingOverlay: () => void
+  testShowComparisonOverlay: () => Promise<string>
+
+  // Comparison overlay communication
+  sendComparisonSelection: (selectedText: string) => void
 }
 
 declare global {

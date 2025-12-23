@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { ipcMain, clipboard, BrowserWindow } from 'electron'
 import {
   updateAudioLevel,
@@ -7,6 +8,8 @@ import {
   updateTranscriptPreview,
   updateOverlayStatus,
 } from './overlay'
+import { showFormattingOverlay, hideFormattingOverlay } from './formattingOverlay'
+import { showComparisonOverlay } from './comparisonOverlay'
 import {
   validateIPC,
   AppSettingsSchema,
@@ -335,7 +338,16 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   // Prompt formatting operations
   ipcMain.handle('format-prompt', async (_, text: unknown) => {
     const validated = validateIPC(FormatPromptSchema, { text }, 'Invalid format prompt params')
-    return FormattingService.getInstance().formatPrompt(validated.text)
+    showFormattingOverlay()
+    try {
+      const result = await FormattingService.getInstance().formatPrompt(validated.text)
+      hideFormattingOverlay()
+      const selectedText = await showComparisonOverlay(validated.text, result)
+      return selectedText || result
+    } catch (error) {
+      hideFormattingOverlay()
+      throw error
+    }
   })
 
   ipcMain.handle('get-prompt-formatting-settings', () => {
@@ -464,6 +476,15 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
       })
     })
     return unlockedIds
+  })
+
+  // Test method for comparison overlay
+  ipcMain.handle('test-show-comparison-overlay', async () => {
+    const originalText =
+      'This is a test of the comparison overlay. You can click on either version to select it.'
+    const formattedText =
+      '# Test Comparison\n\nThis is a **test** of the comparison overlay.\n\n- Click either version to select'
+    return await showComparisonOverlay(originalText, formattedText)
   })
 
   // Error logging

@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Choose Version</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@600;700&family=Share+Tech+Mono&display=swap');
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      body {
+        font-family: 'Rajdhani', sans-serif;
+        background: transparent;
+        position: relative;
+        opacity: 0;
+        animation: fadeIn 300ms ease-out forwards;
+      }
+
+      body.fade-out {
+        animation: fadeOut 400ms ease-out forwards;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+
+      /* Base cloudy background */
+      .overlay-background {
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(135deg,
+          rgba(10, 5, 20, 0.7) 0%,
+          rgba(20, 10, 30, 0.7) 50%,
+          rgba(10, 5, 20, 0.7) 100%);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* Animated gradient overlay - flowing effect */
+      .gradient-animation {
+        position: fixed;
+        inset: -50%;
+        background: linear-gradient(
+          45deg,
+          transparent 0%,
+          rgba(0, 255, 255, 0.05) 25%,
+          rgba(136, 0, 255, 0.05) 50%,
+          rgba(0, 255, 255, 0.05) 75%,
+          transparent 100%
+        );
+        background-size: 400% 400%;
+        animation: gradientFlow 15s ease infinite;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      @keyframes gradientFlow {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      /* Cloud overlay layer */
+      .cloud-overlay {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(
+          ellipse 80% 50% at 50% 50%,
+          rgba(0, 200, 255, 0.12) 0%,
+          transparent 70%
+        );
+        animation: cloudBreathe 8s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      @keyframes cloudBreathe {
+        0%, 100% {
+          opacity: 0.4;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.7;
+          transform: scale(1.1);
+        }
+      }
+
+      /* Magenta wave layer */
+      .magenta-wave {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(
+          ellipse 60% 40% at 50% 50%,
+          rgba(255, 0, 255, 0.15) 0%,
+          transparent 60%
+        );
+        opacity: 0.5;
+        animation: waveFlow 10s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      @keyframes waveFlow {
+        0%, 100% {
+          transform: translateY(0) scale(1);
+        }
+        50% {
+          transform: translateY(-20px) scale(1.05);
+        }
+      }
+
+      /* Cards Container - Centered with gap */
+      .cards-container {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        gap: 30px;
+        max-height: 80vh;
+        max-width: 90vw;
+        z-index: 15;
+        pointer-events: auto; /* Cards are clickable */
+      }
+
+      /* Floating Card - Both cards match height */
+      .floating-card {
+        width: 600px;
+        min-height: 400px;
+        display: flex;
+        flex-direction: column;
+        background: rgb(10, 10, 20);
+        border: 1.5px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.5),
+          inset 0 0 20px rgba(255, 255, 255, 0.03);
+      }
+
+      /* Selection animation - all cards move to center and stack */
+      .floating-card.selected {
+        animation: cardSelectedToCenter 0.6s ease-out forwards;
+        z-index: 100;
+      }
+
+      /* Original card (left) moves right to center */
+      .floating-card.original.selected {
+        animation: cardSelectedToCenterFromLeft 0.6s ease-out forwards;
+      }
+
+      /* Formatted card (right) moves left to center */
+      .floating-card.formatted.selected {
+        animation: cardSelectedToCenterFromRight 0.6s ease-out forwards;
+      }
+
+      @keyframes cardSelectedToCenterFromLeft {
+        0% {
+          transform: translateX(0) translateY(0) scale(1);
+          opacity: 1;
+        }
+        100% {
+          transform: translateX(315px) translateY(0) scale(1.05);
+          opacity: 1;
+        }
+      }
+
+      @keyframes cardSelectedToCenterFromRight {
+        0% {
+          transform: translateX(0) translateY(0) scale(1);
+          opacity: 1;
+        }
+        100% {
+          transform: translateX(-315px) translateY(0) scale(1.05);
+          opacity: 1;
+        }
+      }
+
+      /* Non-selected cards also move to center but stack below */
+      .floating-card.deselected {
+        animation: cardDeselectedToCenter 0.6s ease-out forwards;
+        z-index: 1;
+      }
+
+      /* Original card (left) deselected moves right to center */
+      .floating-card.original.deselected {
+        animation: cardDeselectedToCenterFromLeft 0.6s ease-out forwards;
+      }
+
+      /* Formatted card (right) deselected moves left to center */
+      .floating-card.formatted.deselected {
+        animation: cardDeselectedToCenterFromRight 0.6s ease-out forwards;
+      }
+
+      @keyframes cardDeselectedToCenterFromLeft {
+        0% {
+          transform: translateX(0) translateY(0) scale(1);
+          opacity: 1;
+        }
+        100% {
+          transform: translateX(315px) translateY(0) scale(0.98);
+          opacity: 0.5;
+        }
+      }
+
+      @keyframes cardDeselectedToCenterFromRight {
+        0% {
+          transform: translateX(0) translateY(0) scale(1);
+          opacity: 1;
+        }
+        100% {
+          transform: translateX(-315px) translateY(0) scale(0.98);
+          opacity: 0.5;
+        }
+      }
+
+      /* Holographic shimmer */
+      .floating-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          transparent 0%,
+          rgba(255, 255, 255, 0.05) 40%,
+          transparent 60%
+        );
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+      }
+
+      .floating-card:hover::before {
+        opacity: 1;
+      }
+
+      /* Original Card - Cyan */
+      .floating-card.original {
+        border-color: rgba(0, 255, 255, 0.3);
+      }
+
+      .floating-card.original:hover {
+        border-color: rgba(0, 255, 255, 0.6);
+        box-shadow:
+          0 8px 40px rgba(0, 255, 255, 0.2),
+          0 0 60px rgba(0, 255, 255, 0.15),
+          inset 0 0 30px rgba(0, 255, 255, 0.05);
+        transform: translateY(-4px);
+      }
+
+      /* Formatted Card - Magenta */
+      .floating-card.formatted {
+        border-color: rgba(255, 0, 255, 0.3);
+      }
+
+      .floating-card.formatted:hover {
+        border-color: rgba(255, 0, 255, 0.6);
+        box-shadow:
+          0 8px 40px rgba(255, 0, 255, 0.2),
+          0 0 60px rgba(255, 0, 255, 0.15),
+          inset 0 0 30px rgba(255, 0, 255, 0.05);
+        transform: translateY(-4px);
+      }
+
+      /* Card Header */
+      .card-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+      }
+
+      .card-title-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .card-title {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+      }
+
+      .floating-card.original .card-title {
+        color: #00ffff;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+      }
+
+      .floating-card.formatted .card-title {
+        color: #ff00ff;
+        text-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
+      }
+
+      .card-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+
+      .floating-card.original .card-badge {
+        background: rgba(0, 170, 255, 0.2);
+        border: 1px solid rgba(0, 170, 255, 0.4);
+        color: #00aaff;
+        box-shadow: 0 0 10px rgba(0, 170, 255, 0.3);
+      }
+
+      .floating-card.formatted .card-badge {
+        background: rgba(136, 0, 255, 0.2);
+        border: 1px solid rgba(136, 0, 255, 0.4);
+        color: #bb00ff;
+        box-shadow: 0 0 10px rgba(136, 0, 255, 0.3);
+      }
+
+      /* Statistics */
+      .card-stats {
+        display: flex;
+        gap: 16px;
+        padding: 12px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(0, 0, 0, 0.2);
+        flex-shrink: 0;
+      }
+
+      .stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .stat-label {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 10px;
+        font-weight: 600;
+        color: #808080;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .stat-value {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .floating-card.original .stat-value {
+        color: #00ffff;
+        text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+      }
+
+      .floating-card.formatted .stat-value {
+        color: #ff00ff;
+        text-shadow: 0 0 8px rgba(255, 0, 255, 0.5);
+      }
+
+      /* Card Content */
+      .card-content {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 13px;
+        line-height: 1.7;
+        color: #d0d0d0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+
+      /* Scrollbar */
+      .card-content::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .card-content::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      .card-content::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+      }
+
+      .floating-card.original .card-content::-webkit-scrollbar-thumb {
+        background: rgba(0, 255, 255, 0.3);
+      }
+
+      .floating-card.formatted .card-content::-webkit-scrollbar-thumb {
+        background: rgba(255, 0, 255, 0.3);
+      }
+
+      /* Footer */
+      .footer {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        z-index: 20;
+        pointer-events: auto; /* Footer is clickable */
+      }
+
+      .footer-hint {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 13px;
+        color: #909090;
+        letter-spacing: 0.5px;
+      }
+
+      .footer-hint .highlight {
+        color: #00ffff;
+        font-weight: 600;
+        text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+      }
+
+      .reformat-btn {
+        padding: 8px 20px;
+        background: rgba(136, 0, 255, 0.15);
+        border: 1px solid rgba(136, 0, 255, 0.4);
+        border-radius: 8px;
+        color: #bb00ff;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 0 10px rgba(136, 0, 255, 0.2);
+      }
+
+      .reformat-btn:hover {
+        background: rgba(136, 0, 255, 0.25);
+        border-color: rgba(136, 0, 255, 0.6);
+        box-shadow: 0 0 20px rgba(136, 0, 255, 0.4);
+        transform: translateY(-2px);
+      }
+
+    </style>
+  </head>
+  <body>
+    <!-- Cloudy Animated Background -->
+    <div class="overlay-background"></div>
+    <div class="gradient-animation"></div>
+    <div class="cloud-overlay"></div>
+    <div class="magenta-wave"></div>
+
+    <!-- Cards Container -->
+    <div class="cards-container">
+      <!-- Original Card -->
+      <div class="floating-card original" id="original-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <div class="card-title">Original</div>
+            <div class="card-badge">Raw</div>
+          </div>
+        </div>
+        <div class="card-stats">
+          <div class="stat-item">
+            <div class="stat-label">Words</div>
+            <div class="stat-value" id="original-words">0</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Characters</div>
+            <div class="stat-value" id="original-chars">0</div>
+          </div>
+        </div>
+        <div class="card-content" id="original-text"></div>
+      </div>
+
+      <!-- Formatted Card -->
+      <div class="floating-card formatted" id="formatted-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <div class="card-title">AI Formatted</div>
+            <div class="card-badge">Enhanced</div>
+          </div>
+        </div>
+        <div class="card-stats">
+          <div class="stat-item">
+            <div class="stat-label">Words</div>
+            <div class="stat-value" id="formatted-words">0</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Characters</div>
+            <div class="stat-value" id="formatted-chars">0</div>
+          </div>
+        </div>
+        <div class="card-content" id="formatted-text"></div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-hint">
+        <span class="highlight">Click</span> a version to select it
+      </div>
+      <button class="reformat-btn" id="reformat-btn">Reformat Again</button>
+    </div>
+
+    <script>
+      let originalText = ''
+      let formattedText = ''
+
+      function countWords(text) {
+        return text.trim().split(/\s+/).filter(w => w.length > 0).length
+      }
+
+      // Electric sound effect (same as transcription overlay)
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+
+      function playSelectionSound() {
+        const now = audioContext.currentTime
+
+        // Main rising tone
+        const oscillator = audioContext.createOscillator()
+        const gainNode = audioContext.createGain()
+
+        oscillator.connect(gainNode)
+        gainNode.connect(audioContext.destination)
+
+        oscillator.type = 'sine'
+        oscillator.frequency.setValueAtTime(200, now)
+        oscillator.frequency.exponentialRampToValueAtTime(800, now + 0.15)
+
+        gainNode.gain.setValueAtTime(0, now)
+        gainNode.gain.linearRampToValueAtTime(0.25, now + 0.02)
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15)
+
+        oscillator.start(now)
+        oscillator.stop(now + 0.15)
+
+        // Electricity crackle effect (white noise bursts)
+        const crackleCount = 8
+        for (let i = 0; i < crackleCount; i++) {
+          const crackleTime = now + (i * 0.02)
+          const duration = 0.008 + Math.random() * 0.012
+
+          const noise = audioContext.createBufferSource()
+          const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * duration, audioContext.sampleRate)
+          const noiseData = noiseBuffer.getChannelData(0)
+
+          // Generate white noise
+          for (let j = 0; j < noiseData.length; j++) {
+            noiseData[j] = Math.random() * 2 - 1
+          }
+
+          noise.buffer = noiseBuffer
+
+          const crackleGain = audioContext.createGain()
+          crackleGain.gain.value = 0.03 + Math.random() * 0.02
+
+          noise.connect(crackleGain)
+          crackleGain.connect(audioContext.destination)
+
+          noise.start(crackleTime)
+        }
+
+        console.log('[ComparisonOverlay] Playing electric selection sound')
+      }
+
+      // Trigger fade out animation
+      window.triggerFadeOut = function() {
+        document.body.classList.add('fade-out')
+      }
+
+      // Set texts and make cards match height
+      window.setComparisonTexts = function(original, formatted) {
+        // Remove fade-out class to ensure fade-in works on next show
+        document.body.classList.remove('fade-out')
+
+        originalText = original
+        formattedText = formatted
+
+        // Update content
+        document.getElementById('original-text').textContent = original
+        document.getElementById('formatted-text').textContent = formatted
+
+        // Update stats
+        document.getElementById('original-words').textContent = countWords(original)
+        document.getElementById('original-chars').textContent = original.length
+        document.getElementById('formatted-words').textContent = countWords(formatted)
+        document.getElementById('formatted-chars').textContent = formatted.length
+
+        // Match card heights after content is set
+        setTimeout(() => {
+          const card1 = document.getElementById('original-card')
+          const card2 = document.getElementById('formatted-card')
+          const content1 = document.getElementById('original-text')
+          const content2 = document.getElementById('formatted-text')
+
+          // Calculate required heights based on content
+          // Header (~50px) + Stats (~50px) + Content + Padding
+          const headerHeight = 50
+          const statsHeight = 50
+          const padding = 40
+
+          const content1Height = content1.scrollHeight
+          const content2Height = content2.scrollHeight
+          const maxContentHeight = Math.max(content1Height, content2Height)
+
+          const naturalHeight = headerHeight + statsHeight + maxContentHeight + padding
+
+          // Cap at 80vh
+          const viewportHeight = window.innerHeight
+          const maxAllowedHeight = viewportHeight * 0.8
+          const finalHeight = Math.min(naturalHeight, maxAllowedHeight)
+
+          // Set both cards to the same height
+          card1.style.height = finalHeight + 'px'
+          card2.style.height = finalHeight + 'px'
+
+          console.log('[ComparisonOverlay] Heights - Content1:', content1Height, 'Content2:', content2Height, 'Natural:', naturalHeight, 'Final:', finalHeight, '80vh:', maxAllowedHeight)
+        }, 50)
+      }
+
+      // Handle clicks with selection animation
+      document.getElementById('original-card').addEventListener('click', () => {
+        console.log('[ComparisonOverlay] Original card clicked, text length:', originalText.length)
+
+        // Play sound effect
+        playSelectionSound()
+
+        const originalCard = document.getElementById('original-card')
+        const formattedCard = document.getElementById('formatted-card')
+
+        // Add selection animation classes
+        originalCard.classList.add('selected')
+        formattedCard.classList.add('deselected')
+
+        // Wait for animation to complete, then send selection
+        setTimeout(() => {
+          console.log('[ComparisonOverlay] Sending original text selection via IPC')
+          window.electronAPI.sendComparisonSelection(originalText)
+          console.log('[ComparisonOverlay] Selection sent successfully')
+        }, 600)
+      })
+
+      document.getElementById('formatted-card').addEventListener('click', () => {
+        console.log('[ComparisonOverlay] Formatted card clicked, text length:', formattedText.length)
+
+        // Play sound effect
+        playSelectionSound()
+
+        const originalCard = document.getElementById('original-card')
+        const formattedCard = document.getElementById('formatted-card')
+
+        // Add selection animation classes
+        formattedCard.classList.add('selected')
+        originalCard.classList.add('deselected')
+
+        // Wait for animation to complete, then send selection
+        setTimeout(() => {
+          console.log('[ComparisonOverlay] Sending formatted text selection via IPC')
+          window.electronAPI.sendComparisonSelection(formattedText)
+          console.log('[ComparisonOverlay] Selection sent successfully')
+        }, 600)
+      })
+
+      document.getElementById('reformat-btn').addEventListener('click', () => {
+        console.log('[ComparisonOverlay] Reformat clicked (not implemented)')
+      })
+
+      document.addEventListener('contextmenu', (e) => e.preventDefault())
+    </script>
+  </body>
+</html>

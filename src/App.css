@@ -599,6 +599,34 @@
 .hotkey-left {
   display: flex;
   gap: 20px;
+  align-items: center;
+}
+
+.test-overlay-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-family: var(--font-ui, 'Rajdhani', sans-serif);
+  font-weight: 600;
+  color: #00ffff;
+  background: rgba(0, 255, 255, 0.05);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.test-overlay-btn:hover {
+  background: rgba(0, 255, 255, 0.12);
+  border-color: rgba(0, 255, 255, 0.5);
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.test-overlay-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 0 4px rgba(0, 255, 255, 0.3);
 }
 
 .hotkey-right {
