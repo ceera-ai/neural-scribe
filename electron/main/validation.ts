@@ -12,6 +12,7 @@ import { z } from 'zod'
 // Settings validation
 export const AppSettingsSchema = z.object({
   apiKey: z.string().optional(),
+  deepgramApiKey: z.string().optional(),
   selectedMicrophoneId: z.string().nullable().optional(),
   selectedTerminalId: z.string().nullable().optional(),
   pasteHotkey: z.string().optional(),
@@ -27,6 +28,12 @@ export const AppSettingsSchema = z.object({
   pasteMode: z.enum(['auto', 'clipboard', 'terminal']).optional(),
   hasCompletedFirstLaunch: z.boolean().optional(),
   showPasteNotifications: z.boolean().optional(),
+  transcriptionEngine: z.enum(['elevenlabs', 'deepgram']).optional(),
+  deepgramApiKey: z.string().optional(),
+  deepgramModel: z
+    .enum(['nova-3', 'nova-2', 'nova-2-meeting', 'enhanced', 'base', 'nova-3-monolingual', 'nova-3-multilingual', 'flux'])
+    .optional(),
+  deepgramMultilingual: z.boolean().optional(),
 })
 
 export const ApiKeySchema = z.string().min(1, 'API key cannot be empty')

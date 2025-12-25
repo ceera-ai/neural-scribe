@@ -42,6 +42,9 @@ import {
   setPromptFormattingModel,
   getPasteMode,
   setPasteMode,
+  getDeepgramApiKey,
+  setDeepgramApiKey,
+  hasDeepgramApiKey,
 } from './store/settings'
 import {
   getHistory,
@@ -144,6 +147,35 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
 
   ipcMain.handle('has-api-key', () => {
     return !!getApiKey()
+  })
+
+  // Deepgram API key
+  ipcMain.handle('get-deepgram-api-key', () => {
+    return getDeepgramApiKey()
+  })
+
+  ipcMain.handle('set-deepgram-api-key', (_, apiKey: unknown) => {
+    const validated = validateIPC(ApiKeySchema, apiKey, 'Invalid Deepgram API key')
+    setDeepgramApiKey(validated)
+    return true
+  })
+
+  ipcMain.handle('has-deepgram-api-key', () => {
+    return hasDeepgramApiKey()
+  })
+
+  // Transcription engine selection
+  ipcMain.handle('get-transcription-engine', () => {
+    const settings = getSettings()
+    return settings.transcriptionEngine || 'elevenlabs'
+  })
+
+  ipcMain.handle('set-transcription-engine', (_, engine: unknown) => {
+    if (engine !== 'elevenlabs' && engine !== 'deepgram') {
+      throw new Error('Invalid transcription engine. Must be "elevenlabs" or "deepgram"')
+    }
+    setSettings({ transcriptionEngine: engine })
+    return true
   })
 
   // History

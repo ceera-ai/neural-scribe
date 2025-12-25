@@ -14,6 +14,7 @@ import {
 import { hasCompletedFirstLaunch, setFirstLaunchCompleted } from './store/settings'
 
 let mainWindow: BrowserWindow | null = null
+let debugWindow: BrowserWindow | null = null
 
 export function getMainWindow(): BrowserWindow | null {
   return mainWindow
@@ -31,8 +32,8 @@ function createWindow(): void {
     trafficLightPosition: { x: 15, y: 15 },
     icon: join(__dirname, '../../resources/icon.png'),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: true, // ✅ Enable sandboxing for security
+      preload: join(__dirname, '../preload/index.cjs'),
+      sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,
       backgroundThrottling: false, // ✅ Keep audio analysis running when window is hidden
@@ -68,6 +69,35 @@ function createWindow(): void {
   // Actually quit when window is closed
   mainWindow.on('closed', () => {
     mainWindow = null
+  })
+}
+
+function createDebugWindow(): void {
+  debugWindow = new BrowserWindow({
+    width: 900,
+    height: 700,
+    x: 950, // Position to the right of main window
+    y: 100,
+    show: false,
+    autoHideMenuBar: true,
+    title: 'Debug Tools - Neural Scribe',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.cjs'),
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  })
+
+  debugWindow.on('ready-to-show', () => {
+    debugWindow?.show()
+  })
+
+  // Load the debug HTML file
+  debugWindow.loadFile(join(__dirname, '../renderer/electron/debug.html'))
+
+  debugWindow.on('closed', () => {
+    debugWindow = null
   })
 }
 

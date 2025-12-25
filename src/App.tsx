@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react'
-import { useElevenLabsScribe } from './hooks/useElevenLabsScribe'
+import { useTranscriptionEngine } from './hooks/transcription'
 import { useMicrophoneDevices } from './hooks/useMicrophoneDevices'
 import { useTranscriptionHistory } from './hooks/useTranscriptionHistory'
 import { useGamification } from './hooks/useGamification'
@@ -134,7 +134,7 @@ function App() {
     stopRecording,
     clearTranscript,
     setEditedTranscript,
-  } = useElevenLabsScribe({
+  } = useTranscriptionEngine({
     selectedMicrophoneId: selectedDeviceId,
     onRecordingStopped: handleRecordingStopped,
     onVoiceCommand: handleVoiceCommand,
