@@ -39,6 +39,7 @@ import {
   deleteTranscription,
   clearHistory,
   getLastTranscription,
+  getHistoryStats,
   getReplacements,
   addReplacement,
   updateReplacement,
