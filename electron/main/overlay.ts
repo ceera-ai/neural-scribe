@@ -231,6 +231,9 @@ export function showOverlay(): void {
 export function hideOverlay(): void {
   try {
     if (overlayWindow && !overlayWindow.isDestroyed()) {
+      // Clear the transcript preview before hiding
+      clearTranscriptPreview()
+
       // Trigger hide animation and sound
       overlayWindow.webContents
         .executeJavaScript(
@@ -251,6 +254,42 @@ export function hideOverlay(): void {
   } catch (_err) {
     console.log('[Overlay] Error hiding overlay:', _err)
     overlayWindow = null
+  }
+}
+
+/**
+ * Clear the transcript preview in the overlay
+ */
+export function clearTranscriptPreview(): void {
+  try {
+    if (!overlayWindow || overlayWindow.isDestroyed() || overlayWindow.webContents.isDestroyed()) {
+      return
+    }
+
+    const script = `
+      // Clear preview card
+      var previewEl = document.getElementById('transcript-preview');
+      if (previewEl) {
+        previewEl.textContent = '';
+      }
+
+      // Clear word count
+      var wordCountEl = document.getElementById('word-count');
+      if (wordCountEl) {
+        wordCountEl.textContent = '0 words';
+      }
+
+      // Clear focus mode transcript
+      var focusTextEl = document.getElementById('focus-transcript-text');
+      if (focusTextEl) {
+        focusTextEl.innerHTML = '<span class="transcript-placeholder">Start speaking...</span>';
+      }
+    `
+    overlayWindow.webContents.executeJavaScript(script).catch((err) => {
+      console.error('[Overlay] Failed to clear transcript:', err)
+    })
+  } catch (_err) {
+    console.error('[Overlay] Error in clearTranscriptPreview:', _err)
   }
 }
 

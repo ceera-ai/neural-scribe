@@ -22,11 +22,14 @@ Real-time speech-to-text with voice commands, terminal integration, and gamifica
 
 ## Overview
 
-Neural Scribe is a production-ready Electron desktop application that provides ultra-low-latency voice transcription powered by ElevenLabs Scribe v2 API. Designed for developers, writers, and productivity enthusiasts, it offers seamless terminal integration, customizable voice commands, and an engaging gamification system.
+Neural Scribe is a production-ready Electron desktop application that provides ultra-low-latency voice transcription with support for multiple transcription engines (ElevenLabs Scribe and Deepgram). Designed for developers, writers, and productivity enthusiasts, it offers seamless terminal integration, customizable voice commands, and an engaging gamification system.
+
+**Developed by [Ceera.ai](https://ceera.ai)**
 
 ### Why Neural Scribe?
 
-- **Ultra-Low Latency**: ~150ms transcription latency with Scribe v2 Realtime model
+- **Multi-Engine Support**: Choose between ElevenLabs Scribe or Deepgram for transcription
+- **Ultra-Low Latency**: ~100-150ms transcription latency with real-time streaming
 - **Voice Commands**: Control transcription with natural voice triggers ("send it", "clear", "cancel")
 - **Terminal Integration**: Paste transcriptions directly to any terminal with keyboard shortcuts
 - **Smart Formatting**: AI-powered prompt formatting using Claude Code CLI
@@ -43,7 +46,7 @@ Neural Scribe is a production-ready Electron desktop application that provides u
 
 - ✅ **Real-Time Transcription**: Continuous speech-to-text with live updates
 - ✅ **Voice Activity Detection**: Automatic detection and smart transcript commits
-- ✅ **High Accuracy**: Powered by ElevenLabs Scribe v2 API
+- ✅ **High Accuracy**: Support for ElevenLabs Scribe and Deepgram engines
 - ✅ **Microphone Selection**: Choose from available input devices
 - ✅ **Visual Feedback**: Real-time waveform and audio level visualization
 

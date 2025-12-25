@@ -1056,3 +1056,71 @@
 .transcription-info .info-text strong {
   color: var(--neon-cyan, #00ffff);
 }
+
+/* Provider Option Card Styles */
+.provider-option {
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.provider-option:hover:not(.disabled) {
+  background: rgba(0, 255, 255, 0.05);
+  border-color: rgba(0, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 255, 255, 0.15);
+}
+
+.provider-option.selected {
+  background: rgba(0, 255, 255, 0.1);
+  border-color: var(--neon-cyan, #00ffff);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+.provider-option.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.provider-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.provider-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.provider-checkmark {
+  margin-left: auto;
+  font-size: 18px;
+  color: var(--neon-cyan, #00ffff);
+  font-weight: bold;
+  animation: checkmark-appear 0.3s ease;
+}
+
+@keyframes checkmark-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.provider-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}

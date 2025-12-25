@@ -6,6 +6,7 @@ import {
   updateVoiceCommands,
   updateTranscriptPreview,
   updateOverlayStatus,
+  hideOverlay,
 } from './overlay'
 import { showFormattingOverlay, hideFormattingOverlay } from './formattingOverlay'
 import { showComparisonOverlay } from './comparisonOverlay'
@@ -280,6 +281,11 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   // Overlay status from renderer
   ipcMain.on('overlay-status', (_, status: { connected: boolean; formattingEnabled: boolean }) => {
     updateOverlayStatus(status)
+  })
+
+  // Cancel overlay (from Escape key press)
+  ipcMain.on('cancel-overlay', () => {
+    hideOverlay()
   })
 
   // Terminal operations

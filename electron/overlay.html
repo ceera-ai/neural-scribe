@@ -1731,6 +1731,17 @@
       container.classList.add('hide');
       playPowerDownSound();
     };
+
+    // Add Escape key handler to cancel/hide overlay
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape' || event.keyCode === 27) {
+        event.preventDefault();
+        // Send cancel signal to main process
+        if (window.electronAPI && window.electronAPI.cancelOverlay) {
+          window.electronAPI.cancelOverlay();
+        }
+      }
+    });
   </script>
 </body>
 </html>

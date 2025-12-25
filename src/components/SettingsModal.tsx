@@ -670,7 +670,7 @@ export function SettingsModal({
               {/* About */}
               <div className="cyber-setting-group about-section">
                 <p className="about-text">Neural Scribe v1.0.0</p>
-                <p className="about-subtext">Powered by ElevenLabs Scribe</p>
+                <p className="about-subtext">Powered by Ceera.ai</p>
               </div>
             </div>
           )}
@@ -698,25 +698,25 @@ export function SettingsModal({
                       <div
                         key={provider.id}
                         className={`provider-option ${isSelected ? 'selected' : ''} ${!isAvailable ? 'disabled' : ''}`}
+                        onClick={() => {
+                          if (isAvailable) {
+                            handleEngineChange(provider.id as 'elevenlabs' | 'deepgram')
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if ((e.key === 'Enter' || e.key === ' ') && isAvailable) {
+                            e.preventDefault()
+                            handleEngineChange(provider.id as 'elevenlabs' | 'deepgram')
+                          }
+                        }}
                       >
-                        <label className="provider-radio">
-                          <input
-                            type="radio"
-                            name="transcription-engine"
-                            value={provider.id}
-                            checked={isSelected}
-                            onChange={() =>
-                              handleEngineChange(provider.id as 'elevenlabs' | 'deepgram')
-                            }
-                            disabled={!isAvailable}
-                          />
-                          <span className="radio-mark" />
-                        </label>
-
                         <div className="provider-content">
                           <div className="provider-header">
                             <span className="provider-icon">{provider.icon}</span>
                             <span className="provider-name">{provider.name}</span>
+                            {isSelected && <span className="provider-checkmark">✓</span>}
                             <span className={`provider-tier tier-${provider.tier}`}>
                               {provider.tier}
                             </span>

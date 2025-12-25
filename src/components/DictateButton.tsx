@@ -12,6 +12,9 @@ interface DictateButtonProps {
   disabled?: boolean
 }
 
+// TODO: Add support for Deepgram and other transcription engines
+// Currently only supports ElevenLabs Scribe
+
 export function DictateButton({
   onPartialTranscript,
   onFinalTranscript,
@@ -150,7 +153,11 @@ export function DictateButton({
         className={`dictate-btn ${isRecording ? 'recording' : ''}`}
         onClick={handleClick}
         disabled={disabled}
-        title={isRecording ? 'Stop dictating' : 'Dictate instructions'}
+        title={
+          isRecording
+            ? 'Stop dictating'
+            : 'Dictate instructions (Note: Uses ElevenLabs regardless of selected transcription engine)'
+        }
       >
         {isRecording ? (
           <>

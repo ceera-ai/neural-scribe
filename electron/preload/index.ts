@@ -334,6 +334,11 @@ const electronAPI = {
     ipcRenderer.send('comparison-text-selected', selectedText)
   },
 
+  // Cancel overlay (triggered by Escape key)
+  cancelOverlay: (): void => {
+    ipcRenderer.send('cancel-overlay')
+  },
+
   // Transcription engine selection
   getTranscriptionEngine: (): Promise<'elevenlabs' | 'deepgram'> =>
     ipcRenderer.invoke('get-transcription-engine'),
