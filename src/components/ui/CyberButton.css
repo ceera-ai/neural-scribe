@@ -1,0 +1,276 @@
+/* CyberButton - Neon Futuristic Button Component */
+
+.cyber-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-ui, 'Rajdhani', sans-serif);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all var(--transition-fast, 0.15s ease);
+  background: transparent;
+}
+
+/* Content Layer */
+.cyber-button__content {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Glitch Layer (hidden by default) */
+.cyber-button__glitch {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Border Layer */
+.cyber-button__border {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Size Variants */
+.cyber-button--sm {
+  padding: 8px 16px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.cyber-button--md {
+  padding: 12px 24px;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
+.cyber-button--lg {
+  padding: 16px 32px;
+  font-size: 16px;
+  border-radius: 8px;
+}
+
+/* Primary Variant */
+.cyber-button--primary {
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(0, 170, 255, 0.2) 100%);
+  color: var(--neon-cyan, #00ffff);
+  border: 1px solid var(--neon-cyan, #00ffff);
+  box-shadow:
+    0 0 10px rgba(0, 255, 255, 0.3),
+    inset 0 0 20px rgba(0, 255, 255, 0.1);
+}
+
+.cyber-button--primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.3) 0%, rgba(0, 170, 255, 0.3) 100%);
+  box-shadow:
+    0 0 20px rgba(0, 255, 255, 0.5),
+    0 0 40px rgba(0, 255, 255, 0.2),
+    inset 0 0 30px rgba(0, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.cyber-button--primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow:
+    0 0 10px rgba(0, 255, 255, 0.4),
+    inset 0 0 20px rgba(0, 255, 255, 0.15);
+}
+
+/* Secondary Variant */
+.cyber-button--secondary {
+  background: linear-gradient(135deg, rgba(255, 0, 255, 0.15) 0%, rgba(255, 0, 136, 0.15) 100%);
+  color: var(--neon-magenta, #ff00ff);
+  border: 1px solid rgba(255, 0, 255, 0.5);
+  box-shadow:
+    0 0 10px rgba(255, 0, 255, 0.2),
+    inset 0 0 20px rgba(255, 0, 255, 0.05);
+}
+
+.cyber-button--secondary:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(255, 0, 255, 0.25) 0%, rgba(255, 0, 136, 0.25) 100%);
+  border-color: var(--neon-magenta, #ff00ff);
+  box-shadow:
+    0 0 20px rgba(255, 0, 255, 0.4),
+    0 0 40px rgba(255, 0, 255, 0.15),
+    inset 0 0 30px rgba(255, 0, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Danger Variant */
+.cyber-button--danger {
+  background: linear-gradient(135deg, rgba(255, 0, 68, 0.15) 0%, rgba(255, 0, 0, 0.15) 100%);
+  color: var(--neon-red, #ff0044);
+  border: 1px solid rgba(255, 0, 68, 0.5);
+  box-shadow:
+    0 0 10px rgba(255, 0, 68, 0.2),
+    inset 0 0 20px rgba(255, 0, 68, 0.05);
+}
+
+.cyber-button--danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(255, 0, 68, 0.25) 0%, rgba(255, 0, 0, 0.25) 100%);
+  border-color: var(--neon-red, #ff0044);
+  box-shadow:
+    0 0 20px rgba(255, 0, 68, 0.4),
+    0 0 40px rgba(255, 0, 68, 0.15),
+    inset 0 0 30px rgba(255, 0, 68, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Ghost Variant */
+.cyber-button--ghost {
+  background: transparent;
+  color: var(--text-secondary, #a0a0a0);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cyber-button--ghost:hover:not(:disabled) {
+  background: rgba(0, 255, 255, 0.1);
+  color: var(--neon-cyan, #00ffff);
+  border-color: rgba(0, 255, 255, 0.3);
+}
+
+/* Glowing State */
+.cyber-button--glowing.cyber-button--primary {
+  animation: button-glow-cyan 2s ease-in-out infinite;
+}
+
+.cyber-button--glowing.cyber-button--secondary {
+  animation: button-glow-magenta 2s ease-in-out infinite;
+}
+
+@keyframes button-glow-cyan {
+  0%,
+  100% {
+    box-shadow:
+      0 0 10px rgba(0, 255, 255, 0.3),
+      inset 0 0 20px rgba(0, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(0, 255, 255, 0.5),
+      0 0 40px rgba(0, 255, 255, 0.3),
+      inset 0 0 30px rgba(0, 255, 255, 0.2);
+  }
+}
+
+@keyframes button-glow-magenta {
+  0%,
+  100% {
+    box-shadow:
+      0 0 10px rgba(255, 0, 255, 0.2),
+      inset 0 0 20px rgba(255, 0, 255, 0.05);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(255, 0, 255, 0.4),
+      0 0 40px rgba(255, 0, 255, 0.2),
+      inset 0 0 30px rgba(255, 0, 255, 0.1);
+  }
+}
+
+/* Disabled State */
+.cyber-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+/* Loading State */
+.cyber-button--loading {
+  cursor: wait;
+}
+
+.cyber-button__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Hover Glitch Effect */
+.cyber-button:hover:not(:disabled) .cyber-button__glitch {
+  animation: button-glitch 0.3s ease-in-out;
+}
+
+@keyframes button-glitch {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translate(0);
+  }
+  20% {
+    opacity: 0.8;
+    transform: translate(-2px, 1px);
+    color: var(--neon-magenta, #ff00ff);
+  }
+  40% {
+    opacity: 0;
+    transform: translate(2px, -1px);
+  }
+  60% {
+    opacity: 0.8;
+    transform: translate(-1px, -1px);
+    color: var(--neon-cyan, #00ffff);
+  }
+  80% {
+    opacity: 0;
+    transform: translate(1px, 1px);
+  }
+}
+
+/* Corner Accents */
+.cyber-button::before,
+.cyber-button::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 1px solid currentColor;
+  opacity: 0.5;
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.cyber-button::before {
+  top: 2px;
+  left: 2px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.cyber-button::after {
+  bottom: 2px;
+  right: 2px;
+  border-left: none;
+  border-top: none;
+}
+
+.cyber-button:hover:not(:disabled)::before,
+.cyber-button:hover:not(:disabled)::after {
+  opacity: 1;
+  width: 12px;
+  height: 12px;
+}

@@ -1,0 +1,197 @@
+/* AchievementPopup - Unlock Notification */
+
+.achievement-popup {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-150%);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  opacity: 0;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.achievement-popup--visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.achievement-popup__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.achievement-popup__label {
+  font-family: var(--font-display, 'Orbitron', sans-serif);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--neon-cyan, #00ffff);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 10px var(--neon-cyan, #00ffff);
+  animation: label-pulse 1s ease-in-out infinite;
+}
+
+@keyframes label-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.achievement-popup__count {
+  font-family: var(--font-body, monospace);
+  font-size: 11px;
+  color: var(--text-muted, #606060);
+}
+
+.achievement-popup__card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--bg-elevated, rgba(26, 26, 36, 0.98));
+  border: 2px solid var(--rarity-color, var(--neon-cyan));
+  border-radius: 16px;
+  box-shadow:
+    0 0 20px rgba(0, 255, 255, 0.3),
+    0 0 40px rgba(0, 255, 255, 0.1),
+    inset 0 0 30px rgba(0, 0, 0, 0.5);
+  animation: card-entrance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-width: 320px;
+}
+
+@keyframes card-entrance {
+  0% {
+    transform: scale(0.5) rotate(-10deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1) rotate(2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.achievement-popup__icon {
+  font-size: 48px;
+  animation: icon-bounce 0.8s ease-out;
+  filter: drop-shadow(0 0 10px var(--rarity-color));
+}
+
+@keyframes icon-bounce {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+.achievement-popup__content {
+  flex: 1;
+}
+
+.achievement-popup__name {
+  margin: 0 0 4px 0;
+  font-family: var(--font-display, 'Orbitron', sans-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #e0e0e0);
+  text-shadow: 0 0 8px var(--rarity-color);
+}
+
+.achievement-popup__description {
+  margin: 0 0 8px 0;
+  font-family: var(--font-ui, 'Rajdhani', sans-serif);
+  font-size: 13px;
+  color: var(--text-secondary, #a0a0a0);
+}
+
+.achievement-popup__reward {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.achievement-popup__xp {
+  font-family: var(--font-display, 'Orbitron', sans-serif);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--neon-green, #00ff88);
+  text-shadow: 0 0 8px var(--neon-green, #00ff88);
+}
+
+.achievement-popup__rarity {
+  font-family: var(--font-ui, 'Rajdhani', sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.achievement-popup__rarity--common {
+  color: #a0a0a0;
+  border: 1px solid #a0a0a0;
+}
+
+.achievement-popup__rarity--uncommon {
+  color: #00ff88;
+  border: 1px solid #00ff88;
+}
+
+.achievement-popup__rarity--rare {
+  color: #00aaff;
+  border: 1px solid #00aaff;
+}
+
+.achievement-popup__rarity--epic {
+  color: #aa00ff;
+  border: 1px solid #aa00ff;
+}
+
+.achievement-popup__rarity--legendary {
+  color: #ffaa00;
+  border: 1px solid #ffaa00;
+  animation: legendary-glow 2s ease-in-out infinite;
+}
+
+@keyframes legendary-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 5px #ffaa00;
+  }
+  50% {
+    box-shadow:
+      0 0 15px #ffaa00,
+      0 0 25px #ffaa00;
+  }
+}
+
+.achievement-popup__dismiss {
+  font-family: var(--font-body, monospace);
+  font-size: 11px;
+  color: var(--text-muted, #606060);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s;
+}
+
+.achievement-popup__dismiss:hover {
+  color: var(--text-secondary, #a0a0a0);
+}

@@ -1,0 +1,78 @@
+/* ScanLines - CRT Monitor Effect Overlay */
+
+.scan-lines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-effects, 9999);
+  overflow: hidden;
+}
+
+/* Static scan line pattern */
+.scan-lines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, var(--scan-opacity, 0.05)) 0px,
+    rgba(0, 0, 0, var(--scan-opacity, 0.05)) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+}
+
+/* Moving scan line */
+.scan-lines::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(0deg, transparent 0%, rgba(0, 255, 255, 0.03) 50%, transparent 100%);
+  opacity: 0;
+}
+
+/* Animated version */
+.scan-lines--animated::after {
+  opacity: 1;
+  animation: scan-sweep 8s linear infinite;
+}
+
+@keyframes scan-sweep {
+  0% {
+    top: -100px;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+/* Subtle flicker effect */
+.scan-lines--animated {
+  animation: scan-flicker 0.15s infinite;
+}
+
+@keyframes scan-flicker {
+  0% {
+    opacity: 0.98;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.99;
+  }
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .scan-lines::after {
+    animation: none;
+    opacity: 0;
+  }
+
+  .scan-lines--animated {
+    animation: none;
+  }
+}
