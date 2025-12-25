@@ -162,6 +162,10 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return getLastTranscription()
   })
 
+  ipcMain.handle('get-history-stats', () => {
+    return getHistoryStats()
+  })
+
   // Clipboard
   ipcMain.handle('copy-to-clipboard', (_, text: string) => {
     clipboard.writeText(text)
