@@ -29,7 +29,6 @@ export const AppSettingsSchema = z.object({
   hasCompletedFirstLaunch: z.boolean().optional(),
   showPasteNotifications: z.boolean().optional(),
   transcriptionEngine: z.enum(['elevenlabs', 'deepgram']).optional(),
-  deepgramApiKey: z.string().optional(),
   deepgramModel: z
     .enum(['nova-3', 'nova-2', 'nova-2-meeting', 'enhanced', 'base', 'nova-3-monolingual', 'nova-3-multilingual', 'flux'])
     .optional(),
