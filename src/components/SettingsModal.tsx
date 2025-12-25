@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { VoiceCommandTrigger } from '../types/electron'
+import { getAvailableProviders, getProviderMetadata } from '../hooks/transcription/providerRegistry'
 import './SettingsModal.css'
 
 // Check if running in Electron
@@ -13,7 +14,7 @@ interface SettingsModalProps {
   onVoiceCommandsEnabledChange: (enabled: boolean) => void
 }
 
-type SettingsTab = 'general' | 'voice' | 'formatting' | 'shortcuts'
+type SettingsTab = 'general' | 'transcription' | 'voice' | 'formatting' | 'shortcuts'
 
 export function SettingsModal({
   isOpen,
@@ -26,12 +27,18 @@ export function SettingsModal({
 
   // API Key state
   const [apiKey, setApiKey] = useState('')
+  const [deepgramApiKey, setDeepgramApiKey] = useState('')
   const [showApiKey, setShowApiKey] = useState(false)
   const [isEditingApiKey, setIsEditingApiKey] = useState(false)
   const [newApiKey, setNewApiKey] = useState('')
   const [apiKeyError, setApiKeyError] = useState<string | null>(null)
   const [isValidating, setIsValidating] = useState(false)
   const [apiKeySuccess, setApiKeySuccess] = useState(false)
+
+  // Transcription Engine state
+  const [transcriptionEngine, setTranscriptionEngine] = useState<'elevenlabs' | 'deepgram'>('elevenlabs')
+  const [deepgramModel, setDeepgramModel] = useState<'nova-3' | 'nova-2' | 'nova-2-meeting' | 'enhanced' | 'base'>('nova-2')
+  const [deepgramMultilingual, setDeepgramMultilingual] = useState(false)
 
   // Word Replacements
   const [replacementsEnabled, setReplacementsEnabled] = useState(true)
@@ -96,17 +103,20 @@ export function SettingsModal({
     if (!isElectron) return
 
     try {
-      const [key, settings, triggersData, formattingSettings, defaultInstr, cliStatus] =
+      const [key, deepgramKey, settings, triggersData, formattingSettings, defaultInstr, cliStatus, engine] =
         await Promise.all([
           window.electronAPI.getApiKey(),
+          window.electronAPI.getDeepgramApiKey(),
           window.electronAPI.getSettings(),
           window.electronAPI.getVoiceCommandTriggers(),
           window.electronAPI.getPromptFormattingSettings(),
           window.electronAPI.getDefaultFormattingInstructions(),
           window.electronAPI.checkClaudeCli(),
+          window.electronAPI.getTranscriptionEngine(),
         ])
 
       setApiKey(key || '')
+      setDeepgramApiKey(deepgramKey || '')
       setReplacementsEnabled(settings.replacementsEnabled ?? true)
       setRecordHotkey(settings.recordHotkey || 'CommandOrControl+Shift+R')
       setRecordWithFormattingHotkey(
@@ -115,12 +125,15 @@ export function SettingsModal({
       setPasteHotkey(settings.pasteHotkey || 'CommandOrControl+Shift+V')
       setSubmitAfterPaste(settings.submitAfterPaste ?? true)
       setHistoryLimit(settings.historyLimit ?? 500)
+      setDeepgramModel(settings.deepgramModel || 'nova-2')
+      setDeepgramMultilingual(settings.deepgramMultilingual ?? false)
       setTriggers(triggersData)
       setFormattingEnabled(formattingSettings.enabled)
       setFormattingModel(formattingSettings.model)
       setFormattingInstructions(formattingSettings.instructions)
       setDefaultInstructions(defaultInstr)
       setClaudeCliStatus(cliStatus)
+      setTranscriptionEngine(engine || 'elevenlabs')
     } catch (err) {
       console.error('Failed to load settings:', err)
     }
@@ -144,10 +157,17 @@ export function SettingsModal({
     setIsValidating(true)
 
     try {
-      await window.electronAPI.setApiKey(newApiKey.trim())
-      await window.electronAPI.getScribeToken()
+      if (transcriptionEngine === 'elevenlabs') {
+        await window.electronAPI.setApiKey(newApiKey.trim())
+        // Validate by trying to get a token
+        await window.electronAPI.getScribeToken()
+        setApiKey(newApiKey.trim())
+      } else if (transcriptionEngine === 'deepgram') {
+        // For Deepgram, just save it (validation happens on first use)
+        await window.electronAPI.setDeepgramApiKey(newApiKey.trim())
+        setDeepgramApiKey(newApiKey.trim())
+      }
 
-      setApiKey(newApiKey.trim())
       setNewApiKey('')
       setIsEditingApiKey(false)
       setApiKeySuccess(true)
@@ -155,9 +175,38 @@ export function SettingsModal({
     } catch (err) {
       console.error('API key validation failed:', err)
       setApiKeyError('Invalid API key. Please check and try again.')
-      await window.electronAPI.setApiKey(apiKey)
+      // Restore previous key
+      if (transcriptionEngine === 'elevenlabs') {
+        await window.electronAPI.setApiKey(apiKey)
+      } else {
+        await window.electronAPI.setDeepgramApiKey(deepgramApiKey)
+      }
     } finally {
       setIsValidating(false)
+    }
+  }
+
+  const handleEngineChange = async (newEngine: 'elevenlabs' | 'deepgram') => {
+    if (!isElectron) return
+    try {
+      await window.electronAPI.setTranscriptionEngine(newEngine)
+      setTranscriptionEngine(newEngine)
+    } catch (err) {
+      console.error('Failed to update transcription engine:', err)
+    }
+  }
+
+  const handleDeepgramModelChange = async (model: typeof deepgramModel) => {
+    setDeepgramModel(model)
+    if (isElectron) {
+      await window.electronAPI.setSettings({ deepgramModel: model })
+    }
+  }
+
+  const handleDeepgramMultilingualChange = async (enabled: boolean) => {
+    setDeepgramMultilingual(enabled)
+    if (isElectron) {
+      await window.electronAPI.setSettings({ deepgramMultilingual: enabled })
     }
   }
 
@@ -334,6 +383,7 @@ export function SettingsModal({
 
   const tabs = [
     { id: 'general' as SettingsTab, label: 'General', icon: '⚙️' },
+    { id: 'transcription' as SettingsTab, label: 'Transcription', icon: '🎙️' },
     { id: 'voice' as SettingsTab, label: 'Voice', icon: '🎤' },
     { id: 'formatting' as SettingsTab, label: 'AI Format', icon: '✨' },
     { id: 'shortcuts' as SettingsTab, label: 'Shortcuts', icon: '⌨️' },
@@ -380,71 +430,6 @@ export function SettingsModal({
           {/* General Tab */}
           {activeTab === 'general' && (
             <div className="settings-panel">
-              {/* API Key */}
-              <div className="cyber-setting-group">
-                <div className="setting-header">
-                  <div className="setting-icon">🔑</div>
-                  <div className="setting-info">
-                    <h3>API Key</h3>
-                    <p>Your ElevenLabs API key for speech recognition</p>
-                  </div>
-                </div>
-
-                {!isEditingApiKey ? (
-                  <div className="api-key-display">
-                    <code className="api-key-value">
-                      {showApiKey ? apiKey : maskApiKey(apiKey)}
-                    </code>
-                    <div className="api-key-actions">
-                      <button className="cyber-btn-sm" onClick={() => setShowApiKey(!showApiKey)}>
-                        {showApiKey ? 'Hide' : 'Show'}
-                      </button>
-                      <button
-                        className="cyber-btn-sm cyber-btn-primary"
-                        onClick={() => setIsEditingApiKey(true)}
-                      >
-                        Change
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="api-key-edit">
-                    <input
-                      type="password"
-                      value={newApiKey}
-                      onChange={(e) => setNewApiKey(e.target.value)}
-                      placeholder="Enter new API key"
-                      className="cyber-input"
-                      autoFocus
-                      disabled={isValidating}
-                    />
-                    <div className="api-key-actions">
-                      <button
-                        className="cyber-btn-sm"
-                        onClick={() => {
-                          setIsEditingApiKey(false)
-                          setNewApiKey('')
-                          setApiKeyError(null)
-                        }}
-                        disabled={isValidating}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        className="cyber-btn-sm cyber-btn-primary"
-                        onClick={handleSaveApiKey}
-                        disabled={isValidating || !newApiKey.trim()}
-                      >
-                        {isValidating ? 'Validating...' : 'Save'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {apiKeyError && <div className="cyber-error">{apiKeyError}</div>}
-                {apiKeySuccess && <div className="cyber-success">API key updated successfully</div>}
-              </div>
-
               {/* Word Replacements */}
               <div className="cyber-setting-group">
                 <div className="setting-row">
@@ -552,6 +537,263 @@ export function SettingsModal({
               <div className="cyber-setting-group about-section">
                 <p className="about-text">Neural Scribe v1.0.0</p>
                 <p className="about-subtext">Powered by ElevenLabs Scribe</p>
+              </div>
+            </div>
+          )}
+
+          {/* Transcription Tab */}
+          {activeTab === 'transcription' && (
+            <div className="settings-panel">
+              {/* Transcription Engine Selection */}
+              <div className="cyber-setting-group">
+                <div className="setting-header">
+                  <div className="setting-icon">🎙️</div>
+                  <div className="setting-info">
+                    <h3>Transcription Engine</h3>
+                    <p>Choose your speech-to-text provider</p>
+                  </div>
+                </div>
+
+                <div className="provider-options">
+                  {getAvailableProviders().map((provider) => {
+                    const isSelected = transcriptionEngine === provider.id
+                    const isAvailable = provider.availability.isAvailable
+                    const currentApiKey = provider.id === 'elevenlabs' ? apiKey : deepgramApiKey
+
+                    return (
+                      <div
+                        key={provider.id}
+                        className={`provider-option ${isSelected ? 'selected' : ''} ${!isAvailable ? 'disabled' : ''}`}
+                      >
+                        <label className="provider-radio">
+                          <input
+                            type="radio"
+                            name="transcription-engine"
+                            value={provider.id}
+                            checked={isSelected}
+                            onChange={() => handleEngineChange(provider.id as 'elevenlabs' | 'deepgram')}
+                            disabled={!isAvailable}
+                          />
+                          <span className="radio-mark" />
+                        </label>
+
+                        <div className="provider-content">
+                          <div className="provider-header">
+                            <span className="provider-icon">{provider.icon}</span>
+                            <span className="provider-name">{provider.name}</span>
+                            <span className={`provider-tier tier-${provider.tier}`}>
+                              {provider.tier}
+                            </span>
+                          </div>
+
+                          <p className="provider-description">{provider.description}</p>
+
+                          <div className="provider-capabilities">
+                            {provider.capabilities.partialTranscripts && (
+                              <span className="capability-badge">Real-time</span>
+                            )}
+                            {provider.capabilities.automaticPunctuation && (
+                              <span className="capability-badge">Auto-punctuation</span>
+                            )}
+                            {provider.capabilities.multiLanguage && (
+                              <span className="capability-badge">Multi-language</span>
+                            )}
+                            {provider.capabilities.offlineMode && (
+                              <span className="capability-badge">Offline</span>
+                            )}
+                          </div>
+
+                          {/* API Key Status within provider card */}
+                          {provider.requiresApiKey && (
+                            <div className={`provider-api-status ${currentApiKey ? 'has-key' : 'no-key'}`}>
+                              {currentApiKey ? '✓ API key configured' : '⚠️ API key required'}
+                            </div>
+                          )}
+
+                          {!isAvailable && provider.availability.unavailableReason && (
+                            <div className="provider-warning">
+                              ⚠️ {provider.availability.unavailableReason}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* API Key Configuration - Dynamic based on selected engine */}
+              <div className="cyber-setting-group">
+                <div className="setting-header">
+                  <div className="setting-icon">🔑</div>
+                  <div className="setting-info">
+                    <h3>API Key</h3>
+                    <p>Configure your {transcriptionEngine === 'elevenlabs' ? 'ElevenLabs' : 'Deepgram'} API key</p>
+                  </div>
+                </div>
+
+                {!isEditingApiKey ? (
+                  <div className="api-key-display">
+                    <code className="api-key-value">
+                      {showApiKey
+                        ? (transcriptionEngine === 'elevenlabs' ? apiKey : deepgramApiKey)
+                        : maskApiKey(transcriptionEngine === 'elevenlabs' ? apiKey : deepgramApiKey)
+                      }
+                    </code>
+                    <div className="api-key-actions">
+                      <button className="cyber-btn-sm" onClick={() => setShowApiKey(!showApiKey)}>
+                        {showApiKey ? 'Hide' : 'Show'}
+                      </button>
+                      <button
+                        className="cyber-btn-sm cyber-btn-primary"
+                        onClick={() => setIsEditingApiKey(true)}
+                      >
+                        {(transcriptionEngine === 'elevenlabs' ? apiKey : deepgramApiKey) ? 'Change' : 'Add'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="api-key-edit">
+                    <input
+                      type="password"
+                      value={newApiKey}
+                      onChange={(e) => setNewApiKey(e.target.value)}
+                      placeholder={`Enter ${transcriptionEngine === 'elevenlabs' ? 'ElevenLabs' : 'Deepgram'} API key`}
+                      className="cyber-input"
+                      autoFocus
+                      disabled={isValidating}
+                    />
+                    <div className="api-key-actions">
+                      <button
+                        className="cyber-btn-sm"
+                        onClick={() => {
+                          setIsEditingApiKey(false)
+                          setNewApiKey('')
+                          setApiKeyError(null)
+                        }}
+                        disabled={isValidating}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="cyber-btn-sm cyber-btn-primary"
+                        onClick={handleSaveApiKey}
+                        disabled={isValidating || !newApiKey.trim()}
+                      >
+                        {isValidating ? 'Validating...' : 'Save'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {apiKeyError && <div className="cyber-error">{apiKeyError}</div>}
+                {apiKeySuccess && <div className="cyber-success">API key updated successfully</div>}
+
+                {/* API Key Status Indicator */}
+                {!isEditingApiKey && (
+                  <div className={`api-key-status ${(transcriptionEngine === 'elevenlabs' ? apiKey : deepgramApiKey) ? 'status-valid' : 'status-missing'}`}>
+                    {(transcriptionEngine === 'elevenlabs' ? apiKey : deepgramApiKey)
+                      ? `✓ API key configured and ready`
+                      : `⚠️ Please add your API key to start transcribing`
+                    }
+                  </div>
+                )}
+              </div>
+
+              {/* Deepgram Model Selection - Only shown when Deepgram is selected */}
+              {transcriptionEngine === 'deepgram' && (
+                <>
+                  <div className="cyber-setting-group">
+                    <div className="setting-header">
+                      <div className="setting-icon">🔮</div>
+                      <div className="setting-info">
+                        <h3>Deepgram Model</h3>
+                        <p>Choose the speech-to-text model</p>
+                      </div>
+                    </div>
+
+                    <div className="model-selector">
+                      <button
+                        className={`model-btn ${deepgramModel === 'nova-3' ? 'active' : ''}`}
+                        onClick={() => handleDeepgramModelChange('nova-3')}
+                      >
+                        <span className="model-name">Nova 3</span>
+                        <span className="model-badge">Latest - Best Accuracy</span>
+                      </button>
+                      <button
+                        className={`model-btn ${deepgramModel === 'nova-2' ? 'active' : ''}`}
+                        onClick={() => handleDeepgramModelChange('nova-2')}
+                      >
+                        <span className="model-name">Nova 2</span>
+                        <span className="model-badge">Balanced</span>
+                      </button>
+                      <button
+                        className={`model-btn ${deepgramModel === 'nova-2-meeting' ? 'active' : ''}`}
+                        onClick={() => handleDeepgramModelChange('nova-2-meeting')}
+                      >
+                        <span className="model-name">Meeting</span>
+                        <span className="model-badge">Multi-Speaker</span>
+                      </button>
+                      <button
+                        className={`model-btn ${deepgramModel === 'enhanced' ? 'active' : ''}`}
+                        onClick={() => handleDeepgramModelChange('enhanced')}
+                      >
+                        <span className="model-name">Enhanced</span>
+                        <span className="model-badge">Higher Accuracy</span>
+                      </button>
+                      <button
+                        className={`model-btn ${deepgramModel === 'base' ? 'active' : ''}`}
+                        onClick={() => handleDeepgramModelChange('base')}
+                      >
+                        <span className="model-name">Base</span>
+                        <span className="model-badge">Faster</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Multilingual Toggle */}
+                  <div className="cyber-setting-group">
+                    <div className="setting-row">
+                      <div className="setting-header">
+                        <div className="setting-icon">🌍</div>
+                        <div className="setting-info">
+                          <h3>Multilingual Mode</h3>
+                          <p>Transcribe audio with multiple languages (36+ languages supported)</p>
+                        </div>
+                      </div>
+                      <label className="cyber-toggle">
+                        <input
+                          type="checkbox"
+                          checked={deepgramMultilingual}
+                          onChange={(e) => handleDeepgramMultilingualChange(e.target.checked)}
+                        />
+                        <span className="toggle-track">
+                          <span className="toggle-thumb" />
+                        </span>
+                      </label>
+                    </div>
+
+                    {deepgramMultilingual ? (
+                      <p className="setting-note" style={{ color: '#00ff88', marginTop: '8px' }}>
+                        ✓ Multi-language detection enabled - supports 36+ languages
+                      </p>
+                    ) : (
+                      <p className="setting-note" style={{ color: '#888', marginTop: '8px' }}>
+                        English-only mode
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Info Section */}
+              <div className="cyber-setting-group transcription-info">
+                <p className="info-text">
+                  💡 <strong>Tip:</strong> Both providers offer high-quality transcription.
+                  {transcriptionEngine === 'elevenlabs'
+                    ? ' ElevenLabs Scribe excels at natural conversation and automatic punctuation.'
+                    : ' Deepgram offers multiple specialized models and low-latency streaming.'}
+                </p>
               </div>
             </div>
           )}

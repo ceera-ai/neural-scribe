@@ -24,7 +24,7 @@ export default defineConfig({
         },
         output: {
           format: 'cjs', // Output as CommonJS for Electron preload
-          entryFileNames: '[name].js', // Use .js extension instead of .mjs
+          entryFileNames: '[name].cjs', // Use .cjs extension for CommonJS when sandbox is disabled
         },
       },
     },

@@ -40,6 +40,7 @@ export interface VoiceCommandTrigger {
 
 export interface AppSettings {
   apiKey: string
+  deepgramApiKey: string
   selectedMicrophoneId: string | null
   selectedTerminalId: string | null
   pasteHotkey: string
@@ -54,6 +55,10 @@ export interface AppSettings {
   promptFormattingModel: 'sonnet' | 'opus' | 'haiku'
   // History settings
   historyLimit: number // 0 = no limit, otherwise max items to keep
+  // Transcription engine
+  transcriptionEngine: 'elevenlabs' | 'deepgram'
+  deepgramModel: 'nova-3' | 'nova-2' | 'nova-2-meeting' | 'enhanced' | 'base'
+  deepgramMultilingual: boolean
 }
 
 // Gamification types
@@ -156,6 +161,7 @@ const defaultVoiceCommandTriggers: VoiceCommandTrigger[] = [
 const defaults: StoreSchema = {
   settings: {
     apiKey: '',
+    deepgramApiKey: '',
     selectedMicrophoneId: null,
     selectedTerminalId: null,
     pasteHotkey: 'CommandOrControl+Shift+V',
@@ -168,6 +174,8 @@ const defaults: StoreSchema = {
     promptFormattingInstructions: '', // Empty = use default instructions
     promptFormattingModel: 'sonnet',
     historyLimit: 500, // Default to 500 items, 0 = no limit
+    transcriptionEngine: 'elevenlabs', // Default to ElevenLabs
+    deepgramModel: 'nova-3', // Default to Nova 3
   },
   history: [],
   replacements: [],
@@ -196,6 +204,19 @@ export function getApiKey(): string {
 
 export function setApiKey(apiKey: string): void {
   store.set('settings.apiKey', apiKey)
+}
+
+export function getDeepgramApiKey(): string {
+  return store.get('settings.deepgramApiKey') || ''
+}
+
+export function setDeepgramApiKey(apiKey: string): void {
+  store.set('settings.deepgramApiKey', apiKey)
+}
+
+export function hasDeepgramApiKey(): boolean {
+  const apiKey = getDeepgramApiKey()
+  return apiKey.length > 0
 }
 
 // History helpers

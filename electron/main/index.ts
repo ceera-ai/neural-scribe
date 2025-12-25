@@ -31,8 +31,8 @@ function createWindow(): void {
     trafficLightPosition: { x: 15, y: 15 },
     icon: join(__dirname, '../../resources/icon.png'),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: true, // ✅ Enable sandboxing for security
+      preload: join(__dirname, '../preload/index.cjs'),
+      sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -74,7 +74,7 @@ function createDebugWindow(): void {
     autoHideMenuBar: true,
     title: 'Debug Tools - Neural Scribe',
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/index.cjs'),
       sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,

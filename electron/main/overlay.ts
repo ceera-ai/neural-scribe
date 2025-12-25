@@ -161,7 +161,7 @@ export function createOverlayWindow(mainWindow?: BrowserWindow): void {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true, // ✅ Enable sandboxing for security
+      sandbox: true,
     },
   })
 

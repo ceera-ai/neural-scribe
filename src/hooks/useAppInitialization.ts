@@ -34,7 +34,7 @@ export function useAppInitialization(): AppInitializationState {
 
   // Check if API key is configured and load settings on mount
   useEffect(() => {
-    const initializeApp = () => {
+    const initializeApp = async () => {
       // Check at runtime inside useEffect to avoid race conditions
       const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
 
@@ -55,35 +55,33 @@ export function useAppInitialization(): AppInitializationState {
         return () => clearTimeout(retryTimer)
       }
 
-      // Check API key
-      window.electronAPI
-        .hasApiKey()
-        .then(setHasApiKey)
-        .catch((err) => {
-          console.error('Failed to check API key:', err)
-          setInitError('Failed to initialize: ' + err.message)
-        })
+      try {
+        // Load settings
+        const settings = await window.electronAPI.getSettings()
+        const engine = settings.transcriptionEngine || 'elevenlabs'
 
-      // Load formatting settings
-      window.electronAPI
-        .getPromptFormattingSettings()
-        .then((settings) => {
-          setFormattingEnabled(settings.enabled)
-        })
-        .catch((err) => {
-          console.error('Failed to load formatting settings:', err)
-        })
+        // Only require API key if using ElevenLabs
+        if (engine === 'elevenlabs') {
+          const hasKey = await window.electronAPI.hasApiKey()
+          setHasApiKey(hasKey)
+        } else {
+          // Using Web Speech API - no API key required
+          setHasApiKey(true)
+        }
 
-      // Load shortcut settings
-      window.electronAPI
-        .getSettings()
-        .then((settings) => {
-          if (settings.recordHotkey) setRecordHotkey(settings.recordHotkey)
-          if (settings.pasteHotkey) setPasteHotkey(settings.pasteHotkey)
-        })
-        .catch((err) => {
-          console.error('Failed to load shortcut settings:', err)
-        })
+        // Load formatting settings
+        const formattingSettings = await window.electronAPI.getPromptFormattingSettings()
+        setFormattingEnabled(formattingSettings.enabled)
+
+        // Load shortcut settings
+        if (settings.recordHotkey) setRecordHotkey(settings.recordHotkey)
+        if (settings.pasteHotkey) setPasteHotkey(settings.pasteHotkey)
+
+      } catch (err: any) {
+        console.error('Failed to initialize app:', err)
+        setInitError('Failed to initialize: ' + err.message)
+        setHasApiKey(false)
+      }
     }
 
     initializeApp()

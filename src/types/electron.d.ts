@@ -21,6 +21,7 @@ export interface TranscriptionRecord {
 
 export interface AppSettings {
   apiKey: string
+  deepgramApiKey: string
   selectedMicrophoneId: string | null
   selectedTerminalId: string | null
   pasteHotkey: string
@@ -33,6 +34,8 @@ export interface AppSettings {
   promptFormattingInstructions: string
   promptFormattingModel: 'sonnet' | 'opus' | 'haiku'
   historyLimit: number // 0 = no limit, otherwise max items to keep
+  transcriptionEngine: 'elevenlabs' | 'deepgram' // Transcription provider
+  deepgramModel: 'nova-3' | 'nova-3-monolingual' | 'nova-3-multilingual' | 'nova-2' | 'flux' // Deepgram model selection
 }
 
 export interface PromptFormattingSettings {
@@ -158,6 +161,9 @@ export interface ElectronAPI {
   getApiKey: () => Promise<string>
   setApiKey: (apiKey: string) => Promise<boolean>
   hasApiKey: () => Promise<boolean>
+  getDeepgramApiKey: () => Promise<string>
+  setDeepgramApiKey: (apiKey: string) => Promise<boolean>
+  hasDeepgramApiKey: () => Promise<boolean>
 
   // History
   getHistory: () => Promise<TranscriptionRecord[]>
@@ -277,6 +283,10 @@ export interface ElectronAPI {
 
   // Comparison overlay communication
   sendComparisonSelection: (selectedText: string) => void
+
+  // Transcription engine selection
+  getTranscriptionEngine: () => Promise<'elevenlabs' | 'deepgram'>
+  setTranscriptionEngine: (engine: 'elevenlabs' | 'deepgram') => Promise<boolean>
 }
 
 declare global {

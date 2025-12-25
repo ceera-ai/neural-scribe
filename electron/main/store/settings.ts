@@ -18,6 +18,8 @@ import Store from 'electron-store'
 export interface AppSettings {
   /** ElevenLabs API key for Scribe v2 transcription */
   apiKey: string
+  /** Deepgram API key for Nova-2 transcription */
+  deepgramApiKey: string
   /** Selected microphone device ID (null = default device) */
   selectedMicrophoneId: string | null
   /** Selected terminal application bundle ID (null = auto-detect) */
@@ -42,6 +44,10 @@ export interface AppSettings {
   promptFormattingModel: 'sonnet' | 'opus' | 'haiku'
   /** Maximum history entries to keep (0 = unlimited) */
   historyLimit: number
+  /** Transcription provider engine */
+  transcriptionEngine: 'elevenlabs' | 'deepgram'
+  /** Deepgram model selection for speech-to-text */
+  deepgramModel: 'nova-3' | 'nova-3-monolingual' | 'nova-3-multilingual' | 'nova-2' | 'flux'
 }
 
 /**
@@ -66,6 +72,7 @@ export interface PromptFormattingSettings {
  */
 export const DEFAULT_SETTINGS: AppSettings = {
   apiKey: '',
+  deepgramApiKey: '',
   selectedMicrophoneId: null,
   selectedTerminalId: null,
   pasteHotkey: 'CommandOrControl+Shift+V',
@@ -78,6 +85,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   promptFormattingInstructions: '',
   promptFormattingModel: 'sonnet',
   historyLimit: 500,
+  transcriptionEngine: 'elevenlabs', // Default to ElevenLabs for existing users
+  deepgramModel: 'nova-3', // Default to Nova 3 (latest general-purpose model)
 }
 
 /**
@@ -204,6 +213,60 @@ export function setApiKey(apiKey: string): void {
  */
 export function hasApiKey(): boolean {
   const apiKey = getApiKey()
+  return apiKey.length > 0
+}
+
+// ============================================================================
+// Deepgram API Key Management
+// ============================================================================
+
+/**
+ * Retrieves the stored Deepgram API key
+ *
+ * @returns {string} Deepgram API key (empty string if not set)
+ *
+ * @example
+ * ```typescript
+ * const deepgramApiKey = getDeepgramApiKey()
+ * if (!deepgramApiKey) {
+ *   console.log('No Deepgram API key configured')
+ * }
+ * ```
+ */
+export function getDeepgramApiKey(): string {
+  return store.get('settings.deepgramApiKey') || ''
+}
+
+/**
+ * Stores the Deepgram API key securely
+ *
+ * The API key is encrypted at rest using electron-store's built-in encryption.
+ *
+ * @param {string} apiKey - Deepgram API key
+ *
+ * @example
+ * ```typescript
+ * setDeepgramApiKey('your_deepgram_api_key')
+ * ```
+ */
+export function setDeepgramApiKey(apiKey: string): void {
+  store.set('settings.deepgramApiKey', apiKey)
+}
+
+/**
+ * Checks if a Deepgram API key is configured
+ *
+ * @returns {boolean} True if Deepgram API key exists and is non-empty
+ *
+ * @example
+ * ```typescript
+ * if (!hasDeepgramApiKey()) {
+ *   showDeepgramApiKeySetupDialog()
+ * }
+ * ```
+ */
+export function hasDeepgramApiKey(): boolean {
+  const apiKey = getDeepgramApiKey()
   return apiKey.length > 0
 }
 

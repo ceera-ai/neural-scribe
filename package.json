@@ -25,6 +25,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@deepgram/sdk": "^4.11.3",
     "@electron-toolkit/utils": "^4.0.0",
     "@elevenlabs/client": "^0.11.3",
     "electron-store": "^10.0.0",

@@ -23,6 +23,7 @@ export interface TranscriptionRecord {
 
 export interface AppSettings {
   apiKey: string
+  deepgramApiKey: string
   selectedMicrophoneId: string | null
   selectedTerminalId: string | null
   pasteHotkey: string
@@ -35,6 +36,8 @@ export interface AppSettings {
   promptFormattingInstructions: string
   promptFormattingModel: 'sonnet' | 'opus' | 'haiku'
   historyLimit: number // 0 = no limit, otherwise max items to keep
+  transcriptionEngine: 'elevenlabs' | 'deepgram' // Transcription provider
+  deepgramModel: 'nova-3' | 'nova-3-monolingual' | 'nova-3-multilingual' | 'nova-2' | 'flux' // Deepgram model selection
 }
 
 export interface PromptFormattingSettings {
@@ -109,6 +112,10 @@ const electronAPI = {
   getApiKey: (): Promise<string> => ipcRenderer.invoke('get-api-key'),
   setApiKey: (apiKey: string): Promise<boolean> => ipcRenderer.invoke('set-api-key', apiKey),
   hasApiKey: (): Promise<boolean> => ipcRenderer.invoke('has-api-key'),
+  getDeepgramApiKey: (): Promise<string> => ipcRenderer.invoke('get-deepgram-api-key'),
+  setDeepgramApiKey: (apiKey: string): Promise<boolean> =>
+    ipcRenderer.invoke('set-deepgram-api-key', apiKey),
+  hasDeepgramApiKey: (): Promise<boolean> => ipcRenderer.invoke('has-deepgram-api-key'),
 
   // History
   getHistory: (): Promise<TranscriptionRecord[]> => ipcRenderer.invoke('get-history'),
@@ -303,6 +310,12 @@ const electronAPI = {
   sendComparisonSelection: (selectedText: string): void => {
     ipcRenderer.send('comparison-text-selected', selectedText)
   },
+
+  // Transcription engine selection
+  getTranscriptionEngine: (): Promise<'elevenlabs' | 'deepgram'> =>
+    ipcRenderer.invoke('get-transcription-engine'),
+  setTranscriptionEngine: (engine: 'elevenlabs' | 'deepgram'): Promise<boolean> =>
+    ipcRenderer.invoke('set-transcription-engine', engine),
 
   // Error logging
   logError: (error: { message: string; stack: string; componentStack?: string }): void => {
