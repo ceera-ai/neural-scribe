@@ -854,3 +854,93 @@
   color: var(--neon-cyan, #00ffff);
   opacity: 0.8;
 }
+
+/* Paste Mode Options */
+.paste-mode-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.paste-mode-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(0, 255, 255, 0.02);
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.paste-mode-option:hover {
+  background: rgba(0, 255, 255, 0.05);
+  border-color: rgba(0, 255, 255, 0.2);
+}
+
+.paste-mode-option.active {
+  background: rgba(0, 255, 255, 0.1);
+  border-color: var(--neon-cyan, #00ffff);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+}
+
+.paste-mode-option input[type='radio'] {
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: var(--neon-cyan, #00ffff);
+}
+
+.paste-mode-content {
+  flex: 1;
+}
+
+.paste-mode-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.paste-mode-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
+/* Accessibility Warning */
+.cyber-warning {
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(255, 165, 0, 0.1);
+  border: 1px solid rgba(255, 165, 0, 0.3);
+  border-radius: 8px;
+}
+
+.cyber-warning .warning-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cyber-warning .warning-header span {
+  font-size: 18px;
+}
+
+.cyber-warning .warning-header strong {
+  color: #ffa500;
+  font-size: 14px;
+}
+
+.cyber-warning p {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
+.cyber-warning button {
+  margin-top: 8px;
+}

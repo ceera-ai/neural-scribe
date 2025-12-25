@@ -66,6 +66,8 @@ export function SettingsModal({
 
   // Paste Settings
   const [submitAfterPaste, setSubmitAfterPaste] = useState<boolean>(true)
+  const [pasteMode, setPasteModeState] = useState<'auto' | 'clipboard' | 'terminal'>('clipboard')
+  const [hasAccessibilityPermissions, setHasAccessibilityPermissions] = useState<boolean>(false)
 
   // History Settings
   const [historyLimit, setHistoryLimit] = useState<number>(500)
@@ -96,15 +98,25 @@ export function SettingsModal({
     if (!isElectron) return
 
     try {
-      const [key, settings, triggersData, formattingSettings, defaultInstr, cliStatus] =
-        await Promise.all([
-          window.electronAPI.getApiKey(),
-          window.electronAPI.getSettings(),
-          window.electronAPI.getVoiceCommandTriggers(),
-          window.electronAPI.getPromptFormattingSettings(),
-          window.electronAPI.getDefaultFormattingInstructions(),
-          window.electronAPI.checkClaudeCli(),
-        ])
+      const [
+        key,
+        settings,
+        triggersData,
+        formattingSettings,
+        defaultInstr,
+        cliStatus,
+        currentPasteMode,
+        hasPermissions,
+      ] = await Promise.all([
+        window.electronAPI.getApiKey(),
+        window.electronAPI.getSettings(),
+        window.electronAPI.getVoiceCommandTriggers(),
+        window.electronAPI.getPromptFormattingSettings(),
+        window.electronAPI.getDefaultFormattingInstructions(),
+        window.electronAPI.checkClaudeCli(),
+        window.electronAPI.getPasteMode(),
+        window.electronAPI.checkAccessibilityPermissions(),
+      ])
 
       setApiKey(key || '')
       setReplacementsEnabled(settings.replacementsEnabled ?? true)
@@ -114,6 +126,8 @@ export function SettingsModal({
       )
       setPasteHotkey(settings.pasteHotkey || 'CommandOrControl+Shift+V')
       setSubmitAfterPaste(settings.submitAfterPaste ?? true)
+      setPasteModeState(currentPasteMode)
+      setHasAccessibilityPermissions(hasPermissions)
       setHistoryLimit(settings.historyLimit ?? 500)
       setTriggers(triggersData)
       setFormattingEnabled(formattingSettings.enabled)
@@ -194,6 +208,31 @@ export function SettingsModal({
     setSubmitAfterPaste(enabled)
     if (isElectron) {
       await window.electronAPI.setSettings({ submitAfterPaste: enabled })
+    }
+  }
+
+  const handlePasteModeChange = async (mode: 'auto' | 'clipboard' | 'terminal') => {
+    console.log('[SettingsModal] Changing paste mode to:', mode)
+    setPasteModeState(mode)
+    if (isElectron) {
+      console.log('[SettingsModal] Calling setPasteMode IPC...')
+      await window.electronAPI.setPasteMode(mode)
+      console.log('[SettingsModal] Paste mode saved successfully')
+
+      // If switching to auto mode, check permissions
+      if (mode === 'auto') {
+        console.log('[SettingsModal] Checking accessibility permissions for auto mode...')
+        const hasPerms = await window.electronAPI.checkAccessibilityPermissions()
+        console.log('[SettingsModal] Has accessibility permissions:', hasPerms)
+        setHasAccessibilityPermissions(hasPerms)
+      }
+    }
+  }
+
+  const handleRequestPermissions = async () => {
+    if (isElectron) {
+      const granted = await window.electronAPI.requestAccessibilityPermissions()
+      setHasAccessibilityPermissions(granted)
     }
   }
 
@@ -522,6 +561,85 @@ export function SettingsModal({
 
                 {![100, 250, 500, 1000, 0].includes(historyLimit) && (
                   <p className="current-limit-hint">Current: {historyLimit} items</p>
+                )}
+              </div>
+
+              {/* Paste Mode */}
+              <div className="cyber-setting-group">
+                <div className="setting-header">
+                  <div className="setting-icon">📋</div>
+                  <div className="setting-info">
+                    <h3>Paste Behavior</h3>
+                    <p>How transcribed text should be pasted</p>
+                  </div>
+                </div>
+
+                <div className="paste-mode-options">
+                  <label className={`paste-mode-option ${pasteMode === 'clipboard' ? 'active' : ''}`}>
+                    <input
+                      type="radio"
+                      name="pasteMode"
+                      value="clipboard"
+                      checked={pasteMode === 'clipboard'}
+                      onChange={(e) => handlePasteModeChange(e.target.value as 'clipboard')}
+                    />
+                    <div className="paste-mode-content">
+                      <div className="paste-mode-title">Clipboard Only</div>
+                      <div className="paste-mode-desc">
+                        Copy to clipboard - you manually paste with Cmd+V (safest option)
+                      </div>
+                    </div>
+                  </label>
+
+                  <label className={`paste-mode-option ${pasteMode === 'auto' ? 'active' : ''}`}>
+                    <input
+                      type="radio"
+                      name="pasteMode"
+                      value="auto"
+                      checked={pasteMode === 'auto'}
+                      onChange={(e) => handlePasteModeChange(e.target.value as 'auto')}
+                    />
+                    <div className="paste-mode-content">
+                      <div className="paste-mode-title">Auto-paste to Active Field</div>
+                      <div className="paste-mode-desc">
+                        Automatically paste into the currently focused text field (like Wisprflow)
+                      </div>
+                    </div>
+                  </label>
+
+                  <label className={`paste-mode-option ${pasteMode === 'terminal' ? 'active' : ''}`}>
+                    <input
+                      type="radio"
+                      name="pasteMode"
+                      value="terminal"
+                      checked={pasteMode === 'terminal'}
+                      onChange={(e) => handlePasteModeChange(e.target.value as 'terminal')}
+                    />
+                    <div className="paste-mode-content">
+                      <div className="paste-mode-title">Last Active Terminal</div>
+                      <div className="paste-mode-desc">
+                        Paste into the most recently used terminal window
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Accessibility Permission Warning */}
+                {pasteMode === 'auto' && !hasAccessibilityPermissions && (
+                  <div className="cyber-warning">
+                    <div className="warning-header">
+                      <span>⚠️</span>
+                      <strong>Accessibility Permission Required</strong>
+                    </div>
+                    <p>
+                      Auto-paste requires accessibility permissions to simulate keyboard input.
+                      Please grant permissions in System Preferences → Security & Privacy →
+                      Privacy → Accessibility.
+                    </p>
+                    <button className="cyber-btn-sm cyber-btn-primary" onClick={handleRequestPermissions}>
+                      Open System Preferences
+                    </button>
+                  </div>
                 )}
               </div>
 

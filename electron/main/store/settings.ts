@@ -42,6 +42,12 @@ export interface AppSettings {
   promptFormattingModel: 'sonnet' | 'opus' | 'haiku'
   /** Maximum history entries to keep (0 = unlimited) */
   historyLimit: number
+  /** Paste mode: auto-paste to active field, clipboard only, or terminal */
+  pasteMode: 'auto' | 'clipboard' | 'terminal'
+  /** Whether the user has completed first launch (to show window once) */
+  hasCompletedFirstLaunch: boolean
+  /** Whether to show notifications after paste operations */
+  showPasteNotifications: boolean
 }
 
 /**
@@ -78,6 +84,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   promptFormattingInstructions: '',
   promptFormattingModel: 'sonnet',
   historyLimit: 500,
+  pasteMode: 'clipboard',
+  hasCompletedFirstLaunch: false,
+  showPasteNotifications: false,
 }
 
 /**
@@ -423,4 +432,94 @@ export function getHistoryLimit(): number {
  */
 export function setHistoryLimit(limit: number): void {
   setSettings({ historyLimit: limit })
+}
+
+// ============================================================================
+// Paste Mode Settings
+// ============================================================================
+
+/**
+ * Gets the current paste mode
+ *
+ * @returns {'auto' | 'clipboard' | 'terminal'} Current paste mode
+ *
+ * @example
+ * ```typescript
+ * const mode = getPasteMode()
+ * if (mode === 'auto') {
+ *   console.log('Auto-paste to active field enabled')
+ * }
+ * ```
+ */
+export function getPasteMode(): 'auto' | 'clipboard' | 'terminal' {
+  return store.get('settings.pasteMode') ?? 'clipboard'
+}
+
+/**
+ * Sets the paste mode
+ *
+ * @param {'auto' | 'clipboard' | 'terminal'} mode - Paste mode to use
+ *
+ * @example
+ * ```typescript
+ * // Enable auto-paste
+ * setPasteMode('auto')
+ *
+ * // Use clipboard only
+ * setPasteMode('clipboard')
+ *
+ * // Paste to terminal
+ * setPasteMode('terminal')
+ * ```
+ */
+export function setPasteMode(mode: 'auto' | 'clipboard' | 'terminal'): void {
+  setSettings({ pasteMode: mode })
+}
+
+/**
+ * Gets whether the user has completed first launch
+ *
+ * @returns {boolean} True if first launch completed
+ */
+export function hasCompletedFirstLaunch(): boolean {
+  return store.get('settings.hasCompletedFirstLaunch') ?? false
+}
+
+/**
+ * Marks first launch as completed
+ *
+ * @example
+ * ```typescript
+ * setFirstLaunchCompleted()
+ * ```
+ */
+export function setFirstLaunchCompleted(): void {
+  setSettings({ hasCompletedFirstLaunch: true })
+}
+
+/**
+ * Gets whether to show paste notifications
+ *
+ * @returns {boolean} True if paste notifications should be shown
+ */
+export function getShowPasteNotifications(): boolean {
+  return store.get('settings.showPasteNotifications') ?? false
+}
+
+/**
+ * Sets whether to show paste notifications
+ *
+ * @param {boolean} show - Whether to show notifications
+ *
+ * @example
+ * ```typescript
+ * // Enable notifications
+ * setShowPasteNotifications(true)
+ *
+ * // Disable notifications
+ * setShowPasteNotifications(false)
+ * ```
+ */
+export function setShowPasteNotifications(show: boolean): void {
+  setSettings({ showPasteNotifications: show })
 }

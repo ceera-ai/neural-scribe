@@ -11,9 +11,9 @@ import {
   destroyComparisonOverlay,
   setupComparisonIpcHandlers,
 } from './comparisonOverlay'
+import { hasCompletedFirstLaunch, setFirstLaunchCompleted } from './store/settings'
 
 let mainWindow: BrowserWindow | null = null
-let debugWindow: BrowserWindow | null = null
 
 export function getMainWindow(): BrowserWindow | null {
   return mainWindow
@@ -35,11 +35,18 @@ function createWindow(): void {
       sandbox: true, // ✅ Enable sandboxing for security
       contextIsolation: true,
       nodeIntegration: false,
+      backgroundThrottling: false, // ✅ Keep audio analysis running when window is hidden
     },
   })
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow?.show()
+    // Only show window on first launch (for onboarding)
+    // Otherwise, app runs as menubar-only (hidden by default)
+    if (!hasCompletedFirstLaunch()) {
+      mainWindow?.show()
+      setFirstLaunchCompleted()
+    }
+
     // Open dev tools in development
     if (is.dev) {
       mainWindow?.webContents.openDevTools()
@@ -61,35 +68,6 @@ function createWindow(): void {
   // Actually quit when window is closed
   mainWindow.on('closed', () => {
     mainWindow = null
-  })
-}
-
-function createDebugWindow(): void {
-  debugWindow = new BrowserWindow({
-    width: 900,
-    height: 700,
-    x: 950, // Position to the right of main window
-    y: 100,
-    show: false,
-    autoHideMenuBar: true,
-    title: 'Debug Tools - Neural Scribe',
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: true,
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-  })
-
-  debugWindow.on('ready-to-show', () => {
-    debugWindow?.show()
-  })
-
-  // Load the debug HTML file
-  debugWindow.loadFile(join(__dirname, '../renderer/electron/debug.html'))
-
-  debugWindow.on('closed', () => {
-    debugWindow = null
   })
 }
 
@@ -125,11 +103,6 @@ app.whenReady().then(() => {
   // Create window
   createWindow()
 
-  // Create debug window (development only)
-  if (is.dev) {
-    createDebugWindow()
-  }
-
   // Create recording overlay window (pass main window for fallback display detection)
   createOverlayWindow(mainWindow!)
 
@@ -151,14 +124,20 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow()
-    } else {
-      mainWindow?.show()
     }
+    // In menubar mode, don't auto-show window on activate
+    // User must use tray menu to show/hide window
   })
 })
 
 app.on('window-all-closed', () => {
-  app.quit()
+  // Don't quit on window close in menubar mode
+  // App continues running in background via system tray
+  // Only quit on macOS if explicitly requested
+  if (process.platform !== 'darwin') {
+    // On non-macOS, still quit when all windows closed
+    app.quit()
+  }
 })
 
 app.on('will-quit', () => {
@@ -167,5 +146,44 @@ app.on('will-quit', () => {
   destroyFormattingOverlay()
   destroyComparisonOverlay()
 })
+
+// ============================================================================
+// Window Visibility Management (for menubar mode)
+// ============================================================================
+
+/**
+ * Toggles the main window visibility (show/hide)
+ * Used by system tray menu
+ */
+export function toggleMainWindow(): void {
+  if (!mainWindow) return
+
+  if (mainWindow.isVisible()) {
+    mainWindow.hide()
+  } else {
+    mainWindow.show()
+    mainWindow.focus()
+  }
+}
+
+/**
+ * Checks if the main window is currently visible
+ * Used by paste handler to determine if window needs hiding
+ *
+ * @returns {boolean} True if window is visible
+ */
+export function isMainWindowVisible(): boolean {
+  return mainWindow?.isVisible() ?? false
+}
+
+/**
+ * Hides the main window temporarily (for auto-paste operation)
+ * This allows focus to return to the previously active application
+ */
+export async function hideMainWindowTemporarily(): Promise<void> {
+  if (mainWindow?.isVisible()) {
+    mainWindow.hide()
+  }
+}
 
 export { updateTrayRecordingState }

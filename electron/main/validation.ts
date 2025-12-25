@@ -24,6 +24,9 @@ export const AppSettingsSchema = z.object({
   promptFormattingModel: z.enum(['sonnet', 'opus', 'haiku']).optional(),
   historyLimit: z.number().int().min(0).optional(),
   submitAfterPaste: z.boolean().optional(),
+  pasteMode: z.enum(['auto', 'clipboard', 'terminal']).optional(),
+  hasCompletedFirstLaunch: z.boolean().optional(),
+  showPasteNotifications: z.boolean().optional(),
 })
 
 export const ApiKeySchema = z.string().min(1, 'API key cannot be empty')
@@ -143,6 +146,14 @@ export const ErrorLogSchema = z.object({
   stack: z.string(),
   componentStack: z.string().optional(),
 })
+
+// Paste operations validation
+export const PasteTextSchema = z.object({
+  text: z.string().min(1, 'Text cannot be empty'),
+  mode: z.enum(['auto', 'clipboard', 'terminal']).optional(),
+})
+
+export const PasteModeSchema = z.enum(['auto', 'clipboard', 'terminal'])
 
 /**
  * Helper function to validate and parse data with Zod schema

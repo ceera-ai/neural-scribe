@@ -35,6 +35,9 @@ export interface AppSettings {
   promptFormattingInstructions: string
   promptFormattingModel: 'sonnet' | 'opus' | 'haiku'
   historyLimit: number // 0 = no limit, otherwise max items to keep
+  pasteMode: 'auto' | 'clipboard' | 'terminal'
+  hasCompletedFirstLaunch: boolean
+  showPasteNotifications: boolean
 }
 
 export interface PromptFormattingSettings {
@@ -150,6 +153,25 @@ const electronAPI = {
     copied: boolean
     targetApp: string | null
   }> => ipcRenderer.invoke('paste-to-last-active-terminal', text),
+
+  // Paste mode operations
+  getPasteMode: (): Promise<'auto' | 'clipboard' | 'terminal'> =>
+    ipcRenderer.invoke('get-paste-mode'),
+  setPasteMode: (mode: 'auto' | 'clipboard' | 'terminal'): Promise<boolean> =>
+    ipcRenderer.invoke('set-paste-mode', mode),
+  pasteText: (
+    text: string,
+    mode?: 'auto' | 'clipboard' | 'terminal'
+  ): Promise<{ success: boolean; mode: string; error?: string }> =>
+    ipcRenderer.invoke('paste-text', text, mode),
+  checkAccessibilityPermissions: (): Promise<boolean> =>
+    ipcRenderer.invoke('check-accessibility-permissions'),
+  requestAccessibilityPermissions: (): Promise<boolean> =>
+    ipcRenderer.invoke('request-accessibility-permissions'),
+
+  // Generic invoke method (for flexibility)
+  invoke: (channel: string, ...args: unknown[]): Promise<unknown> =>
+    ipcRenderer.invoke(channel, ...args),
 
   // Word replacement operations
   getReplacements: (): Promise<WordReplacement[]> => ipcRenderer.invoke('get-replacements'),

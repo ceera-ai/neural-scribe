@@ -1,5 +1,9 @@
-import { globalShortcut, BrowserWindow, clipboard } from 'electron'
-import { getSettings, getLastTranscription, setSettings } from './store'
+import { globalShortcut, BrowserWindow } from 'electron'
+import { getSettings, setSettings, getPasteMode } from './store/settings'
+import { getLastTranscription } from './store/history'
+import { handlePaste } from './paste-handler'
+import { hideMainWindowTemporarily, isMainWindowVisible } from './index'
+import { captureActiveApplication, clearCapturedApplication } from './focus-manager'
 
 let mainWindow: BrowserWindow | null = null
 let currentPasteHotkey: string | null = null
@@ -136,20 +140,45 @@ export function updateHotkey(
 }
 
 async function pasteLastTranscription(): Promise<void> {
+  console.log('[Hotkeys] pasteLastTranscription called')
+
   const lastRecord = getLastTranscription()
   if (!lastRecord) {
-    console.log('No transcription to paste')
+    console.log('[Hotkeys] No transcription to paste')
     return
   }
 
-  // Copy to clipboard
-  clipboard.writeText(lastRecord.text)
+  console.log('[Hotkeys] Last transcription:', {
+    id: lastRecord.id,
+    textLength: lastRecord.text.length,
+    textPreview: lastRecord.text.substring(0, 50) + '...',
+  })
+
+  const pasteMode = getPasteMode()
+  console.log('[Hotkeys] Current paste mode:', pasteMode)
+
+  // For auto-paste mode, capture the currently active application first
+  // (since we're not in a recording session, we need to know where to paste)
+  if (pasteMode === 'auto') {
+    console.log('[Hotkeys] Auto-paste mode: capturing active application before paste')
+    await captureActiveApplication()
+  }
+
+  // Use the new paste handler which respects paste mode settings
+  console.log('[Hotkeys] Calling handlePaste...')
+  const result = await handlePaste(
+    { mode: pasteMode, text: lastRecord.text },
+    hideMainWindowTemporarily,
+    isMainWindowVisible
+  )
+  console.log('[Hotkeys] handlePaste result:', result)
+
+  // Clear captured app after paste
+  if (pasteMode === 'auto') {
+    clearCapturedApplication()
+  }
 
   // Notify renderer that paste was triggered
   mainWindow?.webContents.send('transcription-pasted', lastRecord.text)
-
-  // Note: For actual keyboard simulation to paste into other apps,
-  // we would need @nut-tree/nut-js or similar. For now, we just
-  // copy to clipboard and the user can Cmd+V manually.
-  // This is a safer approach that doesn't require accessibility permissions.
+  console.log('[Hotkeys] Notified renderer about paste')
 }

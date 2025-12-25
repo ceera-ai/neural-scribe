@@ -110,8 +110,23 @@ export function usePasteToTerminal({
           console.log('[usePasteToTerminal] Formatting disabled, skipping Claude formatting')
         }
 
-        // Paste to terminal first
-        const result = await window.electronAPI.pasteToLastActiveTerminal(textToPaste)
+        // Paste using the configured paste mode (auto, clipboard, or terminal)
+        // The backend will route based on the current paste mode setting
+        console.log('[usePasteToTerminal] Getting current paste mode...')
+        const pasteMode = await window.electronAPI.invoke('get-paste-mode')
+        console.log('[usePasteToTerminal] Current paste mode:', pasteMode)
+
+        let result
+        if (pasteMode === 'terminal') {
+          // Use legacy terminal paste for terminal mode
+          console.log('[usePasteToTerminal] Using TERMINAL mode - calling pasteToLastActiveTerminal')
+          result = await window.electronAPI.pasteToLastActiveTerminal(textToPaste)
+        } else {
+          // Use new paste handler for auto and clipboard modes
+          console.log('[usePasteToTerminal] Using AUTO/CLIPBOARD mode - calling paste-text IPC')
+          result = await window.electronAPI.invoke('paste-text', textToPaste)
+        }
+
         console.log('[usePasteToTerminal] Paste result:', result)
 
         // Show notification IMMEDIATELY after paste

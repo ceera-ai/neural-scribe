@@ -27,6 +27,8 @@ import {
   ReformatTextSchema,
   GenerateTitleSchema,
   ErrorLogSchema,
+  PasteTextSchema,
+  PasteModeSchema,
 } from './validation'
 import { ACHIEVEMENTS } from './gamification/achievementDefinitions'
 import {
@@ -34,40 +36,58 @@ import {
   setSettings,
   getApiKey,
   setApiKey,
+  getPromptFormattingSettings,
+  setPromptFormattingEnabled,
+  setPromptFormattingInstructions,
+  setPromptFormattingModel,
+  getPasteMode,
+  setPasteMode,
+} from './store/settings'
+import {
   getHistory,
   saveTranscription,
   deleteTranscription,
   clearHistory,
   getLastTranscription,
   getHistoryStats,
+  type TranscriptionRecord,
+} from './store/history'
+import {
   getReplacements,
   addReplacement,
   updateReplacement,
   deleteReplacement,
   applyReplacements,
+} from './store/replacements'
+import {
   getVoiceCommandTriggers,
   updateVoiceCommandTrigger,
   addVoiceCommandTrigger,
   deleteVoiceCommandTrigger,
   resetVoiceCommandTriggers,
   getEnabledVoiceCommands,
-  getPromptFormattingSettings,
-  setPromptFormattingEnabled,
-  setPromptFormattingInstructions,
-  setPromptFormattingModel,
+} from './store/voice-commands'
+import {
   getGamificationData,
   saveGamificationData,
   recordGamificationSession,
   unlockGamificationAchievement,
   checkDailyLoginBonus,
   resetGamificationProgress,
-  TranscriptionRecord,
-  GamificationData,
-} from './store'
-import { checkAndUnlockAllAchievements } from './store/gamification'
+  type GamificationData,
+} from './store/gamification'
+import {
+  handlePaste,
+  checkAccessibilityPermissions,
+  requestAccessibilityPermissions,
+} from './paste-handler'
+import { checkAndUnlockAllAchievements, setGamificationData } from './store/gamification'
+import { trackFeatureUsage, type FeatureType } from './store/gamification/featureTracking'
+import { updateLevelFromXP } from './store/gamification/levels'
 import { FormattingService, TerminalService } from './services'
 import { SUPPORTED_TERMINALS } from './terminal'
 import { updateHotkey } from './hotkeys'
+import { captureActiveApplication } from './focus-manager'
 
 let onRecordingStateChange: ((isRecording: boolean) => void) | null = null
 
@@ -178,7 +198,20 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   })
 
   // Recording state from renderer
-  ipcMain.on('recording-state-changed', (_, isRecording: boolean) => {
+  ipcMain.on('recording-state-changed', async (_, isRecording: boolean) => {
+    console.log('[IPC] recording-state-changed:', isRecording)
+
+    if (isRecording) {
+      // Recording started - capture the currently active application
+      // This must be done BEFORE showing the overlay
+      console.log('[IPC] Recording started, capturing active application...')
+      await captureActiveApplication()
+    } else {
+      // Recording stopped - DON'T clear yet! The paste operation needs this info.
+      // The captured app will be cleared AFTER paste completes in the paste handler.
+      console.log('[IPC] Recording stopped (keeping captured app for paste operation)')
+    }
+
     if (onRecordingStateChange) {
       onRecordingStateChange(isRecording)
     }
@@ -258,6 +291,56 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
 
   ipcMain.handle('paste-to-last-active-terminal', async (_, text: string) => {
     return TerminalService.getInstance().pasteToActiveTerminal(text)
+  })
+
+  // Paste operations (auto-paste, clipboard, terminal)
+  ipcMain.handle('paste-text', async (_, text: unknown, mode?: unknown) => {
+    console.log('[IPC] paste-text called with mode:', mode)
+
+    const currentMode = getPasteMode()
+    console.log('[IPC] Current paste mode from settings:', currentMode)
+
+    const validated = validateIPC(
+      PasteTextSchema,
+      { text, mode: mode ?? currentMode },
+      'Invalid paste text params'
+    )
+
+    console.log('[IPC] Validated paste mode:', validated.mode)
+
+    // Import window functions dynamically to avoid circular dependencies
+    const { hideMainWindowTemporarily, isMainWindowVisible } = await import('./index')
+
+    const result = await handlePaste(
+      { mode: validated.mode ?? currentMode, text: validated.text },
+      hideMainWindowTemporarily,
+      isMainWindowVisible
+    )
+
+    console.log('[IPC] paste-text result:', result)
+    return result
+  })
+
+  ipcMain.handle('check-accessibility-permissions', () => {
+    return checkAccessibilityPermissions(false)
+  })
+
+  ipcMain.handle('request-accessibility-permissions', () => {
+    return requestAccessibilityPermissions()
+  })
+
+  ipcMain.handle('get-paste-mode', () => {
+    const mode = getPasteMode()
+    console.log('[IPC] get-paste-mode returning:', mode)
+    return mode
+  })
+
+  ipcMain.handle('set-paste-mode', (_, mode: unknown) => {
+    console.log('[IPC] set-paste-mode called with:', mode)
+    const validated = validateIPC(PasteModeSchema, mode, 'Invalid paste mode')
+    setPasteMode(validated)
+    console.log('[IPC] Paste mode updated to:', validated)
+    return true
   })
 
   // Word replacement operations
@@ -340,8 +423,21 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     'update-hotkey',
     async (_, type: 'paste' | 'record' | 'recordWithFormatting', newHotkey: string) => {
       const result = updateHotkey(type, newHotkey)
+
       // Track hotkey change
-      await trackFeatureAndNotify('hotkey-change')
+      const newlyUnlocked = await trackFeatureUsage('hotkey-change')
+
+      // Notify all windows that gamification data changed
+      if (newlyUnlocked.length > 0) {
+        BrowserWindow.getAllWindows().forEach((win) => {
+          win.webContents.send('gamification-data-changed')
+          // Notify about each newly unlocked achievement
+          newlyUnlocked.forEach((id) => {
+            win.webContents.send('achievement-unlocked', id)
+          })
+        })
+      }
+
       return result
     }
   )
