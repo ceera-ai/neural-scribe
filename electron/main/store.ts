@@ -44,6 +44,8 @@ export interface AppSettings {
   selectedTerminalId: string | null
   pasteHotkey: string
   recordHotkey: string
+  recordWithFormattingHotkey: string
+  submitAfterPaste: boolean
   replacementsEnabled: boolean
   voiceCommandsEnabled: boolean
   // Prompt formatting settings
@@ -158,6 +160,8 @@ const defaults: StoreSchema = {
     selectedTerminalId: null,
     pasteHotkey: 'CommandOrControl+Shift+V',
     recordHotkey: 'CommandOrControl+Shift+R',
+    recordWithFormattingHotkey: 'CommandOrControl+Shift+F',
+    submitAfterPaste: true,
     replacementsEnabled: true,
     voiceCommandsEnabled: true,
     promptFormattingEnabled: true,
@@ -388,6 +392,15 @@ export function setPromptFormattingInstructions(instructions: string): void {
 
 export function setPromptFormattingModel(model: 'sonnet' | 'opus' | 'haiku'): void {
   setSettings({ promptFormattingModel: model })
+}
+
+// Paste settings helpers
+export function getSubmitAfterPaste(): boolean {
+  return getSettings().submitAfterPaste ?? true
+}
+
+export function setSubmitAfterPaste(submit: boolean): void {
+  setSettings({ submitAfterPaste: submit })
 }
 
 // Gamification helpers

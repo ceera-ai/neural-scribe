@@ -16,12 +16,14 @@ export const AppSettingsSchema = z.object({
   selectedTerminalId: z.string().nullable().optional(),
   pasteHotkey: z.string().optional(),
   recordHotkey: z.string().optional(),
+  recordWithFormattingHotkey: z.string().optional(),
   replacementsEnabled: z.boolean().optional(),
   voiceCommandsEnabled: z.boolean().optional(),
   promptFormattingEnabled: z.boolean().optional(),
   promptFormattingInstructions: z.string().optional(),
   promptFormattingModel: z.enum(['sonnet', 'opus', 'haiku']).optional(),
   historyLimit: z.number().int().min(0).optional(),
+  submitAfterPaste: z.boolean().optional(),
 })
 
 export const ApiKeySchema = z.string().min(1, 'API key cannot be empty')

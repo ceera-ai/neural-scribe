@@ -27,6 +27,8 @@ export interface AppSettings {
   selectedTerminalId: string | null
   pasteHotkey: string
   recordHotkey: string
+  recordWithFormattingHotkey: string
+  submitAfterPaste: boolean
   replacementsEnabled: boolean
   voiceCommandsEnabled: boolean
   promptFormattingEnabled: boolean
@@ -84,7 +86,7 @@ export interface WordReplacement {
   enabled: boolean
 }
 
-export type RecordingToggleCallback = () => void
+export type RecordingToggleCallback = (withFormatting: boolean) => void
 export type TranscriptionPastedCallback = (text: string) => void
 
 export interface HistoryStats {
@@ -177,7 +179,7 @@ const electronAPI = {
 
   // Hotkey operations
   updateHotkey: (
-    type: 'paste' | 'record',
+    type: 'paste' | 'record' | 'recordWithFormatting',
     newHotkey: string
   ): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('update-hotkey', type, newHotkey),
@@ -236,7 +238,7 @@ const electronAPI = {
 
   // Events from main process
   onToggleRecording: (callback: RecordingToggleCallback): void => {
-    ipcRenderer.on('toggle-recording', () => callback())
+    ipcRenderer.on('toggle-recording', (_, withFormatting: boolean) => callback(withFormatting))
   },
   onTranscriptionPasted: (callback: TranscriptionPastedCallback): void => {
     ipcRenderer.on('transcription-pasted', (_, text: string) => callback(text))
@@ -286,6 +288,20 @@ const electronAPI = {
   // Send overlay status info to main process
   sendOverlayStatus: (status: { connected: boolean; formattingEnabled: boolean }): void => {
     ipcRenderer.send('overlay-status', status)
+  },
+
+  // Test methods for formatting overlay
+  testShowFormattingOverlay: (): void => {
+    ipcRenderer.send('test-show-formatting-overlay')
+  },
+
+  testHideFormattingOverlay: (): void => {
+    ipcRenderer.send('test-hide-formatting-overlay')
+  },
+
+  // Send comparison selection from overlay
+  sendComparisonSelection: (selectedText: string): void => {
+    ipcRenderer.send('comparison-text-selected', selectedText)
   },
 
   // Error logging

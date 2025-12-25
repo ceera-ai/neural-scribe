@@ -6,6 +6,11 @@ import { createTray, updateTrayRecordingState } from './tray'
 import { registerHotkeys, unregisterHotkeys } from './hotkeys'
 import { createOverlayWindow, showOverlay, hideOverlay, destroyOverlay } from './overlay'
 import { createFormattingOverlay, destroyFormattingOverlay } from './formattingOverlay'
+import {
+  createComparisonOverlay,
+  destroyComparisonOverlay,
+  setupComparisonIpcHandlers,
+} from './comparisonOverlay'
 
 let mainWindow: BrowserWindow | null = null
 let debugWindow: BrowserWindow | null = null
@@ -17,9 +22,9 @@ export function getMainWindow(): BrowserWindow | null {
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 900,
-    height: 700,
-    minWidth: 600,
-    minHeight: 500,
+    height: 800,
+    minWidth: 900,
+    minHeight: 800,
     show: false,
     autoHideMenuBar: true,
     titleBarStyle: 'hiddenInset',
@@ -131,6 +136,12 @@ app.whenReady().then(() => {
   // Create formatting progress overlay window
   createFormattingOverlay()
 
+  // Create comparison overlay window
+  createComparisonOverlay()
+
+  // Setup comparison overlay IPC handlers
+  setupComparisonIpcHandlers()
+
   // Create system tray
   createTray(mainWindow!)
 
@@ -154,6 +165,7 @@ app.on('will-quit', () => {
   unregisterHotkeys()
   destroyOverlay()
   destroyFormattingOverlay()
+  destroyComparisonOverlay()
 })
 
 export { updateTrayRecordingState }

@@ -73,6 +73,7 @@ export function usePasteToTerminal({
 
       isPastingRef.current = true
       console.log('[usePasteToTerminal] Starting paste operation...')
+      console.log('[usePasteToTerminal] formattingEnabled:', formattingEnabled)
 
       if (!isElectron) {
         console.warn('[usePasteToTerminal] Not in Electron environment, skipping paste')
@@ -91,17 +92,22 @@ export function usePasteToTerminal({
           setPasteStatus('formatting')
           console.log('[usePasteToTerminal] Formatting text with Claude...')
           const formatResult = await window.electronAPI.formatPrompt(text)
+          console.log('[usePasteToTerminal] Format result:', formatResult)
 
           if (formatResult.success && !formatResult.skipped) {
             textToPaste = formatResult.formatted
             formattedText = formatResult.formatted
             console.log('[usePasteToTerminal] Formatted text:', textToPaste)
+          } else if (formatResult.skipped) {
+            console.log('[usePasteToTerminal] Formatting was skipped (user cancelled or chose original)')
           } else if (formatResult.error) {
             console.warn(
               '[usePasteToTerminal] Formatting failed, using original text:',
               formatResult.error
             )
           }
+        } else {
+          console.log('[usePasteToTerminal] Formatting disabled, skipping Claude formatting')
         }
 
         // Paste to terminal first

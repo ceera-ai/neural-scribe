@@ -53,6 +53,8 @@ function App() {
   const transcriptEndRef = useRef<HTMLDivElement>(null)
   const transcriptInputRef = useRef<HTMLTextAreaElement>(null)
   const pendingPasteRef = useRef<string | null>(null)
+  // Per-session formatting override from hotkey (null = use global setting)
+  const [formattingOverride, setFormattingOverride] = useState<boolean | null>(null)
 
   const { selectedDeviceId } = useMicrophoneDevices()
   const { saveTranscription, saveTranscriptionWithFormatting } = useTranscriptionHistory()
@@ -67,6 +69,14 @@ function App() {
     clearRecentUnlocks,
   } = useGamification()
 
+  // Determine effective formatting (override takes precedence)
+  const effectiveFormatting = formattingOverride ?? formattingEnabled
+  console.log('[App] Formatting state:', {
+    override: formattingOverride,
+    global: formattingEnabled,
+    effective: effectiveFormatting,
+  })
+
   // Paste to terminal with formatting
   const {
     pasteStatus,
@@ -74,7 +84,7 @@ function App() {
     formatAndPaste,
     handlePasteToTerminal: pasteToTerminal,
   } = usePasteToTerminal({
-    formattingEnabled,
+    formattingEnabled: effectiveFormatting,
     saveTranscriptionWithFormatting,
   })
 
@@ -130,6 +140,10 @@ function App() {
     onVoiceCommand: handleVoiceCommand,
     voiceCommandsEnabled,
     onSaveTranscript: handleSaveTranscript,
+    onFormattingOverride: (override: boolean | null) => {
+      setFormattingOverride(override)
+      console.log('[App] Formatting override set to:', override)
+    },
   })
 
   // Real audio level analysis from microphone
@@ -381,6 +395,7 @@ function App() {
             recordHotkey={recordHotkey}
             pasteHotkey={pasteHotkey}
             formattingEnabled={formattingEnabled}
+            formattingOverride={formattingOverride}
             voiceCommandsEnabled={voiceCommandsEnabled}
             onFormattingChange={handleFormattingChange}
             onVoiceCommandsChange={setVoiceCommandsEnabled}

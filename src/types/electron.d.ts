@@ -25,6 +25,8 @@ export interface AppSettings {
   selectedTerminalId: string | null
   pasteHotkey: string
   recordHotkey: string
+  recordWithFormattingHotkey: string
+  submitAfterPaste: boolean
   replacementsEnabled: boolean
   voiceCommandsEnabled: boolean
   promptFormattingEnabled: boolean
@@ -205,7 +207,7 @@ export interface ElectronAPI {
 
   // Hotkey operations
   updateHotkey: (
-    type: 'paste' | 'record',
+    type: 'paste' | 'record' | 'recordWithFormatting',
     newHotkey: string
   ) => Promise<{ success: boolean; error?: string }>
 
@@ -268,6 +270,13 @@ export interface ElectronAPI {
 
   // Send overlay status info to main process
   sendOverlayStatus: (status: { connected: boolean; formattingEnabled: boolean }) => void
+
+  // Test methods for formatting overlay
+  testShowFormattingOverlay: () => void
+  testHideFormattingOverlay: () => void
+
+  // Comparison overlay communication
+  sendComparisonSelection: (selectedText: string) => void
 }
 
 declare global {

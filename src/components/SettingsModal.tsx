@@ -55,9 +55,17 @@ export function SettingsModal({
 
   // Keyboard Shortcuts
   const [recordHotkey, setRecordHotkey] = useState('CommandOrControl+Shift+R')
+  const [recordWithFormattingHotkey, setRecordWithFormattingHotkey] = useState(
+    'CommandOrControl+Shift+F'
+  )
   const [pasteHotkey, setPasteHotkey] = useState('CommandOrControl+Shift+V')
-  const [editingShortcut, setEditingShortcut] = useState<'record' | 'paste' | null>(null)
+  const [editingShortcut, setEditingShortcut] = useState<
+    'record' | 'recordWithFormatting' | 'paste' | null
+  >(null)
   const [shortcutError, setShortcutError] = useState<string | null>(null)
+
+  // Paste Settings
+  const [submitAfterPaste, setSubmitAfterPaste] = useState<boolean>(true)
 
   // History Settings
   const [historyLimit, setHistoryLimit] = useState<number>(500)
@@ -101,7 +109,11 @@ export function SettingsModal({
       setApiKey(key || '')
       setReplacementsEnabled(settings.replacementsEnabled ?? true)
       setRecordHotkey(settings.recordHotkey || 'CommandOrControl+Shift+R')
+      setRecordWithFormattingHotkey(
+        settings.recordWithFormattingHotkey || 'CommandOrControl+Shift+F'
+      )
       setPasteHotkey(settings.pasteHotkey || 'CommandOrControl+Shift+V')
+      setSubmitAfterPaste(settings.submitAfterPaste ?? true)
       setHistoryLimit(settings.historyLimit ?? 500)
       setTriggers(triggersData)
       setFormattingEnabled(formattingSettings.enabled)
@@ -175,6 +187,13 @@ export function SettingsModal({
     onVoiceCommandsEnabledChange(enabled)
     if (isElectron) {
       await window.electronAPI.setSettings({ voiceCommandsEnabled: enabled })
+    }
+  }
+
+  const handleSubmitAfterPasteChange = async (enabled: boolean) => {
+    setSubmitAfterPaste(enabled)
+    if (isElectron) {
+      await window.electronAPI.setSettings({ submitAfterPaste: enabled })
     }
   }
 
@@ -276,7 +295,10 @@ export function SettingsModal({
     return parts.join('+')
   }
 
-  const handleShortcutKeyDown = async (e: React.KeyboardEvent, type: 'record' | 'paste') => {
+  const handleShortcutKeyDown = async (
+    e: React.KeyboardEvent,
+    type: 'record' | 'recordWithFormatting' | 'paste'
+  ) => {
     e.preventDefault()
     e.stopPropagation()
 
@@ -295,6 +317,7 @@ export function SettingsModal({
 
     if (result.success) {
       if (type === 'record') setRecordHotkey(accelerator)
+      else if (type === 'recordWithFormatting') setRecordWithFormattingHotkey(accelerator)
       else setPasteHotkey(accelerator)
       setEditingShortcut(null)
       setShortcutError(null)
@@ -500,6 +523,29 @@ export function SettingsModal({
                 {![100, 250, 500, 1000, 0].includes(historyLimit) && (
                   <p className="current-limit-hint">Current: {historyLimit} items</p>
                 )}
+              </div>
+
+              {/* Submit After Paste Toggle */}
+              <div className="cyber-setting-group">
+                <div className="setting-row">
+                  <div className="setting-header">
+                    <div className="setting-icon">⏎</div>
+                    <div className="setting-info">
+                      <h3>Submit After Paste</h3>
+                      <p>Press Enter after pasting to terminal (submit command)</p>
+                    </div>
+                  </div>
+                  <label className="cyber-toggle">
+                    <input
+                      type="checkbox"
+                      checked={submitAfterPaste}
+                      onChange={(e) => handleSubmitAfterPasteChange(e.target.checked)}
+                    />
+                    <span className="toggle-track">
+                      <span className="toggle-thumb" />
+                    </span>
+                  </label>
+                </div>
               </div>
 
               {/* About */}
@@ -735,7 +781,7 @@ export function SettingsModal({
 
               <div className="shortcuts-list">
                 <div className="shortcut-item">
-                  <span className="shortcut-label">Toggle Recording</span>
+                  <span className="shortcut-label">Start Recording (No Formatting)</span>
                   {editingShortcut === 'record' ? (
                     <input
                       type="text"
@@ -758,6 +804,34 @@ export function SettingsModal({
                       }}
                     >
                       {formatHotkeyForDisplay(recordHotkey)}
+                    </button>
+                  )}
+                </div>
+
+                <div className="shortcut-item">
+                  <span className="shortcut-label">Start Recording (With Formatting)</span>
+                  {editingShortcut === 'recordWithFormatting' ? (
+                    <input
+                      type="text"
+                      className="cyber-input cyber-input-sm shortcut-input"
+                      placeholder="Press keys..."
+                      autoFocus
+                      onKeyDown={(e) => handleShortcutKeyDown(e, 'recordWithFormatting')}
+                      onBlur={() => {
+                        setEditingShortcut(null)
+                        setShortcutError(null)
+                      }}
+                      readOnly
+                    />
+                  ) : (
+                    <button
+                      className="shortcut-key"
+                      onClick={() => {
+                        setEditingShortcut('recordWithFormatting')
+                        setShortcutError(null)
+                      }}
+                    >
+                      {formatHotkeyForDisplay(recordWithFormattingHotkey)}
                     </button>
                   )}
                 </div>
