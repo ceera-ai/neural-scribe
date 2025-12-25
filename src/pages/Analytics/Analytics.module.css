@@ -8,8 +8,8 @@
 }
 
 .chartsGrid {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
 }
 
@@ -18,9 +18,10 @@
 }
 
 .sideCharts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
 }
 
 .loading,
@@ -59,24 +60,6 @@
   margin-top: 0.5rem;
 }
 
-/* Desktop (large) */
-@media (min-width: 1024px) {
-  .chartsGrid {
-    grid-template-columns: 2fr 1fr;
-  }
-
-  .sideCharts {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Tablet */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .sideCharts {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
 /* Mobile */
 @media (max-width: 767px) {
   .container {
@@ -88,7 +71,6 @@
   }
 
   .sideCharts {
-    grid-template-columns: 1fr;
     gap: 1rem;
   }
 }

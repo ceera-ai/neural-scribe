@@ -13,7 +13,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { DataPoint } from '../types'
+import type { DataPoint } from '../types'
 import styles from './TimeSpentChart.module.css'
 
 interface TimeSpentChartProps {
@@ -67,7 +67,7 @@ export function TimeSpentChart({ data }: TimeSpentChartProps) {
     <div className={styles.container}>
       <h3 className={styles.title}>⏱️ Time Spent</h3>
       <ResponsiveContainer width="100%" height={250}>
-        <AreaChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <AreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <defs>
             <linearGradient id="colorTime" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />

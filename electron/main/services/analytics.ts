@@ -7,7 +7,7 @@
  * @module services/analytics
  */
 
-export type TimeRange = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'all'
+export type TimeRange = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'all' | 'custom'
 
 export interface TranscriptionRecord {
   id: string
@@ -33,11 +33,69 @@ interface TimeBucket {
  * Calculate time buckets for aggregation based on selected range
  *
  * @param range - The time range to generate buckets for
+ * @param customDateRange - Optional custom date range for precise control
  * @returns Array of time buckets with start/end dates and granularity
  */
-export function calculateBuckets(range: TimeRange): TimeBucket[] {
-  const now = new Date()
+export function calculateBuckets(
+  range: TimeRange,
+  customDateRange?: { start: Date; end: Date }
+): TimeBucket[] {
+  const now = customDateRange?.end || new Date()
   const buckets: TimeBucket[] = []
+
+  // For custom range, calculate buckets based on the custom dates
+  if (range === 'custom' && customDateRange) {
+    const { start: customStart, end: customEnd } = customDateRange
+    const daysDiff = Math.ceil(
+      (customEnd.getTime() - customStart.getTime()) / (1000 * 60 * 60 * 24)
+    )
+
+    // Choose granularity based on range length
+    if (daysDiff <= 1) {
+      // Hourly buckets for single day
+      const startOfDay = new Date(customStart)
+      startOfDay.setHours(0, 0, 0, 0)
+      for (let i = 0; i < 24; i++) {
+        const start = new Date(startOfDay)
+        start.setHours(i, 0, 0, 0)
+        const end = new Date(start)
+        end.setHours(i + 1, 0, 0, 0)
+        buckets.push({ start, end, granularity: 'hour' })
+      }
+    } else if (daysDiff <= 31) {
+      // Daily buckets for up to a month
+      for (let i = 0; i < daysDiff; i++) {
+        const start = new Date(customStart)
+        start.setDate(customStart.getDate() + i)
+        start.setHours(0, 0, 0, 0)
+        const end = new Date(start)
+        end.setDate(start.getDate() + 1)
+        buckets.push({ start, end, granularity: 'day' })
+      }
+    } else if (daysDiff <= 120) {
+      // Weekly buckets for up to ~4 months
+      const weekCount = Math.ceil(daysDiff / 7)
+      for (let i = 0; i < weekCount; i++) {
+        const start = new Date(customStart)
+        start.setDate(customStart.getDate() + i * 7)
+        start.setHours(0, 0, 0, 0)
+        const end = new Date(start)
+        end.setDate(start.getDate() + 7)
+        buckets.push({ start, end, granularity: 'week' })
+      }
+    } else {
+      // Monthly buckets for longer ranges
+      const monthsDiff = Math.ceil(daysDiff / 30)
+      for (let i = 0; i < monthsDiff; i++) {
+        const start = new Date(customStart)
+        start.setMonth(customStart.getMonth() + i, 1)
+        const end = new Date(start)
+        end.setMonth(start.getMonth() + 1)
+        buckets.push({ start, end, granularity: 'month' })
+      }
+    }
+    return buckets
+  }
 
   switch (range) {
     case 'today': {
@@ -217,14 +275,17 @@ export function calculateAllTimeBuckets(records: TranscriptionRecord[]): TimeBuc
  *
  * @param records - All transcription records
  * @param range - Time range to aggregate for
+ * @param customDateRange - Optional custom date range
  * @returns Aggregated data points for the range
  */
 export function getAnalyticsData(
   records: TranscriptionRecord[],
-  range: TimeRange
+  range: TimeRange,
+  customDateRange?: { start: Date; end: Date }
 ): AggregatedDataPoint[] {
   // For 'all' time, calculate buckets dynamically
-  const buckets = range === 'all' ? calculateAllTimeBuckets(records) : calculateBuckets(range)
+  const buckets =
+    range === 'all' ? calculateAllTimeBuckets(records) : calculateBuckets(range, customDateRange)
 
   return aggregateData(records, buckets)
 }

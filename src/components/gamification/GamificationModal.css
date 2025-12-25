@@ -14,7 +14,8 @@
   border: 1px solid var(--border-dim, rgba(0, 255, 255, 0.2));
   border-radius: 16px;
   width: 90%;
-  max-width: 480px;
+  max-width: 1400px;
+  min-width: 60%;
   max-height: 85vh;
   overflow: hidden;
   box-shadow: 0 0 40px rgba(0, 255, 255, 0.1);

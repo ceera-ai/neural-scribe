@@ -13,7 +13,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { DataPoint } from '../types'
+import type { DataPoint } from '../types'
 import styles from './WordsChart.module.css'
 
 interface WordsChartProps {
@@ -56,7 +56,7 @@ export function WordsChart({ data }: WordsChartProps) {
     <div className={styles.container}>
       <h3 className={styles.title}>📊 Words Transcribed</h3>
       <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
           <XAxis
             dataKey="date"

@@ -213,7 +213,8 @@ const electronAPI = {
   // Gamification operations
   getGamificationData: () => ipcRenderer.invoke('get-gamification-data'),
   getAchievementDefinitions: () => ipcRenderer.invoke('get-achievement-definitions'),
-  getAnalyticsData: (range: string) => ipcRenderer.invoke('get-analytics-data', range),
+  getAnalyticsData: (range: string, dateRange?: { start: Date; end: Date }) =>
+    ipcRenderer.invoke('get-analytics-data', range, dateRange),
   saveGamificationData: (data: unknown) => ipcRenderer.invoke('save-gamification-data', data),
   recordGamificationSession: (params: { words: number; durationMs: number }) =>
     ipcRenderer.invoke('record-gamification-session', params),

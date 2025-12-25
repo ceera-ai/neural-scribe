@@ -648,14 +648,24 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   })
 
   // Analytics
-  ipcMain.handle('get-analytics-data', (_, range: unknown) => {
+  ipcMain.handle('get-analytics-data', (_, range: unknown, dateRange?: unknown) => {
     if (typeof range !== 'string') {
       throw new Error('Invalid time range')
     }
 
-    const validRanges = ['today', 'week', 'month', 'quarter', 'year', 'all']
+    const validRanges = ['today', 'week', 'month', 'quarter', 'year', 'all', 'custom']
     if (!validRanges.includes(range)) {
       throw new Error(`Invalid time range: ${range}`)
+    }
+
+    // Parse custom date range if provided
+    let customDateRange: { start: Date; end: Date } | undefined
+    if (dateRange && typeof dateRange === 'object' && 'start' in dateRange && 'end' in dateRange) {
+      const dr = dateRange as { start: string | Date; end: string | Date }
+      customDateRange = {
+        start: typeof dr.start === 'string' ? new Date(dr.start) : dr.start,
+        end: typeof dr.end === 'string' ? new Date(dr.end) : dr.end,
+      }
     }
 
     const history = getHistory()
@@ -668,7 +678,8 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
 
     const aggregatedData = getAnalyticsData(
       records,
-      range as 'today' | 'week' | 'month' | 'quarter' | 'year' | 'all'
+      range as 'today' | 'week' | 'month' | 'quarter' | 'year' | 'all' | 'custom',
+      customDateRange
     )
 
     return {

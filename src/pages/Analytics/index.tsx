@@ -10,12 +10,14 @@ import { WordsChart } from './components/WordsChart'
 import { SessionsChart } from './components/SessionsChart'
 import { TimeSpentChart } from './components/TimeSpentChart'
 import { useAnalyticsData } from './hooks/useAnalyticsData'
-import { TimeRange } from './types'
+import type { TimeRange, CustomDateRange } from './types'
 import styles from './Analytics.module.css'
 
 export function Analytics() {
   const [range, setRange] = useState<TimeRange>('week')
-  const { data, loading, error } = useAnalyticsData(range)
+  const [offset, setOffset] = useState(0)
+  const [customRange, setCustomRange] = useState<CustomDateRange | undefined>()
+  const { data, loading, error } = useAnalyticsData(range, offset, customRange)
 
   if (loading) {
     return (
@@ -39,9 +41,24 @@ export function Analytics() {
     )
   }
 
+  const handleRangeChange = (newRange: TimeRange, custom?: { start: Date; end: Date }) => {
+    setRange(newRange)
+    setOffset(0)
+    if (custom) {
+      setCustomRange(custom)
+    } else {
+      setCustomRange(undefined)
+    }
+  }
+
   return (
     <div className={styles.container}>
-      <DateRangeSelector selected={range} onChange={setRange} />
+      <DateRangeSelector
+        selected={range}
+        onChange={handleRangeChange}
+        currentOffset={offset}
+        onOffsetChange={setOffset}
+      />
 
       <div className={styles.chartsGrid}>
         <div className={styles.mainChart}>
