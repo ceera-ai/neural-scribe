@@ -8,7 +8,10 @@ export function detectVoiceCommand(
   text: string,
   voiceCommands: VoiceCommands
 ): { command: 'send' | 'clear' | 'cancel' | null; cleanedText: string } {
-  const normalizedText = text.toLowerCase().trim().replace(/[.,!?]+$/, '')
+  const normalizedText = text
+    .toLowerCase()
+    .trim()
+    .replace(/[.,!?]+$/, '')
 
   console.log('[VoiceCommand] Checking text:', `"${text}"`, '-> normalized:', `"${normalizedText}"`)
 
@@ -16,7 +19,11 @@ export function detectVoiceCommand(
   for (const phrase of voiceCommands.send) {
     if (normalizedText.endsWith(phrase)) {
       const phraseStart = normalizedText.lastIndexOf(phrase)
-      const cleanedText = text.slice(0, phraseStart).trim().replace(/[.,!?]+$/, '').trim()
+      const cleanedText = text
+        .slice(0, phraseStart)
+        .trim()
+        .replace(/[.,!?]+$/, '')
+        .trim()
       console.log('[VoiceCommand] DETECTED "send" command, cleaned text:', `"${cleanedText}"`)
       return { command: 'send', cleanedText }
     }

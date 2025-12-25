@@ -195,10 +195,7 @@ function getAchievementById(id: string) {
 /**
  * Hook for managing achievement notifications
  */
-export function useAchievementNotifications(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _onAchievementClick?: (achievementId: string) => void
-) {
+export function useAchievementNotifications(_onAchievementClick?: (achievementId: string) => void) {
   // Handle achievement unlocked event
   const handleAchievementUnlocked = useCallback((_event: unknown, achievementId: string) => {
     const achievement = getAchievementById(achievementId)

@@ -1,5 +1,6 @@
+/* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/label-has-associated-control */
 import { useState, useMemo } from 'react'
-import type { TranscriptionRecord, FormattedVersion } from '../types/electron'
+import type { TranscriptionRecord } from '../types/electron'
 import { DictateButton } from './DictateButton'
 import './ReformatDialog.css'
 

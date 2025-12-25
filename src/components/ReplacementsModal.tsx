@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/label-has-associated-control */
 import { useState, useEffect } from 'react'
 import type { WordReplacement } from '../types/electron'
 import './ReplacementsModal.css'
@@ -5,7 +6,7 @@ import './ReplacementsModal.css'
 // Check if running in Electron
 const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
 
-interface ReplacementsModalProps{
+interface ReplacementsModalProps {
   isOpen: boolean
   onClose: () => void
   initialFromText?: string

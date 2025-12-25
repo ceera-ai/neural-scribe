@@ -1,5 +1,6 @@
+/* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
 import { useState, useMemo } from 'react'
-import type { TranscriptionRecord, FormattedVersion } from '../types/electron'
+import type { TranscriptionRecord } from '../types/electron'
 import './HistoryDetailModal.css'
 
 interface HistoryDetailModalProps {

@@ -1,11 +1,11 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Scribe, RealtimeEvents } from '@elevenlabs/client'
 import './DictateButton.css'
 
 // Check if running in Electron
 const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
 
-interface DictateButtonProps{
+interface DictateButtonProps {
   onPartialTranscript: (text: string) => void // Called with real-time updates
   onFinalTranscript: (text: string) => void // Called when recording stops
   onRecordingChange?: (isRecording: boolean) => void // Called when recording state changes
@@ -24,7 +24,11 @@ export function DictateButton({
   const committedTextRef = useRef<string>('')
   const partialTextRef = useRef<string>('')
   const onRecordingChangeRef = useRef(onRecordingChange)
-  onRecordingChangeRef.current = onRecordingChange
+
+  // Update ref in effect to avoid updating during render
+  useEffect(() => {
+    onRecordingChangeRef.current = onRecordingChange
+  }, [onRecordingChange])
 
   const updateTranscript = useCallback(() => {
     // Combine committed + current partial for real-time display

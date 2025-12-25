@@ -30,7 +30,16 @@ export const AppSettingsSchema = z.object({
   showPasteNotifications: z.boolean().optional(),
   transcriptionEngine: z.enum(['elevenlabs', 'deepgram']).optional(),
   deepgramModel: z
-    .enum(['nova-3', 'nova-2', 'nova-2-meeting', 'enhanced', 'base', 'nova-3-monolingual', 'nova-3-multilingual', 'flux'])
+    .enum([
+      'nova-3',
+      'nova-2',
+      'nova-2-meeting',
+      'enhanced',
+      'base',
+      'nova-3-monolingual',
+      'nova-3-multilingual',
+      'flux',
+    ])
     .optional(),
   deepgramMultilingual: z.boolean().optional(),
 })

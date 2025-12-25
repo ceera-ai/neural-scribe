@@ -99,7 +99,9 @@ export function usePasteToTerminal({
             formattedText = formatResult.formatted
             console.log('[usePasteToTerminal] Formatted text:', textToPaste)
           } else if (formatResult.skipped) {
-            console.log('[usePasteToTerminal] Formatting was skipped (user cancelled or chose original)')
+            console.log(
+              '[usePasteToTerminal] Formatting was skipped (user cancelled or chose original)'
+            )
           } else if (formatResult.error) {
             console.warn(
               '[usePasteToTerminal] Formatting failed, using original text:',
@@ -119,7 +121,9 @@ export function usePasteToTerminal({
         let result
         if (pasteMode === 'terminal') {
           // Use legacy terminal paste for terminal mode
-          console.log('[usePasteToTerminal] Using TERMINAL mode - calling pasteToLastActiveTerminal')
+          console.log(
+            '[usePasteToTerminal] Using TERMINAL mode - calling pasteToLastActiveTerminal'
+          )
           result = await window.electronAPI.pasteToLastActiveTerminal(textToPaste)
         } else {
           // Use new paste handler for auto and clipboard modes

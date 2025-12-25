@@ -100,10 +100,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               <button onClick={this.handleReset} className="btn btn-primary">
                 Try Again
               </button>
-              <button
-                onClick={() => window.location.reload()}
-                className="btn btn-secondary"
-              >
+              <button onClick={() => window.location.reload()} className="btn btn-secondary">
                 Reload App
               </button>
             </div>

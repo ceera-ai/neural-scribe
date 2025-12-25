@@ -66,7 +66,7 @@ export function ApiKeySetup({ onApiKeySet }: ApiKeySetupProps) {
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="xi_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
               className="api-key-input"
-              autoFocus
+              autoFocus // eslint-disable-line jsx-a11y/no-autofocus
               disabled={isLoading}
             />
           </div>

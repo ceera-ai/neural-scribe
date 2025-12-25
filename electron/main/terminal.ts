@@ -370,9 +370,7 @@ function releasePasteLock(): void {
  * Paste text to the last active terminal (simpler workflow)
  * Returns: { success: boolean, needsPermission: boolean, copied: boolean, targetApp: string }
  */
-export async function pasteToLastActiveTerminal(
-  text: string
-): Promise<{
+export async function pasteToLastActiveTerminal(text: string): Promise<{
   success: boolean
   needsPermission: boolean
   copied: boolean

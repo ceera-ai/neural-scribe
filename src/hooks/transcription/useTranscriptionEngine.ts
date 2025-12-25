@@ -4,7 +4,7 @@ import { useDeepgramProvider } from './useDeepgramProvider'
 import type {
   TranscriptionProvider,
   TranscriptionProviderOptions,
-  TranscriptionEngine
+  TranscriptionEngine,
 } from './types'
 
 export function useTranscriptionEngine(
@@ -35,9 +35,8 @@ export function useTranscriptionEngine(
 
   // Log which provider is active
   useEffect(() => {
-    const providerName = engine === 'deepgram'
-      ? 'Deepgram (Premium)'
-      : 'ElevenLabs Scribe (Premium)'
+    const providerName =
+      engine === 'deepgram' ? 'Deepgram (Premium)' : 'ElevenLabs Scribe (Premium)'
     console.log(`[TranscriptionEngine] 🎯 Active provider: ${providerName}`)
   }, [engine])
 

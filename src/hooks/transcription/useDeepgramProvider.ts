@@ -1,6 +1,11 @@
+/* eslint-disable max-lines */
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { createClient, LiveTranscriptionEvents, LiveClient } from '@deepgram/sdk'
-import type { TranscriptionProvider, TranscriptionProviderOptions, TranscriptSegment } from './types'
+import type {
+  TranscriptionProvider,
+  TranscriptionProviderOptions,
+  TranscriptSegment,
+} from './types'
 import { detectVoiceCommand, type VoiceCommands } from './voiceCommands'
 
 /**
@@ -345,11 +350,11 @@ export function useDeepgramProvider(
         'nova-3': 'nova-3',
         'nova-2': 'nova-2',
         'nova-2-meeting': 'nova-2-meeting',
-        'enhanced': 'enhanced',
-        'base': 'base',
+        enhanced: 'enhanced',
+        base: 'base',
         'nova-3-monolingual': 'nova-3',
         'nova-3-multilingual': 'nova-3',
-        'flux': 'nova-2',
+        flux: 'nova-2',
       }
 
       const model = modelMap[requestedModel] || 'nova-2'
@@ -470,9 +475,12 @@ export function useDeepgramProvider(
             }
 
             // Auto-stop recording after voice command
-            setTimeout(() => {
-              performStopRecording()
-            }, isFinal ? 100 : 200)
+            setTimeout(
+              () => {
+                performStopRecording()
+              },
+              isFinal ? 100 : 200
+            )
 
             return
           }
@@ -524,13 +532,7 @@ export function useDeepgramProvider(
         window.electronAPI.notifyRecordingState(false)
       }
     }
-  }, [
-    sessionId,
-    selectedMicrophoneId,
-    startAudioAnalysis,
-    performStopRecording,
-    isElectron,
-  ])
+  }, [sessionId, selectedMicrophoneId, startAudioAnalysis, performStopRecording, isElectron])
 
   const stopRecording = useCallback(async () => {
     await performStopRecording()
@@ -551,7 +553,11 @@ export function useDeepgramProvider(
       const activeEngine = settings.transcriptionEngine || 'elevenlabs'
 
       if (activeEngine !== 'deepgram') {
-        console.log('[Deepgram] Ignoring hotkey - not the active engine (active:', activeEngine, ')')
+        console.log(
+          '[Deepgram] Ignoring hotkey - not the active engine (active:',
+          activeEngine,
+          ')'
+        )
         return
       }
 

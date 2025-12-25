@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { BrowserWindow, screen, Display } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
@@ -221,8 +222,8 @@ export function showOverlay(): void {
 
       console.log('[Overlay] Shown on display:', targetDisplay.id, 'with hotkey:', hotkeyText)
     }
-  } catch (err) {
-    console.log('[Overlay] Error showing overlay:', err)
+  } catch (_err) {
+    console.log('[Overlay] Error showing overlay:', _err)
     overlayWindow = null
   }
 }
@@ -247,8 +248,8 @@ export function hideOverlay(): void {
         }
       }, 350)
     }
-  } catch (err) {
-    console.log('[Overlay] Error hiding overlay:', err)
+  } catch (_err) {
+    console.log('[Overlay] Error hiding overlay:', _err)
     overlayWindow = null
   }
 }
@@ -258,8 +259,8 @@ export function destroyOverlay(): void {
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       overlayWindow.destroy()
     }
-  } catch (err) {
-    console.log('[Overlay] Error destroying overlay:', err)
+  } catch (_err) {
+    console.log('[Overlay] Error destroying overlay:', _err)
   }
   overlayWindow = null
   mainWindowRef = null
@@ -343,7 +344,7 @@ export function updateAudioLevel(level: number): void {
       ${waveformUpdates}
     `
     overlayWindow.webContents.executeJavaScript(script).catch(() => {})
-  } catch (err) {
+  } catch {
     // Ignore errors silently
   }
 }
@@ -384,7 +385,7 @@ export function updateRecordingTime(seconds: number): void {
       if (timeEl) timeEl.textContent = '${timeStr}';
     `
     overlayWindow.webContents.executeJavaScript(script).catch(() => {})
-  } catch (err) {
+  } catch {
     // Ignore errors silently
   }
 }
@@ -444,8 +445,8 @@ export function updateVoiceCommands(commands: {
     overlayWindow.webContents.executeJavaScript(script).catch((err) => {
       console.error('[Overlay] Failed to update voice commands:', err)
     })
-  } catch (err) {
-    console.error('[Overlay] Error in updateVoiceCommands:', err)
+  } catch (_err) {
+    console.error('[Overlay] Error in updateVoiceCommands:', _err)
   }
 }
 
@@ -561,8 +562,8 @@ export function updateTranscriptPreview(text: string, wordCount: number): void {
       // Log errors for debugging (will appear in main process console)
       console.error('[Overlay] Failed to update transcript preview:', err)
     })
-  } catch (err) {
-    console.error('[Overlay] Error in updateTranscriptPreview:', err)
+  } catch (_err) {
+    console.error('[Overlay] Error in updateTranscriptPreview:', _err)
   }
 }
 
@@ -610,8 +611,8 @@ export function updateOverlayStatus(status: {
     overlayWindow.webContents.executeJavaScript(script).catch((err) => {
       console.error('[Overlay] Failed to update status:', err)
     })
-  } catch (err) {
-    console.error('[Overlay] Error in updateOverlayStatus:', err)
+  } catch (_err) {
+    console.error('[Overlay] Error in updateOverlayStatus:', _err)
   }
 }
 
@@ -689,7 +690,7 @@ export function updateFrequencyData(frequencyData: number[]): void {
       });
     `
     overlayWindow.webContents.executeJavaScript(script).catch(() => {})
-  } catch (err) {
+  } catch {
     // Ignore errors silently
   }
 }

@@ -72,7 +72,7 @@ function createWindow(): void {
   })
 }
 
-function createDebugWindow(): void {
+export function createDebugWindow(): void {
   debugWindow = new BrowserWindow({
     width: 900,
     height: 700,

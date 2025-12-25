@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/label-has-associated-control */
 import { useMicrophoneDevices } from '../hooks/useMicrophoneDevices'
 import './MicrophoneSelector.css'
 

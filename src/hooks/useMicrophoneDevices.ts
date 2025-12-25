@@ -36,7 +36,9 @@ export const useMicrophoneDevices = (): UseMicrophoneDevicesReturn => {
           const settings = await window.electronAPI.getSettings()
           if (settings.selectedMicrophoneId) {
             // Verify the saved device still exists
-            const deviceExists = audioInputs.some((d) => d.deviceId === settings.selectedMicrophoneId)
+            const deviceExists = audioInputs.some(
+              (d) => d.deviceId === settings.selectedMicrophoneId
+            )
             if (deviceExists) {
               setSelectedDeviceIdState(settings.selectedMicrophoneId)
             }

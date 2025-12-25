@@ -85,11 +85,7 @@ export const AppHeader: FC<AppHeaderProps> = ({
             <path d="M6 20v-4"></path>
           </svg>
         </button>
-        <button
-          className="btn settings-btn cyber-btn"
-          onClick={onOpenSettings}
-          title="Settings"
-        >
+        <button className="btn settings-btn cyber-btn" onClick={onOpenSettings} title="Settings">
           <svg
             width="18"
             height="18"

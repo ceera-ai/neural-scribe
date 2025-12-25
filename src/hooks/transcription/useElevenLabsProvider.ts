@@ -1,6 +1,11 @@
+/* eslint-disable max-lines */
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Scribe, RealtimeEvents } from '@elevenlabs/client'
-import type { TranscriptionProvider, TranscriptionProviderOptions, TranscriptSegment } from './types'
+import type {
+  TranscriptionProvider,
+  TranscriptionProviderOptions,
+  TranscriptSegment,
+} from './types'
 import { detectVoiceCommand, type VoiceCommands } from './voiceCommands'
 
 /**
@@ -549,7 +554,9 @@ export function useElevenLabsProvider(
 
         // This path is only reached if the connection closed unexpectedly
         // (not via manual stopRecording call)
-        console.log('[WebSocket] Unexpected connection close - cleaning up via performStopRecording')
+        console.log(
+          '[WebSocket] Unexpected connection close - cleaning up via performStopRecording'
+        )
 
         await performStopRecording()
       })
@@ -584,7 +591,11 @@ export function useElevenLabsProvider(
       const activeEngine = settings.transcriptionEngine || 'elevenlabs'
 
       if (activeEngine !== 'elevenlabs') {
-        console.log('[ElevenLabs] Ignoring hotkey - not the active engine (active:', activeEngine, ')')
+        console.log(
+          '[ElevenLabs] Ignoring hotkey - not the active engine (active:',
+          activeEngine,
+          ')'
+        )
         return
       }
 

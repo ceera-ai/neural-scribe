@@ -30,7 +30,13 @@ export interface TranscriptionProviderOptions {
 }
 
 // Extensible engine ID - add new providers here
-export type TranscriptionEngine = 'elevenlabs' | 'deepgram' | 'azure' | 'aws' | 'whisper' | 'macos-native'
+export type TranscriptionEngine =
+  | 'elevenlabs'
+  | 'deepgram'
+  | 'azure'
+  | 'aws'
+  | 'whisper'
+  | 'macos-native'
 
 // Provider metadata for UI and capabilities
 export interface ProviderMetadata {

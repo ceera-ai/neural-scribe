@@ -155,7 +155,7 @@ export async function clipboardOnlyMode(text: string): Promise<PasteResult> {
 export async function autoPasteToActiveField(
   text: string,
   hideWindow: () => Promise<void>,
-  isWindowVisible: () => boolean,
+  isWindowVisible: () => boolean
 ): Promise<PasteResult> {
   try {
     console.log('[PasteHandler] autoPasteToActiveField - Starting auto-paste')
@@ -273,7 +273,7 @@ export async function autoPasteToActiveField(
 export async function handlePaste(
   options: PasteOptions,
   hideWindow: () => Promise<void>,
-  isWindowVisible: () => boolean,
+  isWindowVisible: () => boolean
 ): Promise<PasteResult> {
   const { mode, text } = options
 

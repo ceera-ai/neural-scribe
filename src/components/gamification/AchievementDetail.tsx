@@ -231,7 +231,7 @@ export const AchievementDetail: React.FC<AchievementDetailProps> = ({
 }
 
 // Helper function to generate requirement text based on category
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 function getRequirementText(category: string, _name: string): string {
   const texts: Record<string, string> = {
     milestone: 'Complete the required number of transcription sessions to unlock this achievement.',

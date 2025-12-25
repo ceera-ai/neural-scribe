@@ -76,7 +76,6 @@ export function useAppInitialization(): AppInitializationState {
         // Load shortcut settings
         if (settings.recordHotkey) setRecordHotkey(settings.recordHotkey)
         if (settings.pasteHotkey) setPasteHotkey(settings.pasteHotkey)
-
       } catch (err: any) {
         console.error('Failed to initialize app:', err)
         setInitError('Failed to initialize: ' + err.message)

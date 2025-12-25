@@ -71,7 +71,12 @@ export function useRecordingEffects({
           try {
             // Apply replacements first
             const processedText = await window.electronAPI.applyReplacements(textToPaste)
-            console.log('[useRecordingEffects] Voice command paste:', processedText, 'duration:', duration)
+            console.log(
+              '[useRecordingEffects] Voice command paste:',
+              processedText,
+              'duration:',
+              duration
+            )
 
             // Use the formatAndPaste helper with duration
             await formatAndPaste(processedText, true, duration)

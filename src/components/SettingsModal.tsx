@@ -1,6 +1,9 @@
+/* eslint-disable max-lines */
+/* eslint-disable jsx-a11y/no-autofocus */
+/* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/label-has-associated-control */
 import { useState, useEffect } from 'react'
 import type { VoiceCommandTrigger } from '../types/electron'
-import { getAvailableProviders, getProviderMetadata } from '../hooks/transcription/providerRegistry'
+import { getAvailableProviders } from '../hooks/transcription/providerRegistry'
 import './SettingsModal.css'
 
 // Check if running in Electron
@@ -36,8 +39,12 @@ export function SettingsModal({
   const [apiKeySuccess, setApiKeySuccess] = useState(false)
 
   // Transcription Engine state
-  const [transcriptionEngine, setTranscriptionEngine] = useState<'elevenlabs' | 'deepgram'>('elevenlabs')
-  const [deepgramModel, setDeepgramModel] = useState<'nova-3' | 'nova-2' | 'nova-2-meeting' | 'enhanced' | 'base'>('nova-2')
+  const [transcriptionEngine, setTranscriptionEngine] = useState<'elevenlabs' | 'deepgram'>(
+    'elevenlabs'
+  )
+  const [deepgramModel, setDeepgramModel] = useState<
+    'nova-3' | 'nova-2' | 'nova-2-meeting' | 'enhanced' | 'base'
+  >('nova-2')
   const [deepgramMultilingual, setDeepgramMultilingual] = useState(false)
 
   // Word Replacements
@@ -562,7 +569,9 @@ export function SettingsModal({
                 </div>
 
                 <div className="paste-mode-options">
-                  <label className={`paste-mode-option ${pasteMode === 'clipboard' ? 'active' : ''}`}>
+                  <label
+                    className={`paste-mode-option ${pasteMode === 'clipboard' ? 'active' : ''}`}
+                  >
                     <input
                       type="radio"
                       name="pasteMode"
@@ -594,7 +603,9 @@ export function SettingsModal({
                     </div>
                   </label>
 
-                  <label className={`paste-mode-option ${pasteMode === 'terminal' ? 'active' : ''}`}>
+                  <label
+                    className={`paste-mode-option ${pasteMode === 'terminal' ? 'active' : ''}`}
+                  >
                     <input
                       type="radio"
                       name="pasteMode"
@@ -620,10 +631,13 @@ export function SettingsModal({
                     </div>
                     <p>
                       Auto-paste requires accessibility permissions to simulate keyboard input.
-                      Please grant permissions in System Preferences → Security & Privacy →
-                      Privacy → Accessibility.
+                      Please grant permissions in System Preferences → Security & Privacy → Privacy
+                      → Accessibility.
                     </p>
-                    <button className="cyber-btn-sm cyber-btn-primary" onClick={handleRequestPermissions}>
+                    <button
+                      className="cyber-btn-sm cyber-btn-primary"
+                      onClick={handleRequestPermissions}
+                    >
                       Open System Preferences
                     </button>
                   </div>
@@ -691,7 +705,9 @@ export function SettingsModal({
                             name="transcription-engine"
                             value={provider.id}
                             checked={isSelected}
-                            onChange={() => handleEngineChange(provider.id as 'elevenlabs' | 'deepgram')}
+                            onChange={() =>
+                              handleEngineChange(provider.id as 'elevenlabs' | 'deepgram')
+                            }
                             disabled={!isAvailable}
                           />
                           <span className="radio-mark" />
@@ -725,7 +741,9 @@ export function SettingsModal({
 
                           {/* API Key Status within provider card */}
                           {provider.requiresApiKey && (
-                            <div className={`provider-api-status ${currentApiKey ? 'has-key' : 'no-key'}`}>
+                            <div
+                              className={`provider-api-status ${currentApiKey ? 'has-key' : 'no-key'}`}
+                            >
                               {currentApiKey ? '✓ API key configured' : '⚠️ API key required'}
                             </div>
                           )}
@@ -748,7 +766,10 @@ export function SettingsModal({
                   <div className="setting-icon">🔑</div>
                   <div className="setting-info">
                     <h3>API Key</h3>
-                    <p>Configure your {transcriptionEngine === 'elevenlabs' ? 'ElevenLabs' : 'Deepgram'} API key</p>
+                    <p>
+                      Configure your{' '}
+                      {transcriptionEngine === 'elevenlabs' ? 'ElevenLabs' : 'Deepgram'} API key
+                    </p>
                   </div>
                 </div>
 
@@ -756,9 +777,12 @@ export function SettingsModal({
                   <div className="api-key-display">
                     <code className="api-key-value">
                       {showApiKey
-                        ? (transcriptionEngine === 'elevenlabs' ? apiKey : deepgramApiKey)
-                        : maskApiKey(transcriptionEngine === 'elevenlabs' ? apiKey : deepgramApiKey)
-                      }
+                        ? transcriptionEngine === 'elevenlabs'
+                          ? apiKey
+                          : deepgramApiKey
+                        : maskApiKey(
+                            transcriptionEngine === 'elevenlabs' ? apiKey : deepgramApiKey
+                          )}
                     </code>
                     <div className="api-key-actions">
                       <button className="cyber-btn-sm" onClick={() => setShowApiKey(!showApiKey)}>
@@ -768,7 +792,9 @@ export function SettingsModal({
                         className="cyber-btn-sm cyber-btn-primary"
                         onClick={() => setIsEditingApiKey(true)}
                       >
-                        {(transcriptionEngine === 'elevenlabs' ? apiKey : deepgramApiKey) ? 'Change' : 'Add'}
+                        {(transcriptionEngine === 'elevenlabs' ? apiKey : deepgramApiKey)
+                          ? 'Change'
+                          : 'Add'}
                       </button>
                     </div>
                   </div>
@@ -811,11 +837,12 @@ export function SettingsModal({
 
                 {/* API Key Status Indicator */}
                 {!isEditingApiKey && (
-                  <div className={`api-key-status ${(transcriptionEngine === 'elevenlabs' ? apiKey : deepgramApiKey) ? 'status-valid' : 'status-missing'}`}>
+                  <div
+                    className={`api-key-status ${(transcriptionEngine === 'elevenlabs' ? apiKey : deepgramApiKey) ? 'status-valid' : 'status-missing'}`}
+                  >
                     {(transcriptionEngine === 'elevenlabs' ? apiKey : deepgramApiKey)
                       ? `✓ API key configured and ready`
-                      : `⚠️ Please add your API key to start transcribing`
-                    }
+                      : `⚠️ Please add your API key to start transcribing`}
                   </div>
                 )}
               </div>

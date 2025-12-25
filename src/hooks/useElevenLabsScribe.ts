@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Scribe, RealtimeEvents } from '@elevenlabs/client'
 
@@ -649,7 +650,9 @@ export const useElevenLabsScribe = (
 
         // This path is only reached if the connection closed unexpectedly
         // (not via manual stopRecording call)
-        console.log('[WebSocket] Unexpected connection close - cleaning up via performStopRecording')
+        console.log(
+          '[WebSocket] Unexpected connection close - cleaning up via performStopRecording'
+        )
 
         await performStopRecording()
       })

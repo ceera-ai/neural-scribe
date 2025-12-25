@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/label-has-associated-control */
 import { useState, useEffect, useCallback } from 'react'
 import type { TerminalWindow } from '../types/electron'
 import './TerminalSelector.css'

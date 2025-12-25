@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/click-events-have-key-events */
 import { useMemo } from 'react'
 import './AIOrb.css'
 
@@ -28,8 +29,11 @@ export function AIOrb({
     return Array.from({ length: 12 }, (_, i) => ({
       id: i,
       delay: i * 0.3,
+      // eslint-disable-next-line react-hooks/purity
       duration: 3 + Math.random() * 2,
+      // eslint-disable-next-line react-hooks/purity
       size: 2 + Math.random() * 4,
+      // eslint-disable-next-line react-hooks/purity
       distance: 60 + Math.random() * 40,
       angle: (360 / 12) * i,
     }))
