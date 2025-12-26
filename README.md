@@ -28,11 +28,11 @@ Neural Scribe is a production-ready Electron desktop application that provides u
 
 ### Why Neural Scribe?
 
-- **Multi-Engine Support**: Choose between ElevenLabs Scribe or Deepgram for transcription
+- **Multi-Engine Support**: Choose between ElevenLabs Scribe or Deepgram for transcription (applies to all features including dictation)
 - **Ultra-Low Latency**: ~100-150ms transcription latency with real-time streaming
 - **Voice Commands**: Control transcription with natural voice triggers ("send it", "clear", "cancel")
 - **Terminal Integration**: Paste transcriptions directly to any terminal with keyboard shortcuts
-- **Smart Formatting**: AI-powered prompt formatting using Claude Code CLI
+- **Smart Formatting**: AI-powered prompt formatting using Claude Code CLI with voice dictation
 - **Gamification**: Track your transcription stats, earn XP, and unlock achievements
 - **Customizable**: Word replacements, voice command triggers, and hotkey configuration
 - **Privacy-Focused**: Runs locally, data stays on your machine

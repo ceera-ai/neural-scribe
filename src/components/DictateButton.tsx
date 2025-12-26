@@ -1,9 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
-import { Scribe, RealtimeEvents } from '@elevenlabs/client'
+import { useState } from 'react'
+import { useDictation } from '../hooks/useDictation'
 import './DictateButton.css'
-
-// Check if running in Electron
-const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
 
 interface DictateButtonProps {
   onPartialTranscript: (text: string) => void // Called with real-time updates
@@ -12,139 +9,44 @@ interface DictateButtonProps {
   disabled?: boolean
 }
 
-// TODO: Add support for Deepgram and other transcription engines
-// Currently only supports ElevenLabs Scribe
-
+/**
+ * Dictate Button Component
+ *
+ * Provides voice dictation using the selected transcription engine from settings.
+ * Automatically switches between ElevenLabs and Deepgram based on user preference.
+ */
 export function DictateButton({
   onPartialTranscript,
   onFinalTranscript,
   onRecordingChange,
   disabled,
 }: DictateButtonProps) {
-  const [isRecording, setIsRecording] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const connectionRef = useRef<ReturnType<typeof Scribe.connect> | null>(null)
-  const committedTextRef = useRef<string>('')
-  const partialTextRef = useRef<string>('')
-  const onRecordingChangeRef = useRef(onRecordingChange)
+  const [displayError, setDisplayError] = useState<string | null>(null)
 
-  // Update ref in effect to avoid updating during render
-  useEffect(() => {
-    onRecordingChangeRef.current = onRecordingChange
-  }, [onRecordingChange])
+  const { isRecording, startDictation, stopDictation, error, engine } = useDictation({
+    onPartialTranscript,
+    onFinalTranscript,
+    onRecordingChange,
+  })
 
-  const updateTranscript = useCallback(() => {
-    // Combine committed + current partial for real-time display
-    const fullText =
-      committedTextRef.current + (partialTextRef.current ? ' ' + partialTextRef.current : '')
-    onPartialTranscript(fullText.trim())
-  }, [onPartialTranscript])
+  // Show errors from the hook
+  if (error && error !== displayError) {
+    setDisplayError(error)
+  }
 
-  const startRecording = useCallback(async () => {
-    setError(null)
-    committedTextRef.current = ''
-    partialTextRef.current = ''
-
-    if (!isElectron) {
-      setError('Not in Electron environment')
-      return
-    }
-
-    try {
-      const token = await window.electronAPI.getScribeToken()
-
-      // Microphone configuration
-      const microphoneConfig: MediaTrackConstraints = {
-        echoCancellation: true,
-        noiseSuppression: true,
-      }
-
-      // Create connection using the official SDK
-      const connection = Scribe.connect({
-        token,
-        modelId: 'scribe_v2_realtime',
-        microphone: microphoneConfig,
-        includeTimestamps: false,
-      })
-
-      connectionRef.current = connection
-
-      // Handle connection opened
-      connection.on(RealtimeEvents.OPEN, () => {
-        console.log('[Dictate] WebSocket opened')
-      })
-
-      // Handle session started (recording active)
-      connection.on(RealtimeEvents.SESSION_STARTED, () => {
-        console.log('[Dictate] Session started')
-        setIsRecording(true)
-        onRecordingChangeRef.current?.(true)
-      })
-
-      // Handle partial (real-time) transcripts
-      connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (...args: unknown[]) => {
-        const data = args[0] as { text: string }
-        console.log('[Dictate] Partial:', data.text)
-        partialTextRef.current = data.text
-        updateTranscript()
-      })
-
-      // Handle committed transcripts
-      connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (...args: unknown[]) => {
-        const data = args[0] as { text: string }
-        console.log('[Dictate] Committed:', data.text)
-        // Add to committed text
-        if (committedTextRef.current) {
-          committedTextRef.current += ' ' + data.text
-        } else {
-          committedTextRef.current = data.text
-        }
-        // Clear partial since it's now committed
-        partialTextRef.current = ''
-        updateTranscript()
-      })
-
-      // Handle connection closed
-      connection.on(RealtimeEvents.CLOSE, () => {
-        console.log('[Dictate] Connection closed')
-        setIsRecording(false)
-        onRecordingChangeRef.current?.(false)
-        // Send final transcript
-        const finalText = committedTextRef.current.trim()
-        if (finalText) {
-          onFinalTranscript(finalText)
-        }
-        connectionRef.current = null
-      })
-
-      // Handle errors
-      connection.on(RealtimeEvents.ERROR, (...args: unknown[]) => {
-        const err = args[0] as { message?: string }
-        console.error('[Dictate] Error:', err)
-        setError(err.message || 'Recording failed')
-        setIsRecording(false)
-      })
-    } catch (err: any) {
-      console.error('[Dictate] Failed to start:', err)
-      setError(err.message || 'Failed to start recording')
-      setIsRecording(false)
-    }
-  }, [onPartialTranscript, onFinalTranscript, updateTranscript])
-
-  const stopRecording = useCallback(() => {
-    if (connectionRef.current) {
-      connectionRef.current.close()
-      connectionRef.current = null
-    }
-  }, [])
-
-  const handleClick = () => {
+  const handleClick = async () => {
     if (isRecording) {
-      stopRecording()
+      stopDictation()
     } else {
-      startRecording()
+      setDisplayError(null)
+      await startDictation()
     }
   }
+
+  // Generate tooltip with engine info
+  const tooltip = isRecording
+    ? 'Stop dictating'
+    : `Dictate instructions (Using ${engine === 'deepgram' ? 'Deepgram' : 'ElevenLabs'})`
 
   return (
     <div className="dictate-container">
@@ -153,11 +55,7 @@ export function DictateButton({
         className={`dictate-btn ${isRecording ? 'recording' : ''}`}
         onClick={handleClick}
         disabled={disabled}
-        title={
-          isRecording
-            ? 'Stop dictating'
-            : 'Dictate instructions (Note: Uses ElevenLabs regardless of selected transcription engine)'
-        }
+        title={tooltip}
       >
         {isRecording ? (
           <>
@@ -171,7 +69,7 @@ export function DictateButton({
           </>
         )}
       </button>
-      {error && <span className="dictate-error">{error}</span>}
+      {displayError && <span className="dictate-error">{displayError}</span>}
     </div>
   )
 }
