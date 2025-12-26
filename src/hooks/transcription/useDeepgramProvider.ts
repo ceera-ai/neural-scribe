@@ -493,12 +493,13 @@ export function useDeepgramProvider(
         }
 
         setTranscriptSegments((prev) => {
-          if (!isFinal && prev.length > 0 && !prev[prev.length - 1].isFinal) {
-            // Replace last interim segment
+          // Replace last interim segment if it exists (for both interim and final transcripts)
+          if (prev.length > 0 && !prev[prev.length - 1].isFinal) {
             const updated = [...prev]
             updated[updated.length - 1] = newSegment
             return updated
           }
+          // Otherwise append as new segment
           return [...prev, newSegment]
         })
       })
