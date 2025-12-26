@@ -33,6 +33,7 @@ export function ReformatDialog({ record, isOpen, onClose, onReformat }: Reformat
   const [customInstructions, setCustomInstructions] = useState('')
   const [isDictating, setIsDictating] = useState(false)
   const [dictationBaseText, setDictationBaseText] = useState('')
+  const [partialDictation, setPartialDictation] = useState('')
   const [isFormatting, setIsFormatting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -168,18 +169,21 @@ export function ReformatDialog({ record, isOpen, onClose, onReformat }: Reformat
                   if (recording) {
                     setIsDictating(true)
                     setDictationBaseText(customInstructions)
+                    setPartialDictation('')
                   } else {
                     setIsDictating(false)
+                    setPartialDictation('')
                   }
                 }}
                 onPartialTranscript={(text) => {
-                  const separator = dictationBaseText ? ' ' : ''
-                  setCustomInstructions(dictationBaseText + separator + text)
+                  // Just update the partial preview, don't modify the actual field
+                  setPartialDictation(text)
                 }}
                 onFinalTranscript={(text) => {
-                  const separator = dictationBaseText ? ' ' : ''
+                  const separator = dictationBaseText && text ? ' ' : ''
                   setCustomInstructions(dictationBaseText + separator + text)
                   setDictationBaseText('')
+                  setPartialDictation('')
                 }}
                 disabled={isFormatting}
               />
@@ -195,6 +199,11 @@ export function ReformatDialog({ record, isOpen, onClose, onReformat }: Reformat
               rows={3}
               readOnly={isDictating}
             />
+            {isDictating && partialDictation && (
+              <div className="dictation-preview">
+                <span className="dictation-preview-label">Dictating:</span> {partialDictation}
+              </div>
+            )}
           </div>
 
           {/* Error */}

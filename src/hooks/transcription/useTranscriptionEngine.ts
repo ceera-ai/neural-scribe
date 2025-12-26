@@ -33,6 +33,62 @@ export function useTranscriptionEngine(
   const elevenLabsProvider = useElevenLabsProvider(options)
   const deepgramProvider = useDeepgramProvider(options)
 
+  // Get the active provider
+  const activeProvider = engine === 'deepgram' ? deepgramProvider : elevenLabsProvider
+
+  // Set up toggle-recording listener ONCE for the active provider
+  // This prevents conflicts from both providers trying to register listeners
+  useEffect(() => {
+    if (!isElectron) return
+
+    const handleToggleRecording = async (withFormatting: boolean) => {
+      const { isRecording, startRecording, stopRecording, transcriptSegments, editedTranscript } =
+        activeProvider
+      const { onSaveTranscript, onFormattingOverride } = options
+
+      console.log(
+        `[TranscriptionEngine] Toggle recording: ${withFormatting ? 'with' : 'without'} formatting`
+      )
+
+      if (isRecording) {
+        // Stop current recording
+        stopRecording()
+      } else {
+        // Override formatting setting for this recording session
+        if (onFormattingOverride) {
+          onFormattingOverride(withFormatting)
+        }
+
+        // Save existing transcript before starting new recording
+        if (transcriptSegments.length > 0 || editedTranscript) {
+          const currentText =
+            editedTranscript ||
+            transcriptSegments
+              .map((s) => s.text)
+              .join(' ')
+              .trim()
+          if (currentText && onSaveTranscript) {
+            await onSaveTranscript(currentText)
+          }
+        }
+        startRecording()
+      }
+    }
+
+    window.electronAPI.onToggleRecording(handleToggleRecording)
+
+    return () => {
+      window.electronAPI.removeAllListeners('toggle-recording')
+    }
+  }, [
+    isElectron,
+    activeProvider,
+    activeProvider.isRecording,
+    activeProvider.transcriptSegments,
+    activeProvider.editedTranscript,
+    options,
+  ])
+
   // Log which provider is active
   useEffect(() => {
     const providerName =
@@ -40,13 +96,6 @@ export function useTranscriptionEngine(
     console.log(`[TranscriptionEngine] 🎯 Active provider: ${providerName}`)
   }, [engine])
 
-  // Return the active provider based on selected engine
-  if (engine === 'deepgram') {
-    console.log('[TranscriptionEngine] Returning Deepgram provider')
-    return deepgramProvider
-  }
-
-  // Default to ElevenLabs
-  console.log('[TranscriptionEngine] Returning ElevenLabs provider')
-  return elevenLabsProvider
+  // Return the active provider
+  return activeProvider
 }

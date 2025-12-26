@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { createClient, LiveTranscriptionEvents, LiveClient } from '@deepgram/sdk'
 import type {
@@ -67,7 +66,7 @@ export function useDeepgramProvider(
     onRecordingStopped,
     onVoiceCommand,
     voiceCommandsEnabled = true,
-    onSaveTranscript,
+    onSaveTranscript: _onSaveTranscript, // Handled in useTranscriptionEngine
     onFormattingOverride,
   } = options
 
@@ -543,71 +542,8 @@ export function useDeepgramProvider(
     setEditedTranscript(null)
   }, [])
 
-  // Listen for toggle recording events from main process
-  useEffect(() => {
-    if (!isElectron) return
-
-    const handleToggleRecording = async (withFormatting: boolean) => {
-      // Check if Deepgram is the active engine
-      const settings = await window.electronAPI.getSettings()
-      const activeEngine = settings.transcriptionEngine || 'elevenlabs'
-
-      if (activeEngine !== 'deepgram') {
-        console.log(
-          '[Deepgram] Ignoring hotkey - not the active engine (active:',
-          activeEngine,
-          ')'
-        )
-        return
-      }
-
-      console.log('[Deepgram] Hotkey pressed, withFormatting:', withFormatting)
-
-      if (isRecording) {
-        stopRecording()
-        // Reset formatting override when stopping
-        if (onFormattingOverride) {
-          onFormattingOverride(null)
-        }
-      } else {
-        // Set formatting override based on which hotkey was pressed
-        if (onFormattingOverride) {
-          onFormattingOverride(withFormatting)
-        }
-
-        // Save existing transcript to history before starting new recording
-        if (transcriptSegments.length > 0 || editedTranscript !== null) {
-          const currentText =
-            editedTranscript ??
-            transcriptSegments
-              .map((s) => s.text)
-              .join(' ')
-              .trim()
-          if (currentText && onSaveTranscript) {
-            await onSaveTranscript(currentText)
-          }
-          setTranscriptSegments([])
-          setEditedTranscript(null)
-        }
-        startRecording()
-      }
-    }
-
-    window.electronAPI.onToggleRecording(handleToggleRecording)
-
-    return () => {
-      window.electronAPI.removeAllListeners('toggle-recording')
-    }
-  }, [
-    isElectron,
-    isRecording,
-    startRecording,
-    stopRecording,
-    transcriptSegments,
-    editedTranscript,
-    onSaveTranscript,
-    onFormattingOverride,
-  ])
+  // Toggle recording listener is now handled in useTranscriptionEngine
+  // to prevent conflicts when both providers are mounted
 
   // Cleanup on unmount
   useEffect(() => {
