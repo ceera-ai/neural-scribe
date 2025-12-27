@@ -4,6 +4,7 @@ import { getLastTranscription } from './store/history'
 import { handlePaste } from './paste-handler'
 import { hideMainWindowTemporarily, isMainWindowVisible } from './index'
 import { captureActiveApplication, clearCapturedApplication } from './focus-manager'
+import { showOverlay, hideOverlay } from './overlay'
 
 let mainWindow: BrowserWindow | null = null
 let currentPasteHotkey: string | null = null
@@ -11,6 +12,7 @@ let currentRecordHotkey: string | null = null
 let currentRecordWithFormattingHotkey: string | null = null
 let _escapeCallback: (() => void) | null = null // Stored for cleanup, not directly used
 let isEscapeRegistered = false
+let isCurrentlyRecording = false // Track recording state in main process
 
 export function registerHotkeys(window: BrowserWindow): void {
   mainWindow = window
@@ -32,12 +34,43 @@ export function registerHotkeys(window: BrowserWindow): void {
   // Register record toggle hotkey without formatting (Cmd+Shift+R by default)
   try {
     if (
-      globalShortcut.register(settings.recordHotkey, () => {
+      globalShortcut.register(settings.recordHotkey, async () => {
         const t0 = performance.now()
         console.log(`[PERF] Hotkey pressed at ${t0.toFixed(2)}ms`)
+
+        // Toggle state and show/hide overlay IMMEDIATELY
+        isCurrentlyRecording = !isCurrentlyRecording
+
+        if (isCurrentlyRecording) {
+          // Starting recording - show overlay immediately (don't wait for capture)
+          console.log('[Hotkeys] Starting recording, showing overlay immediately...')
+
+          // Capture app in background (non-blocking)
+          captureActiveApplication()
+            .then(() => {
+              const t1 = performance.now()
+              console.log(
+                `[PERF] captureActiveApplication completed in ${(t1 - t0).toFixed(2)}ms (async)`
+              )
+            })
+            .catch((err) => {
+              console.error('[Hotkeys] Failed to capture active app:', err)
+            })
+
+          showOverlay()
+          const t1 = performance.now()
+          console.log(`[PERF] showOverlay took ${(t1 - t0).toFixed(2)}ms`)
+          console.log(`[PERF] TOTAL hotkey handler (start): ${(t1 - t0).toFixed(2)}ms`)
+        } else {
+          // Stopping recording - hide overlay immediately
+          console.log('[Hotkeys] Stopping recording, hiding overlay...')
+          hideOverlay()
+          const t1 = performance.now()
+          console.log(`[PERF] hideOverlay took ${(t1 - t0).toFixed(2)}ms`)
+        }
+
+        // Send IPC to renderer (async, doesn't block)
         mainWindow?.webContents.send('toggle-recording', false)
-        const t1 = performance.now()
-        console.log(`[PERF] IPC sent in ${(t1 - t0).toFixed(2)}ms`)
       })
     ) {
       currentRecordHotkey = settings.recordHotkey
@@ -49,12 +82,47 @@ export function registerHotkeys(window: BrowserWindow): void {
   // Register record toggle hotkey with formatting (Cmd+Shift+F by default)
   try {
     if (
-      globalShortcut.register(settings.recordWithFormattingHotkey, () => {
+      globalShortcut.register(settings.recordWithFormattingHotkey, async () => {
         const t0 = performance.now()
         console.log(`[PERF] Hotkey with formatting pressed at ${t0.toFixed(2)}ms`)
+
+        // Toggle state and show/hide overlay IMMEDIATELY
+        isCurrentlyRecording = !isCurrentlyRecording
+
+        if (isCurrentlyRecording) {
+          // Starting recording - show overlay immediately (don't wait for capture)
+          console.log(
+            '[Hotkeys] Starting recording with formatting, showing overlay immediately...'
+          )
+
+          // Capture app in background (non-blocking)
+          captureActiveApplication()
+            .then(() => {
+              const t1 = performance.now()
+              console.log(
+                `[PERF] captureActiveApplication completed in ${(t1 - t0).toFixed(2)}ms (async)`
+              )
+            })
+            .catch((err) => {
+              console.error('[Hotkeys] Failed to capture active app:', err)
+            })
+
+          showOverlay()
+          const t1 = performance.now()
+          console.log(`[PERF] showOverlay took ${(t1 - t0).toFixed(2)}ms`)
+          console.log(
+            `[PERF] TOTAL hotkey handler (start with formatting): ${(t1 - t0).toFixed(2)}ms`
+          )
+        } else {
+          // Stopping recording - hide overlay immediately
+          console.log('[Hotkeys] Stopping recording, hiding overlay...')
+          hideOverlay()
+          const t1 = performance.now()
+          console.log(`[PERF] hideOverlay took ${(t1 - t0).toFixed(2)}ms`)
+        }
+
+        // Send IPC to renderer (async, doesn't block)
         mainWindow?.webContents.send('toggle-recording', true)
-        const t1 = performance.now()
-        console.log(`[PERF] IPC sent in ${(t1 - t0).toFixed(2)}ms`)
       })
     ) {
       currentRecordWithFormattingHotkey = settings.recordWithFormattingHotkey
