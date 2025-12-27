@@ -9,6 +9,7 @@
  */
 
 import Store from 'electron-store'
+import { getUserDataPath } from '../config/app-config'
 
 /**
  * Application settings schema
@@ -114,6 +115,7 @@ const store = new Store<SettingsStore>({
     settings: DEFAULT_SETTINGS,
   },
   encryptionKey: 'elevenlabs-transcription-secure-key',
+  cwd: getUserDataPath(),
 })
 
 // ============================================================================

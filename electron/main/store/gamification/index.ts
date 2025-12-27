@@ -21,6 +21,7 @@ import { unlockAchievement, type AchievementsState, DEFAULT_ACHIEVEMENTS } from 
 import { checkAchievements } from './achievementChecker'
 import { getAchievementById } from '../../gamification/achievementDefinitions'
 import { migrateGamificationData, needsMigration, getDataVersion } from './migration'
+import { getUserDataPath } from '../../config/app-config'
 
 // Re-export types from sub-modules
 export type { LevelSystem, Rank } from './levels'
@@ -83,6 +84,7 @@ const store = new Store<GamificationStore>({
     gamification: DEFAULT_GAMIFICATION_DATA,
   },
   encryptionKey: 'elevenlabs-transcription-secure-key',
+  cwd: getUserDataPath(),
 })
 
 // ============================================================================
@@ -182,11 +184,12 @@ export function saveGamificationData(data: Partial<GamificationData>): void {
  *
  * @param {number} words - Words transcribed
  * @param {number} durationMs - Session duration in milliseconds
+ * @param {string} [engine] - Optional transcription engine used ('elevenlabs' or 'deepgram')
  * @returns Session results including XP gained and level changes
  *
  * @example
  * ```typescript
- * const result = recordGamificationSession(150, 45000)
+ * const result = recordGamificationSession(150, 45000, 'elevenlabs')
  * console.log(`+${result.xpGained} XP`)
  * if (result.leveledUp) {
  *   console.log(`Leveled up! ${result.oldLevel} → ${result.newLevel}`)
@@ -195,7 +198,8 @@ export function saveGamificationData(data: Partial<GamificationData>): void {
  */
 export function recordGamificationSession(
   words: number,
-  durationMs: number
+  durationMs: number,
+  engine?: string
 ): {
   xpGained: number
   newAchievements: string[]
@@ -204,6 +208,16 @@ export function recordGamificationSession(
   newLevel: number
 } {
   const data = getGamificationData()
+
+  // Track engine usage if provided
+  if (engine) {
+    if (!data.stats.featureUsage.enginesUsed.includes(engine)) {
+      data.stats.featureUsage.enginesUsed.push(engine)
+    }
+    // Increment session count for this engine
+    const currentCount = data.stats.featureUsage.engineSessionCounts[engine] || 0
+    data.stats.featureUsage.engineSessionCounts[engine] = currentCount + 1
+  }
 
   // Update stats
   let updatedStats = updateSessionStats(data.stats, words, durationMs)

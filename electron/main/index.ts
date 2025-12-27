@@ -1,3 +1,8 @@
+// CRITICAL: Import app-config FIRST to initialize test mode before any stores are created
+// This must be the very first import to ensure app.setName() and app.setPath() are called
+// before electron-store instances are initialized in other modules
+import { isTestMode } from './config/app-config'
+
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -17,50 +22,6 @@ import {
   setupComparisonIpcHandlers,
 } from './comparisonOverlay'
 import { hasCompletedFirstLaunch, setFirstLaunchCompleted } from './store/settings'
-
-// ============================================================================
-// Test Launch Mode - Temporary Data Directory
-// ============================================================================
-// Check for TEST_LAUNCH environment variable to use separate test data directory
-// This allows testing first-launch experience without clearing real user data
-
-const isTestMode = process.env.TEST_LAUNCH === 'true'
-console.log('[TestMode] TEST_LAUNCH env:', process.env.TEST_LAUNCH)
-console.log('[TestMode] isTestMode:', isTestMode)
-
-// IMPORTANT: Set app name BEFORE accessing userData path
-// In dev mode, Electron uses "Electron" by default, which changes the data directory
-app.setName('Neural Scribe')
-
-if (isTestMode) {
-  // Use separate directory for test data
-  const normalUserData = app.getPath('userData')
-  const testUserData = normalUserData + '-test'
-
-  console.log('[TestMode] BEFORE setting test path:')
-  console.log('[TestMode]   Current userData:', app.getPath('userData'))
-
-  app.setPath('userData', testUserData)
-
-  console.log('[TestMode] AFTER setting test path:')
-  console.log('[TestMode]   Test userData:', app.getPath('userData'))
-
-  console.log('╔════════════════════════════════════════════════════════════════╗')
-  console.log('║                     🧪 TEST LAUNCH MODE                        ║')
-  console.log('╟────────────────────────────────────────────────────────────────╢')
-  console.log('║  Using temporary test data directory:                         ║')
-  console.log(`║  ${testUserData.padEnd(60)} ║`)
-  console.log('║                                                                ║')
-  console.log('║  Your real data is safe at:                                   ║')
-  console.log(`║  ${normalUserData.padEnd(60)} ║`)
-  console.log('║                                                                ║')
-  console.log('║  Changes in test mode will NOT affect your real data.         ║')
-  console.log('╚════════════════════════════════════════════════════════════════╝')
-} else {
-  console.log('📦 Normal launch mode - using real data directory')
-  console.log('   App name:', app.getName())
-  console.log('   Data location:', app.getPath('userData'))
-}
 
 let mainWindow: BrowserWindow | null = null
 let debugWindow: BrowserWindow | null = null
@@ -158,7 +119,7 @@ export function createDebugWindow(): void {
 }
 
 app.whenReady().then(() => {
-  // App name already set at top of file for userData path
+  // App name and test mode already initialized in app-config module
   electronApp.setAppUserModelId('com.neuralscribe.app')
 
   // Set dock icon on macOS

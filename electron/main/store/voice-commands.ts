@@ -8,6 +8,7 @@
  */
 
 import Store from 'electron-store'
+import { getUserDataPath } from '../config/app-config'
 
 /**
  * Voice command trigger
@@ -57,6 +58,7 @@ const store = new Store<VoiceCommandsStore>({
     voiceCommandTriggers: DEFAULT_VOICE_COMMAND_TRIGGERS,
   },
   encryptionKey: 'elevenlabs-transcription-secure-key',
+  cwd: getUserDataPath(),
 })
 
 /**

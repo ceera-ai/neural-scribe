@@ -9,6 +9,7 @@
 
 import Store from 'electron-store'
 import { getHistoryLimit } from './settings'
+import { getUserDataPath } from '../config/app-config'
 
 /**
  * Formatted version of a transcription
@@ -76,6 +77,7 @@ const store = new Store<HistoryStore>({
     history: [],
   },
   encryptionKey: 'elevenlabs-transcription-secure-key',
+  cwd: getUserDataPath(),
 })
 
 // ============================================================================

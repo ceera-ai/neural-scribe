@@ -1,4 +1,5 @@
 import Store from 'electron-store'
+import { getUserDataPath } from './config/app-config'
 
 export interface FormattedVersion {
   id: string
@@ -186,6 +187,7 @@ const defaults: StoreSchema = {
 export const store = new Store<StoreSchema>({
   defaults,
   encryptionKey: 'elevenlabs-transcription-secure-key',
+  cwd: getUserDataPath(),
 })
 
 // Settings helpers

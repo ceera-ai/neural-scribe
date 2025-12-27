@@ -8,6 +8,7 @@
  */
 
 import Store from 'electron-store'
+import { getUserDataPath } from '../config/app-config'
 
 /**
  * Word replacement rule
@@ -38,6 +39,7 @@ const store = new Store<ReplacementsStore>({
     replacements: [],
   },
   encryptionKey: 'elevenlabs-transcription-secure-key',
+  cwd: getUserDataPath(),
 })
 
 /**
