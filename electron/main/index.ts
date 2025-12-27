@@ -18,11 +18,44 @@ import {
 } from './comparisonOverlay'
 import { hasCompletedFirstLaunch, setFirstLaunchCompleted } from './store/settings'
 
+// ============================================================================
+// Test Launch Mode - Temporary Data Directory
+// ============================================================================
+// Check for --test or --test-launch flag to use separate test data directory
+// This allows testing first-launch experience without clearing real user data
+const isTestMode = process.argv.includes('--test') || process.argv.includes('--test-launch')
+
+if (isTestMode) {
+  // Use separate directory for test data
+  const normalUserData = app.getPath('userData')
+  const testUserData = normalUserData + '-test'
+  app.setPath('userData', testUserData)
+
+  console.log('╔════════════════════════════════════════════════════════════════╗')
+  console.log('║                     🧪 TEST LAUNCH MODE                        ║')
+  console.log('╟────────────────────────────────────────────────────────────────╢')
+  console.log('║  Using temporary test data directory:                         ║')
+  console.log(`║  ${testUserData.padEnd(60)} ║`)
+  console.log('║                                                                ║')
+  console.log('║  Your real data is safe at:                                   ║')
+  console.log(`║  ${normalUserData.padEnd(60)} ║`)
+  console.log('║                                                                ║')
+  console.log('║  Changes in test mode will NOT affect your real data.         ║')
+  console.log('╚════════════════════════════════════════════════════════════════╝')
+} else {
+  console.log('📦 Normal launch mode - using real data directory')
+  console.log('   Data location:', app.getPath('userData'))
+}
+
 let mainWindow: BrowserWindow | null = null
 let debugWindow: BrowserWindow | null = null
 
 export function getMainWindow(): BrowserWindow | null {
   return mainWindow
+}
+
+export function getIsTestMode(): boolean {
+  return isTestMode
 }
 
 function createWindow(): void {
@@ -33,6 +66,7 @@ function createWindow(): void {
     minHeight: 800,
     show: false,
     autoHideMenuBar: true,
+    title: isTestMode ? '🧪 Neural Scribe - TEST MODE' : 'Neural Scribe',
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 15, y: 15 },
     icon: join(__dirname, '../../resources/icon.png'),
