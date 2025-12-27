@@ -14,6 +14,14 @@ let _escapeCallback: (() => void) | null = null // Stored for cleanup, not direc
 let isEscapeRegistered = false
 let isCurrentlyRecording = false // Track recording state in main process
 
+/**
+ * Update recording state (called by IPC handler for voice commands)
+ */
+export function setRecordingState(isRecording: boolean): void {
+  isCurrentlyRecording = isRecording
+  console.log(`[Hotkeys] Recording state synced: ${isRecording}`)
+}
+
 export function registerHotkeys(window: BrowserWindow): void {
   mainWindow = window
   const settings = getSettings()

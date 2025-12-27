@@ -3,8 +3,8 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { setupIpcHandlers } from './ipc-handlers'
 import { createTray, updateTrayRecordingState } from './tray'
-import { registerHotkeys, unregisterHotkeys } from './hotkeys'
-import { createOverlayWindow, destroyOverlay } from './overlay'
+import { registerHotkeys, unregisterHotkeys, setRecordingState } from './hotkeys'
+import { createOverlayWindow, showOverlay, hideOverlay, destroyOverlay } from './overlay'
 import { createFormattingOverlay, destroyFormattingOverlay } from './formattingOverlay'
 import {
   createComparisonOverlay,
@@ -119,11 +119,19 @@ app.whenReady().then(() => {
 
   // Setup IPC handlers with recording state callback
   setupIpcHandlers((isRecording: boolean) => {
+    // Sync recording state with hotkey handler
+    setRecordingState(isRecording)
+
     if (mainWindow) {
       updateTrayRecordingState(mainWindow, isRecording)
     }
-    // Overlay is now managed by hotkey handler for immediate response
-    // No need to show/hide here as hotkeys handle it directly
+    // Show/hide overlay for voice commands and other non-hotkey triggers
+    // (Hotkeys manage overlay directly for speed, but voice commands come through here)
+    if (isRecording) {
+      showOverlay()
+    } else {
+      hideOverlay()
+    }
   })
 
   // Create window
