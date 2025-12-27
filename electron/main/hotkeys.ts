@@ -13,6 +13,7 @@ let currentRecordWithFormattingHotkey: string | null = null
 let _escapeCallback: (() => void) | null = null // Stored for cleanup, not directly used
 let isEscapeRegistered = false
 let isCurrentlyRecording = false // Track recording state in main process
+let lastTriggerWasHotkey = false // Track if last trigger was from hotkey (to avoid double-triggering)
 
 /**
  * Update recording state (called by IPC handler for voice commands)
@@ -20,6 +21,18 @@ let isCurrentlyRecording = false // Track recording state in main process
 export function setRecordingState(isRecording: boolean): void {
   isCurrentlyRecording = isRecording
   console.log(`[Hotkeys] Recording state synced: ${isRecording}`)
+}
+
+/**
+ * Check if the overlay was already shown by hotkey
+ */
+export function wasLastTriggerHotkey(): boolean {
+  const result = lastTriggerWasHotkey
+  // Reset the flag after checking
+  if (!isCurrentlyRecording) {
+    lastTriggerWasHotkey = false
+  }
+  return result
 }
 
 export function registerHotkeys(window: BrowserWindow): void {
@@ -52,6 +65,7 @@ export function registerHotkeys(window: BrowserWindow): void {
         if (isCurrentlyRecording) {
           // Starting recording - show overlay immediately (don't wait for capture)
           console.log('[Hotkeys] Starting recording, showing overlay immediately...')
+          lastTriggerWasHotkey = true // Mark that hotkey triggered this
 
           // Capture app in background (non-blocking)
           captureActiveApplication()
@@ -72,6 +86,7 @@ export function registerHotkeys(window: BrowserWindow): void {
         } else {
           // Stopping recording - hide overlay immediately
           console.log('[Hotkeys] Stopping recording, hiding overlay...')
+          lastTriggerWasHotkey = true // Mark that hotkey triggered this
           hideOverlay()
           const t1 = performance.now()
           console.log(`[PERF] hideOverlay took ${(t1 - t0).toFixed(2)}ms`)
@@ -102,6 +117,7 @@ export function registerHotkeys(window: BrowserWindow): void {
           console.log(
             '[Hotkeys] Starting recording with formatting, showing overlay immediately...'
           )
+          lastTriggerWasHotkey = true // Mark that hotkey triggered this
 
           // Capture app in background (non-blocking)
           captureActiveApplication()
@@ -124,6 +140,7 @@ export function registerHotkeys(window: BrowserWindow): void {
         } else {
           // Stopping recording - hide overlay immediately
           console.log('[Hotkeys] Stopping recording, hiding overlay...')
+          lastTriggerWasHotkey = true // Mark that hotkey triggered this
           hideOverlay()
           const t1 = performance.now()
           console.log(`[PERF] hideOverlay took ${(t1 - t0).toFixed(2)}ms`)

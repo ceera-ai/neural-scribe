@@ -3,7 +3,12 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { setupIpcHandlers } from './ipc-handlers'
 import { createTray, updateTrayRecordingState } from './tray'
-import { registerHotkeys, unregisterHotkeys, setRecordingState } from './hotkeys'
+import {
+  registerHotkeys,
+  unregisterHotkeys,
+  setRecordingState,
+  wasLastTriggerHotkey,
+} from './hotkeys'
 import { createOverlayWindow, showOverlay, hideOverlay, destroyOverlay } from './overlay'
 import { createFormattingOverlay, destroyFormattingOverlay } from './formattingOverlay'
 import {
@@ -125,12 +130,18 @@ app.whenReady().then(() => {
     if (mainWindow) {
       updateTrayRecordingState(mainWindow, isRecording)
     }
-    // Show/hide overlay for voice commands and other non-hotkey triggers
-    // (Hotkeys manage overlay directly for speed, but voice commands come through here)
-    if (isRecording) {
-      showOverlay()
+
+    // Only show/hide overlay if this wasn't triggered by hotkey
+    // (prevents double-triggering when using Cmd+Shift+R/F)
+    if (!wasLastTriggerHotkey()) {
+      // Show/hide overlay for voice commands and other non-hotkey triggers
+      if (isRecording) {
+        showOverlay()
+      } else {
+        hideOverlay()
+      }
     } else {
-      hideOverlay()
+      console.log('[Main] Skipping overlay management - already handled by hotkey')
     }
   })
 
