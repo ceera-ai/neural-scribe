@@ -33,7 +33,11 @@ export function registerHotkeys(window: BrowserWindow): void {
   try {
     if (
       globalShortcut.register(settings.recordHotkey, () => {
+        const t0 = performance.now()
+        console.log(`[PERF] Hotkey pressed at ${t0.toFixed(2)}ms`)
         mainWindow?.webContents.send('toggle-recording', false)
+        const t1 = performance.now()
+        console.log(`[PERF] IPC sent in ${(t1 - t0).toFixed(2)}ms`)
       })
     ) {
       currentRecordHotkey = settings.recordHotkey
@@ -46,7 +50,11 @@ export function registerHotkeys(window: BrowserWindow): void {
   try {
     if (
       globalShortcut.register(settings.recordWithFormattingHotkey, () => {
+        const t0 = performance.now()
+        console.log(`[PERF] Hotkey with formatting pressed at ${t0.toFixed(2)}ms`)
         mainWindow?.webContents.send('toggle-recording', true)
+        const t1 = performance.now()
+        console.log(`[PERF] IPC sent in ${(t1 - t0).toFixed(2)}ms`)
       })
     ) {
       currentRecordWithFormattingHotkey = settings.recordWithFormattingHotkey

@@ -192,14 +192,28 @@ export function createOverlayWindow(mainWindow?: BrowserWindow): void {
 }
 
 export function showOverlay(): void {
+  const t0 = performance.now()
+  console.log(`[PERF] showOverlay called at ${t0.toFixed(2)}ms`)
+
   try {
     if (overlayWindow && !overlayWindow.isDestroyed()) {
+      const t1 = performance.now()
+      console.log(`[PERF] Window check passed in ${(t1 - t0).toFixed(2)}ms`)
+
       // Position overlay on the best display before showing
       const targetDisplay = getBestDisplay()
+      const t2 = performance.now()
+      console.log(`[PERF] getBestDisplay took ${(t2 - t1).toFixed(2)}ms`)
+
       positionOverlay(targetDisplay)
+      const t3 = performance.now()
+      console.log(`[PERF] positionOverlay took ${(t3 - t2).toFixed(2)}ms`)
 
       // Update the hotkey display from current settings
       const settings = getSettings()
+      const t4 = performance.now()
+      console.log(`[PERF] getSettings took ${(t4 - t3).toFixed(2)}ms`)
+
       const hotkeyText = formatHotkeyForDisplay(settings.recordHotkey)
       overlayWindow.webContents
         .executeJavaScript(
@@ -209,14 +223,20 @@ export function showOverlay(): void {
       `
         )
         .catch(() => {})
+      const t5 = performance.now()
+      console.log(`[PERF] Hotkey text update queued in ${(t5 - t4).toFixed(2)}ms`)
 
       overlayWindow.show()
+      const t6 = performance.now()
+      console.log(`[PERF] window.show() took ${(t6 - t5).toFixed(2)}ms`)
 
       // Register Escape key to hide overlay
       registerEscapeKey(() => {
         console.log('[Overlay] Escape key pressed, hiding overlay')
         hideOverlay()
       })
+      const t7 = performance.now()
+      console.log(`[PERF] registerEscapeKey took ${(t7 - t6).toFixed(2)}ms`)
 
       // Trigger animation and sound
       overlayWindow.webContents
@@ -226,7 +246,12 @@ export function showOverlay(): void {
       `
         )
         .catch(() => {})
+      const t8 = performance.now()
+      console.log(`[PERF] Animation trigger queued in ${(t8 - t7).toFixed(2)}ms`)
 
+      console.log(
+        `[PERF] TOTAL showOverlay time: ${(t8 - t0).toFixed(2)}ms on display ${targetDisplay.id}`
+      )
       console.log('[Overlay] Shown on display:', targetDisplay.id, 'with hotkey:', hotkeyText)
     }
   } catch (_err) {

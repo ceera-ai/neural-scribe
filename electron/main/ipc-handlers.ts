@@ -232,13 +232,18 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
 
   // Recording state from renderer
   ipcMain.on('recording-state-changed', async (_, isRecording: boolean) => {
-    console.log('[IPC] recording-state-changed:', isRecording)
+    const t0 = performance.now()
+    console.log(
+      `[PERF] recording-state-changed received at ${t0.toFixed(2)}ms, isRecording: ${isRecording}`
+    )
 
     if (isRecording) {
       // Recording started - capture the currently active application
       // This must be done BEFORE showing the overlay
       console.log('[IPC] Recording started, capturing active application...')
       await captureActiveApplication()
+      const t1 = performance.now()
+      console.log(`[PERF] captureActiveApplication took ${(t1 - t0).toFixed(2)}ms`)
     } else {
       // Recording stopped - DON'T clear yet! The paste operation needs this info.
       // The captured app will be cleared AFTER paste completes in the paste handler.
@@ -246,7 +251,11 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     }
 
     if (onRecordingStateChange) {
+      const t2 = performance.now()
       onRecordingStateChange(isRecording)
+      const t3 = performance.now()
+      console.log(`[PERF] onRecordingStateChange callback took ${(t3 - t2).toFixed(2)}ms`)
+      console.log(`[PERF] TOTAL recording-state-changed handler: ${(t3 - t0).toFixed(2)}ms`)
     }
   })
 
