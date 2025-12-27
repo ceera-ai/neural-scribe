@@ -41,21 +41,36 @@ export function useTranscriptionEngine(
   useEffect(() => {
     if (!isElectron) return
 
+    console.log('[TranscriptionEngine] Setting up toggle-recording listener')
+
     const handleToggleRecording = async (withFormatting: boolean) => {
-      const { isRecording, startRecording, stopRecording, transcriptSegments, editedTranscript } =
-        activeProvider
+      console.log(
+        `[TranscriptionEngine] 🎯 IPC RECEIVED: toggle-recording (withFormatting: ${withFormatting})`
+      )
+
+      const {
+        isRecording,
+        startRecording,
+        stopRecording,
+        clearTranscript,
+        transcriptSegments,
+        editedTranscript,
+      } = activeProvider
       const { onSaveTranscript, onFormattingOverride } = options
 
+      console.log(`[TranscriptionEngine] Current isRecording state: ${isRecording}`)
       console.log(
         `[TranscriptionEngine] Toggle recording: ${withFormatting ? 'with' : 'without'} formatting`
       )
 
       if (isRecording) {
         // Stop current recording
+        console.log('[TranscriptionEngine] Calling stopRecording()')
         stopRecording()
       } else {
         // Override formatting setting for this recording session
         if (onFormattingOverride) {
+          console.log(`[TranscriptionEngine] Setting formatting override: ${withFormatting}`)
           onFormattingOverride(withFormatting)
         }
 
@@ -68,16 +83,28 @@ export function useTranscriptionEngine(
               .join(' ')
               .trim()
           if (currentText && onSaveTranscript) {
+            console.log('[TranscriptionEngine] Saving existing transcript before new recording')
             await onSaveTranscript(currentText)
           }
+          // Clear the old transcript after saving
+          console.log('[TranscriptionEngine] Clearing old transcript before new recording')
+          clearTranscript()
         }
-        startRecording()
+        console.log('[TranscriptionEngine] Calling startRecording()')
+        try {
+          await startRecording()
+          console.log('[TranscriptionEngine] startRecording() completed successfully')
+        } catch (err) {
+          console.error('[TranscriptionEngine] startRecording() failed:', err)
+        }
       }
     }
 
     window.electronAPI.onToggleRecording(handleToggleRecording)
+    console.log('[TranscriptionEngine] ✅ toggle-recording listener registered')
 
     return () => {
+      console.log('[TranscriptionEngine] ❌ Removing toggle-recording listener')
       window.electronAPI.removeAllListeners('toggle-recording')
     }
   }, [
