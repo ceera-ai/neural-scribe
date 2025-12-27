@@ -4,8 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Choose Version</title>
-    <!-- Load ElevenLabs client library -->
+    <!-- Load transcription engine libraries -->
     <script src="./elevenlabs-client.umd.js"></script>
+    <script src="./deepgram-client.umd.js"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@600;700&family=Share+Tech+Mono&display=swap');
 
@@ -1042,60 +1043,143 @@
         dictateText.textContent = 'Stop'
 
         try {
-          const token = await window.electronAPI.getScribeToken()
+          // Get selected transcription engine
+          const engine = await window.electronAPI.getTranscriptionEngine()
+          console.log('[ComparisonOverlay] Using transcription engine:', engine)
 
-          const microphoneConfig = {
-            echoCancellation: true,
-            noiseSuppression: true,
-          }
-
-          dictationConnection = Scribe.connect({
-            token,
-            modelId: 'scribe_v2_realtime',
-            microphone: microphoneConfig,
-            includeTimestamps: false,
-          })
-
-          dictationConnection.on(RealtimeEvents.OPEN, () => {
-            // WebSocket opened
-          })
-
-          dictationConnection.on(RealtimeEvents.SESSION_STARTED, () => {
-            // Session started
-          })
-
-          dictationConnection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (...args) => {
-            const data = args[0]
-            partialText = data.text
-            updateDictationTextarea()
-          })
-
-          dictationConnection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (...args) => {
-            const data = args[0]
-            if (committedText) {
-              committedText += ' ' + data.text
-            } else {
-              committedText = data.text
+          if (engine === 'deepgram') {
+            // Use Deepgram
+            const apiKey = await window.electronAPI.getDeepgramApiKey()
+            if (!apiKey) {
+              throw new Error('Deepgram API key not configured')
             }
-            partialText = ''
-            updateDictationTextarea()
-          })
 
-          dictationConnection.on(RealtimeEvents.CLOSE, () => {
-            isDictating = false
-            const dictateBtn = document.getElementById('dictate-btn')
-            const dictateText = document.getElementById('dictate-text')
-            dictateBtn.classList.remove('recording')
-            dictateText.textContent = 'Dictate'
-            dictationConnection = null
-          })
+            const settings = await window.electronAPI.getSettings()
+            const model = settings.deepgramModel || 'nova-2'
+            const isMultilingual = settings.deepgramMultilingual ?? false
+            const language = isMultilingual ? 'multi' : 'en'
 
-          dictationConnection.on(RealtimeEvents.ERROR, (...args) => {
-            const err = args[0]
-            console.error('[ComparisonOverlay] Dictation error:', err)
-            alert('Dictation error: ' + (err.message || 'Recording failed'))
-            stopDictation()
-          })
+            const deepgram = window.deepgram.createClient(apiKey)
+            const connection = deepgram.listen.live({
+              model,
+              language,
+              smart_format: true,
+              interim_results: true,
+            })
+
+            dictationConnection = connection
+
+            connection.on('open', () => {
+              console.log('[ComparisonOverlay] Deepgram connection opened')
+            })
+
+            connection.on('Results', (data) => {
+              const transcript = data.channel?.alternatives?.[0]?.transcript
+              const isFinal = data.is_final
+
+              if (!transcript) return
+
+              if (isFinal) {
+                if (committedText) {
+                  committedText += ' ' + transcript
+                } else {
+                  committedText = transcript
+                }
+                partialText = ''
+              } else {
+                partialText = transcript
+              }
+              updateDictationTextarea()
+            })
+
+            connection.on('error', (err) => {
+              console.error('[ComparisonOverlay] Deepgram error:', err)
+              alert('Dictation error: ' + (err.message || 'Recording failed'))
+              stopDictation()
+            })
+
+            connection.on('close', () => {
+              isDictating = false
+              dictateBtn.classList.remove('recording')
+              dictateText.textContent = 'Dictate'
+              dictationConnection = null
+            })
+
+            // Get microphone stream and send to Deepgram
+            const stream = await navigator.mediaDevices.getUserMedia({
+              audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+              }
+            })
+
+            const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+            mediaRecorder.addEventListener('dataavailable', (event) => {
+              if (event.data.size > 0 && connection.getReadyState() === 1) {
+                connection.send(event.data)
+              }
+            })
+            mediaRecorder.start(250)
+
+            // Store for cleanup
+            dictationConnection._mediaRecorder = mediaRecorder
+            dictationConnection._stream = stream
+          } else {
+            // Use ElevenLabs Scribe
+            const token = await window.electronAPI.getScribeToken()
+
+            const microphoneConfig = {
+              echoCancellation: true,
+              noiseSuppression: true,
+            }
+
+            dictationConnection = Scribe.connect({
+              token,
+              modelId: 'scribe_v2_realtime',
+              microphone: microphoneConfig,
+              includeTimestamps: false,
+            })
+
+            dictationConnection.on(RealtimeEvents.OPEN, () => {
+              console.log('[ComparisonOverlay] ElevenLabs connection opened')
+            })
+
+            dictationConnection.on(RealtimeEvents.SESSION_STARTED, () => {
+              // Session started
+            })
+
+            dictationConnection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (...args) => {
+              const data = args[0]
+              partialText = data.text
+              updateDictationTextarea()
+            })
+
+            dictationConnection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (...args) => {
+              const data = args[0]
+              if (committedText) {
+                committedText += ' ' + data.text
+              } else {
+                committedText = data.text
+              }
+              partialText = ''
+              updateDictationTextarea()
+            })
+
+            dictationConnection.on(RealtimeEvents.CLOSE, () => {
+              isDictating = false
+              dictateBtn.classList.remove('recording')
+              dictateText.textContent = 'Dictate'
+              dictationConnection = null
+            })
+
+            dictationConnection.on(RealtimeEvents.ERROR, (...args) => {
+              const err = args[0]
+              console.error('[ComparisonOverlay] ElevenLabs error:', err)
+              alert('Dictation error: ' + (err.message || 'Recording failed'))
+              stopDictation()
+            })
+          }
         } catch (error) {
           console.error('[ComparisonOverlay] Failed to start dictation:', error)
           alert('Failed to start dictation: ' + error.message)
@@ -1107,6 +1191,17 @@
 
       function stopDictation() {
         if (dictationConnection) {
+          // Clean up Deepgram resources if using Deepgram
+          if (dictationConnection._mediaRecorder) {
+            dictationConnection._mediaRecorder.stop()
+            dictationConnection._mediaRecorder = null
+          }
+          if (dictationConnection._stream) {
+            dictationConnection._stream.getTracks().forEach(track => track.stop())
+            dictationConnection._stream = null
+          }
+
+          // Close connection
           dictationConnection.close()
           dictationConnection = null
         }
