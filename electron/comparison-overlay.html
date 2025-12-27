@@ -1069,11 +1069,13 @@
 
             dictationConnection = connection
 
-            connection.on('open', () => {
+            const LiveTranscriptionEvents = window.deepgram.LiveTranscriptionEvents
+
+            connection.on(LiveTranscriptionEvents.Open, () => {
               console.log('[ComparisonOverlay] Deepgram connection opened')
             })
 
-            connection.on('Results', (data) => {
+            connection.on(LiveTranscriptionEvents.Transcript, (data) => {
               const transcript = data.channel?.alternatives?.[0]?.transcript
               const isFinal = data.is_final
 
@@ -1092,13 +1094,13 @@
               updateDictationTextarea()
             })
 
-            connection.on('error', (err) => {
+            connection.on(LiveTranscriptionEvents.Error, (err) => {
               console.error('[ComparisonOverlay] Deepgram error:', err)
               alert('Dictation error: ' + (err.message || 'Recording failed'))
               stopDictation()
             })
 
-            connection.on('close', () => {
+            connection.on(LiveTranscriptionEvents.Close, () => {
               isDictating = false
               dictateBtn.classList.remove('recording')
               dictateText.textContent = 'Dictate'
