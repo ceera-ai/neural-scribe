@@ -212,6 +212,9 @@ export function showOverlay(): void {
 
       overlayWindow.show()
 
+      // Clear any previous transcript before showing
+      clearTranscriptPreview()
+
       // Register Escape key to hide overlay
       registerEscapeKey(() => {
         console.log('[Overlay] Escape key pressed, hiding overlay')
