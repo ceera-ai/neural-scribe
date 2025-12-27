@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "dev:test": "TEST_LAUNCH=true electron-vite dev",
+    "dev:test:fresh": "rm -rf ~/Library/Application\\ Support/neural-scribe-test && TEST_LAUNCH=true electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "lint": "eslint .",
