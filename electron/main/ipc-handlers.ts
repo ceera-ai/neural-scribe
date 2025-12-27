@@ -165,6 +165,40 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
     return hasDeepgramApiKey()
   })
 
+  // Test Deepgram API connection
+  ipcMain.handle('test-deepgram-connection', async () => {
+    const apiKey = getDeepgramApiKey()
+    if (!apiKey) {
+      return { success: false, error: 'No Deepgram API key configured' }
+    }
+
+    try {
+      // Make a simple request to Deepgram API to verify the key
+      // We'll use the projects endpoint which is a lightweight check
+      const response = await fetch('https://api.deepgram.com/v1/projects', {
+        method: 'GET',
+        headers: {
+          Authorization: `Token ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        return { success: true }
+      } else {
+        return {
+          success: false,
+          error: `Invalid API key or authentication failed: ${response.status}`,
+        }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to connect to Deepgram API',
+      }
+    }
+  })
+
   // Transcription engine selection
   ipcMain.handle('get-transcription-engine', () => {
     const settings = getSettings()

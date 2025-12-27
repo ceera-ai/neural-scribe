@@ -1,4 +1,6 @@
 import { app } from 'electron'
+import * as fs from 'fs'
+import * as path from 'path'
 
 // ============================================================================
 // Test Launch Mode Configuration
@@ -22,6 +24,35 @@ console.log('[TestMode] isTestMode:', isTestMode)
 // In dev mode, Electron uses "Electron" by default, which changes the data directory
 app.setName('Neural Scribe')
 
+/**
+ * Clears all data from a directory (non-recursively, files only)
+ */
+function clearDirectory(dirPath: string): void {
+  if (!fs.existsSync(dirPath)) {
+    return
+  }
+
+  try {
+    const files = fs.readdirSync(dirPath)
+    for (const file of files) {
+      const filePath = path.join(dirPath, file)
+      const stats = fs.statSync(filePath)
+
+      if (stats.isFile()) {
+        fs.unlinkSync(filePath)
+        console.log('[TestMode] Deleted:', file)
+      } else if (stats.isDirectory()) {
+        // Recursively delete directories
+        fs.rmSync(filePath, { recursive: true, force: true })
+        console.log('[TestMode] Deleted directory:', file)
+      }
+    }
+    console.log('[TestMode] ✓ Test directory cleared')
+  } catch (error) {
+    console.error('[TestMode] Error clearing test directory:', error)
+  }
+}
+
 if (isTestMode) {
   // Use separate directory for test data
   const normalUserData = app.getPath('userData')
@@ -35,6 +66,10 @@ if (isTestMode) {
   console.log('[TestMode] AFTER setting test path:')
   console.log('[TestMode]   Test userData:', app.getPath('userData'))
 
+  // Clear all test data on startup
+  console.log('[TestMode] Clearing test data directory...')
+  clearDirectory(testUserData)
+
   console.log('╔════════════════════════════════════════════════════════════════╗')
   console.log('║                     🧪 TEST LAUNCH MODE                        ║')
   console.log('╟────────────────────────────────────────────────────────────────╢')
@@ -44,6 +79,7 @@ if (isTestMode) {
   console.log('║  Your real data is safe at:                                   ║')
   console.log(`║  ${normalUserData.padEnd(60)} ║`)
   console.log('║                                                                ║')
+  console.log('║  Test data is cleared on each launch.                         ║')
   console.log('║  Changes in test mode will NOT affect your real data.         ║')
   console.log('╚════════════════════════════════════════════════════════════════╝')
 } else {

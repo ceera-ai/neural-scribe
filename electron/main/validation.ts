@@ -183,7 +183,9 @@ export function validateIPC<T>(schema: z.ZodSchema<T>, data: unknown, errorMessa
   const result = schema.safeParse(data)
 
   if (!result.success) {
-    const errors = result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ')
+    const errors =
+      result.error?.errors?.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ') ||
+      'Unknown validation error'
     throw new Error(`${errorMessage}: ${errors}`)
   }
 

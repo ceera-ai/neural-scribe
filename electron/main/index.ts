@@ -37,9 +37,9 @@ export function getIsTestMode(): boolean {
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 900,
-    height: 1200,
-    minWidth: 800,
-    minHeight: 1200,
+    height: 1100,
+    minWidth: 900,
+    minHeight: 1100,
     show: false,
     autoHideMenuBar: true,
     title: isTestMode ? '🧪 Neural Scribe - TEST MODE' : 'Neural Scribe',

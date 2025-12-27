@@ -345,6 +345,10 @@ const electronAPI = {
   setTranscriptionEngine: (engine: 'elevenlabs' | 'deepgram'): Promise<boolean> =>
     ipcRenderer.invoke('set-transcription-engine', engine),
 
+  // API connection testing
+  testDeepgramConnection: (): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('test-deepgram-connection'),
+
   // Error logging
   logError: (error: { message: string; stack: string; componentStack?: string }): void => {
     ipcRenderer.send('log-error', error)

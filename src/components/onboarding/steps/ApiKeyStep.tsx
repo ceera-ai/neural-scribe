@@ -28,8 +28,7 @@ export function ApiKeyStep({
       name: 'ElevenLabs',
       placeholder: 'xi_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
       helpUrl: 'https://elevenlabs.io/app/settings/api-keys',
-      helpText:
-        'You can find your API key in your ElevenLabs dashboard under Settings > API Keys',
+      helpText: 'You can find your API key in your ElevenLabs dashboard under Settings > API Keys',
     },
     deepgram: {
       name: 'Deepgram',
@@ -66,9 +65,11 @@ export function ApiKeyStep({
           deepgramModel: deepgramModel,
         })
 
-        // Test Deepgram connection (will need to add this IPC handler)
-        // For now, we'll just save it
-        // TODO: Add actual validation
+        // Test Deepgram connection
+        const result = await window.electronAPI.testDeepgramConnection()
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to connect to Deepgram API')
+        }
       }
 
       setIsValidated(true)
@@ -103,9 +104,7 @@ export function ApiKeyStep({
     <div className="onboarding-step api-key-step">
       <div className="step-header">
         <h2 className="step-title">{config.name} API Key</h2>
-        <p className="step-description">
-          Enter your {config.name} API key to enable transcription
-        </p>
+        <p className="step-description">Enter your {config.name} API key to enable transcription</p>
       </div>
 
       <div className="api-key-form">
@@ -217,7 +216,9 @@ export function ApiKeyStep({
 
         {!isValidated && (
           <button className="cyber-button primary" onClick={validateApiKey} disabled={isValidating}>
-            <span className="button-text">{isValidating ? 'Validating...' : 'Validate API Key'}</span>
+            <span className="button-text">
+              {isValidating ? 'Validating...' : 'Validate API Key'}
+            </span>
             <span className="button-glow" />
           </button>
         )}
