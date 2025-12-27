@@ -313,7 +313,15 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
       { text, bundleId },
       'Invalid paste to terminal params'
     )
-    return TerminalService.getInstance().pasteToTerminal(validated.text, validated.bundleId)
+    const result = await TerminalService.getInstance().pasteToTerminal(
+      validated.text,
+      validated.bundleId
+    )
+    // Track terminal paste if successful
+    if (result.success) {
+      trackFeatureUsage('terminal-paste', { bundleId: validated.bundleId })
+    }
+    return result
   })
 
   // Terminal window operations
@@ -329,16 +337,26 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
         { text, bundleId, windowName },
         'Invalid paste to terminal window params'
       )
-      return TerminalService.getInstance().pasteToWindow(
+      const result = await TerminalService.getInstance().pasteToWindow(
         validated.text,
         validated.bundleId,
         validated.windowName
       )
+      // Track terminal paste if successful
+      if (result.success) {
+        trackFeatureUsage('terminal-paste', { bundleId: validated.bundleId })
+      }
+      return result
     }
   )
 
   ipcMain.handle('paste-to-last-active-terminal', async (_, text: string) => {
-    return TerminalService.getInstance().pasteToActiveTerminal(text)
+    const result = await TerminalService.getInstance().pasteToActiveTerminal(text)
+    // Track terminal paste if successful (bundleId will be captured in the result)
+    if (result.success && result.bundleId) {
+      trackFeatureUsage('terminal-paste', { bundleId: result.bundleId })
+    }
+    return result
   })
 
   // Paste operations (auto-paste, clipboard, terminal)
@@ -589,7 +607,11 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
       'Invalid gamification session params'
     )
 
-    const result = recordGamificationSession(validated.words, validated.durationMs)
+    // Get current transcription engine for tracking
+    const settings = getSettings()
+    const engine = settings.transcriptionEngine || 'elevenlabs'
+
+    const result = recordGamificationSession(validated.words, validated.durationMs, engine)
 
     // Notify all windows that gamification data changed
     BrowserWindow.getAllWindows().forEach((win) => {

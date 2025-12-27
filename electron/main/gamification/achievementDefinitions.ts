@@ -662,7 +662,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     order: 8,
   },
 
-  // Exploration Achievements (7 achievements)
+  // Exploration Achievements (11 achievements)
   {
     id: 'feature-discoverer',
     name: 'Feature Discoverer',
@@ -709,13 +709,49 @@ export const ACHIEVEMENTS: Achievement[] = [
     order: 5,
   },
   {
+    id: 'elevenlabs-explorer',
+    name: 'ElevenLabs Explorer',
+    description: 'Use ElevenLabs Scribe transcription engine',
+    icon: '🎤',
+    xpReward: 50,
+    category: 'exploration',
+    order: 6,
+  },
+  {
+    id: 'deepgram-discoverer',
+    name: 'Deepgram Discoverer',
+    description: 'Use Deepgram transcription engine',
+    icon: '🌊',
+    xpReward: 50,
+    category: 'exploration',
+    order: 7,
+  },
+  {
+    id: 'engine-switcher',
+    name: 'Engine Switcher',
+    description: 'Switch between transcription engines',
+    icon: '🔄',
+    xpReward: 100,
+    category: 'exploration',
+    order: 8,
+  },
+  {
+    id: 'multi-engine-master',
+    name: 'Multi-Engine Master',
+    description: 'Use both ElevenLabs and Deepgram engines',
+    icon: '🎛️',
+    xpReward: 150,
+    category: 'exploration',
+    order: 9,
+  },
+  {
     id: 'experimental-mode',
     name: 'Experimental Mode',
     description: "Try a feature you haven't used in 30 days",
     icon: '🧪',
     xpReward: 100,
     category: 'exploration',
-    order: 6,
+    order: 10,
   },
   {
     id: 'renaissance-user',
@@ -724,7 +760,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '🎨',
     xpReward: 500,
     category: 'exploration',
-    order: 7,
+    order: 11,
   },
 ]
 

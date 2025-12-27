@@ -63,16 +63,21 @@ export const useMicrophoneDevices = (): UseMicrophoneDevicesReturn => {
   }, [])
 
   const setSelectedDeviceId = useCallback(async (deviceId: string | null) => {
+    const previousDeviceId = selectedDeviceId
     setSelectedDeviceIdState(deviceId)
     // Save to settings
     if (isElectron) {
       try {
         await window.electronAPI.setSettings({ selectedMicrophoneId: deviceId })
+        // Track microphone change if device actually changed
+        if (previousDeviceId !== deviceId) {
+          window.electronAPI.trackFeatureUsage('microphone-change')
+        }
       } catch (err) {
         console.error('Failed to save microphone selection:', err)
       }
     }
-  }, [])
+  }, [selectedDeviceId])
 
   const refreshDevices = useCallback(async () => {
     await enumerateDevices()

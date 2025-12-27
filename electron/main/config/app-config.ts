@@ -20,7 +20,8 @@ console.log('[TestMode] isTestMode:', isTestMode)
 
 // IMPORTANT: Set app name BEFORE accessing userData path
 // In dev mode, Electron uses "Electron" by default, which changes the data directory
-app.setName('Neural Scribe')
+// Use lowercase to match package.json name (maintains compatibility with existing data)
+app.setName('neural-scribe')
 
 if (isTestMode) {
   // Use separate directory for test data

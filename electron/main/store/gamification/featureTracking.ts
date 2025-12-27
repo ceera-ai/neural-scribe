@@ -54,6 +54,11 @@ export type FeatureType =
   | 'feature-toggle'
   | 'microphone-change'
 
+  // Transcription Engines
+  | 'engine-change'
+  | 'engine-use-elevenlabs'
+  | 'engine-use-deepgram'
+
 /**
  * Track a feature usage and check for newly unlocked achievements
  *
@@ -314,6 +319,23 @@ function updateFeatureStats(
 
     case 'microphone-change':
       featureUsage.microphoneChanges++
+      break
+
+    // Transcription Engines
+    case 'engine-change':
+      featureUsage.engineChanges++
+      break
+
+    case 'engine-use-elevenlabs':
+      if (!featureUsage.enginesUsed.includes('elevenlabs')) {
+        featureUsage.enginesUsed.push('elevenlabs')
+      }
+      break
+
+    case 'engine-use-deepgram':
+      if (!featureUsage.enginesUsed.includes('deepgram')) {
+        featureUsage.enginesUsed.push('deepgram')
+      }
       break
 
     default:

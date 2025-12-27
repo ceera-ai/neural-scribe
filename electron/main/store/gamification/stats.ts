@@ -68,6 +68,14 @@ export interface FeatureUsageStats {
   /** Number of microphone device changes */
   microphoneChanges: number
 
+  // Transcription Engines
+  /** Number of times transcription engine was changed */
+  engineChanges: number
+  /** List of unique engines used (elevenlabs, deepgram) */
+  enginesUsed: string[]
+  /** Session count by engine */
+  engineSessionCounts: Record<string, number>
+
   // First-use dates (YYYY-MM-DD format)
   /** First time AI formatting was used */
   firstFormattingDate: string
@@ -140,6 +148,11 @@ export const DEFAULT_FEATURE_USAGE: FeatureUsageStats = {
   settingsChanges: 0,
   featureToggles: 0,
   microphoneChanges: 0,
+
+  // Transcription Engines
+  engineChanges: 0,
+  enginesUsed: [],
+  engineSessionCounts: {},
 
   // First-use dates
   firstFormattingDate: '',

@@ -521,6 +521,33 @@ export function checkExplorationAchievements(
     newlyUnlocked.push('microphone-selector')
   }
 
+  // Transcription Engine Exploration
+  const enginesUsed = featureUsage.enginesUsed || []
+
+  // ElevenLabs engine
+  if (enginesUsed.includes('elevenlabs') && !isAchievementUnlocked(achievements, 'elevenlabs-explorer')) {
+    newlyUnlocked.push('elevenlabs-explorer')
+  }
+
+  // Deepgram engine
+  if (enginesUsed.includes('deepgram') && !isAchievementUnlocked(achievements, 'deepgram-discoverer')) {
+    newlyUnlocked.push('deepgram-discoverer')
+  }
+
+  // Engine switcher (changed engine at least once)
+  if ((featureUsage.engineChanges || 0) >= 1 && !isAchievementUnlocked(achievements, 'engine-switcher')) {
+    newlyUnlocked.push('engine-switcher')
+  }
+
+  // Multi-engine master (used both engines)
+  if (
+    enginesUsed.includes('elevenlabs') &&
+    enginesUsed.includes('deepgram') &&
+    !isAchievementUnlocked(achievements, 'multi-engine-master')
+  ) {
+    newlyUnlocked.push('multi-engine-master')
+  }
+
   // Note: jack-of-all-trades, combo-master, experimental-mode, and renaissance-user
   // require more complex tracking and will need special handling
 

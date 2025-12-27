@@ -212,8 +212,14 @@ export function SettingsModal({
   const handleEngineChange = async (newEngine: 'elevenlabs' | 'deepgram') => {
     if (!isElectron) return
     try {
+      const oldEngine = transcriptionEngine
       await window.electronAPI.setTranscriptionEngine(newEngine)
       setTranscriptionEngine(newEngine)
+
+      // Track engine change
+      if (oldEngine !== newEngine) {
+        window.electronAPI.trackFeatureUsage('engine-change')
+      }
     } catch (err) {
       console.error('Failed to update transcription engine:', err)
     }
@@ -312,6 +318,8 @@ export function SettingsModal({
     setFormattingInstructions(instructions)
     if (isElectron) {
       await window.electronAPI.setPromptFormattingInstructions(instructions)
+      // Track custom instructions change
+      window.electronAPI.trackFeatureUsage('custom-instructions-change')
     }
   }
 

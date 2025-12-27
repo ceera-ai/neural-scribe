@@ -15,6 +15,7 @@ import {
   DEFAULT_FORMATTING_INSTRUCTIONS,
 } from '../prompt-formatter'
 import { getPromptFormattingSettings } from '../store/settings'
+import { trackFeatureUsage } from '../store/gamification/featureTracking'
 
 /**
  * Format result
@@ -119,7 +120,15 @@ export class FormattingService {
         }
       }
 
-      return await formatPromptImpl(text)
+      const result = await formatPromptImpl(text)
+
+      // Track formatting usage if successful
+      if (result.success && !result.skipped) {
+        const model = settings.model || 'sonnet'
+        trackFeatureUsage(`formatting-${model}` as any)
+      }
+
+      return result
     } catch (error) {
       return {
         success: false,
@@ -153,10 +162,17 @@ export class FormattingService {
 
       // Use custom instructions if provided, otherwise use default formatting instructions
       const instructions = customInstructions || settings.instructions
-      const model = settings.model
+      const model = settings.model || 'sonnet'
 
       // Call formatPromptImpl with custom instructions
-      return await formatPromptImpl(text, instructions, model)
+      const result = await formatPromptImpl(text, instructions, model)
+
+      // Track reformatting usage if successful
+      if (result.success && !result.skipped) {
+        trackFeatureUsage(`reformatting-${model}` as any)
+      }
+
+      return result
     } catch (error) {
       return {
         success: false,
@@ -182,7 +198,14 @@ export class FormattingService {
    */
   public async generateTitle(text: string): Promise<TitleResult> {
     try {
-      return await generateTitleImpl(text)
+      const result = await generateTitleImpl(text)
+
+      // Track title generation if successful
+      if (result.success) {
+        trackFeatureUsage('title-generation')
+      }
+
+      return result
     } catch (error) {
       return {
         success: false,

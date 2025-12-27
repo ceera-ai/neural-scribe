@@ -9,6 +9,7 @@
 
 import Store from 'electron-store'
 import { getUserDataPath } from '../config/app-config'
+import { trackFeatureUsage } from './gamification/featureTracking'
 
 /**
  * Word replacement rule
@@ -97,6 +98,7 @@ export function deleteReplacement(id: string): void {
 export function applyReplacements(text: string): string {
   const replacements = store.get('replacements') || []
   let result = text
+  let hasReplacements = false
 
   for (const replacement of replacements) {
     if (!replacement.enabled) continue
@@ -110,7 +112,16 @@ export function applyReplacements(text: string): string {
       pattern = new RegExp(escapeRegex(replacement.from), flags)
     }
 
-    result = result.replace(pattern, replacement.to)
+    const replaced = result.replace(pattern, replacement.to)
+    if (replaced !== result) {
+      hasReplacements = true
+    }
+    result = replaced
+  }
+
+  // Track if any replacements were applied
+  if (hasReplacements) {
+    trackFeatureUsage('word-replacement-apply')
   }
 
   return result

@@ -59,6 +59,8 @@ export function ReplacementsModal({ isOpen, onClose, initialFromText }: Replacem
     setReplacements([...replacements, replacement])
     setNewFrom('')
     setNewTo('')
+    // Track word replacement added
+    window.electronAPI.trackFeatureUsage('word-replacement-add')
   }
 
   const handleToggle = async (id: string, enabled: boolean) => {
