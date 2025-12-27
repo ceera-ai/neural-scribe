@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useTranscriptionEngine } from './transcription/useTranscriptionEngine'
+import { useElevenLabsProvider } from './transcription/useElevenLabsProvider'
+import { useDeepgramProvider } from './transcription/useDeepgramProvider'
 import type { TranscriptionEngine } from './transcription/types'
 
 /**
@@ -7,6 +8,9 @@ import type { TranscriptionEngine } from './transcription/types'
  *
  * This hook provides a simple interface for voice dictation in dialogs and forms.
  * It automatically uses the transcription engine selected in settings (ElevenLabs or Deepgram).
+ *
+ * IMPORTANT: This hook uses the provider hooks directly (not useTranscriptionEngine) to avoid
+ * registering duplicate toggle-recording listeners that would conflict with the main app.
  *
  * @example
  * ```tsx
@@ -63,8 +67,9 @@ export function useDictation(options: UseDictationOptions = {}): UseDictationRet
     }
   }, [isElectron])
 
-  // Use the transcription engine with specialized dictation callbacks
-  const transcriptionProvider = useTranscriptionEngine({
+  // Call both provider hooks unconditionally (React requirement)
+  // Only the selected provider will be used
+  const elevenLabsProvider = useElevenLabsProvider({
     voiceCommandsEnabled: false, // Disable voice commands for dictation
     onRecordingStopped: async (transcript) => {
       console.log('[Dictation] Recording stopped, final transcript:', transcript)
@@ -74,6 +79,20 @@ export function useDictation(options: UseDictationOptions = {}): UseDictationRet
       setPartialText('')
     },
   })
+
+  const deepgramProvider = useDeepgramProvider({
+    voiceCommandsEnabled: false, // Disable voice commands for dictation
+    onRecordingStopped: async (transcript) => {
+      console.log('[Dictation] Recording stopped, final transcript:', transcript)
+      if (onFinalTranscript && transcript.trim()) {
+        onFinalTranscript(transcript.trim())
+      }
+      setPartialText('')
+    },
+  })
+
+  // Select the active provider based on engine
+  const transcriptionProvider = engine === 'deepgram' ? deepgramProvider : elevenLabsProvider
 
   const {
     isRecording,
