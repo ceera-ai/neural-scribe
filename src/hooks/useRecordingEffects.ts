@@ -141,6 +141,7 @@ export function useRecordingEffects({
         .join(' ')
         .trim()
       const wordCount = fullText ? fullText.split(/\s+/).length : 0
+      console.log(`[useRecordingEffects] Sending preview: ${wordCount} words`)
       window.electronAPI.sendTranscriptPreview(fullText, wordCount)
     }
   }, [transcriptSegments, isRecording])

@@ -134,6 +134,7 @@ app.whenReady().then(() => {
     // Only show/hide overlay if this wasn't triggered by hotkey
     // (prevents double-triggering when using Cmd+Shift+R/F)
     if (!wasLastTriggerHotkey()) {
+      console.log('[Main] Trigger source: NOT hotkey, managing overlay...')
       // Show/hide overlay for voice commands and other non-hotkey triggers
       if (isRecording) {
         showOverlay()
@@ -141,7 +142,7 @@ app.whenReady().then(() => {
         hideOverlay()
       }
     } else {
-      console.log('[Main] Skipping overlay management - already handled by hotkey')
+      console.log('[Main] Trigger source: hotkey, skipping overlay (already handled)')
     }
   })
 

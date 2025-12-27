@@ -25,13 +25,13 @@ export function setRecordingState(isRecording: boolean): void {
 
 /**
  * Check if the overlay was already shown by hotkey
+ * This flag is consumed (reset) when checked to prevent stale values
  */
 export function wasLastTriggerHotkey(): boolean {
   const result = lastTriggerWasHotkey
-  // Reset the flag after checking
-  if (!isCurrentlyRecording) {
-    lastTriggerWasHotkey = false
-  }
+  // Always reset (consume) the flag when checked
+  lastTriggerWasHotkey = false
+  console.log(`[Hotkeys] wasLastTriggerHotkey checked: ${result}, flag now reset`)
   return result
 }
 

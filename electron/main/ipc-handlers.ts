@@ -233,6 +233,7 @@ export function setupIpcHandlers(recordingStateCallback?: (isRecording: boolean)
   // Recording state from renderer
   ipcMain.on('recording-state-changed', async (_, isRecording: boolean) => {
     const t0 = performance.now()
+    console.log(`[IPC] recording-state-changed received: isRecording=${isRecording}`)
     console.log(
       `[PERF] recording-state-changed received at ${t0.toFixed(2)}ms, isRecording: ${isRecording}`
     )

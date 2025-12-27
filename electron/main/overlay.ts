@@ -296,33 +296,82 @@ export function hideOverlay(): void {
  * Clear the transcript preview in the overlay
  */
 export function clearTranscriptPreview(): void {
+  const timestamp = performance.now()
+  console.log(`[Overlay] clearTranscriptPreview called at ${timestamp}ms`)
+
   try {
     if (!overlayWindow || overlayWindow.isDestroyed() || overlayWindow.webContents.isDestroyed()) {
+      console.log('[Overlay] Clearing skipped - overlay window not available')
       return
     }
 
     const script = `
-      // Clear preview card
-      var previewEl = document.getElementById('transcript-preview');
-      if (previewEl) {
-        previewEl.textContent = '';
-      }
+      (function() {
+        const results = {
+          preview: { found: false, cleared: false },
+          wordCount: { found: false, cleared: false },
+          focusLines: { found: false, childCount: 0, cleared: false },
+          focusPlaceholder: { found: false, shown: false }
+        };
 
-      // Clear word count
-      var wordCountEl = document.getElementById('word-count');
-      if (wordCountEl) {
-        wordCountEl.textContent = '0 words';
-      }
+        // Clear preview card
+        var previewEl = document.getElementById('transcript-preview');
+        if (previewEl) {
+          results.preview.found = true;
+          previewEl.textContent = '';
+          results.preview.cleared = true;
+        }
 
-      // Clear focus mode transcript
-      var focusTextEl = document.getElementById('focus-transcript-text');
-      if (focusTextEl) {
-        focusTextEl.innerHTML = '<span class="transcript-placeholder">Start speaking...</span>';
-      }
+        // Clear word count
+        var wordCountEl = document.getElementById('word-count');
+        if (wordCountEl) {
+          results.wordCount.found = true;
+          wordCountEl.textContent = '0';
+          results.wordCount.cleared = true;
+        }
+
+        // FIX: Clear focus mode lines (was 'focus-transcript-text', now 'focus-lines')
+        var focusLinesEl = document.getElementById('focus-lines');
+        if (focusLinesEl) {
+          results.focusLines.found = true;
+          results.focusLines.childCount = focusLinesEl.children.length;
+          focusLinesEl.innerHTML = '';
+          results.focusLines.cleared = true;
+        }
+
+        // Show placeholder
+        var focusPlaceholderEl = document.getElementById('focus-placeholder');
+        if (focusPlaceholderEl) {
+          results.focusPlaceholder.found = true;
+          focusPlaceholderEl.style.display = 'block';
+          results.focusPlaceholder.shown = true;
+        }
+
+        return results;
+      })()
     `
-    overlayWindow.webContents.executeJavaScript(script).catch((err) => {
-      console.error('[Overlay] Failed to clear transcript:', err)
-    })
+
+    overlayWindow.webContents
+      .executeJavaScript(script)
+      .then((results) => {
+        console.log('[Overlay] Clear results:', JSON.stringify(results, null, 2))
+
+        // Log warnings for missing elements
+        if (!results.focusLines.found) {
+          console.warn('[Overlay] WARNING: #focus-lines not found!')
+        }
+        if (!results.focusPlaceholder.found) {
+          console.warn('[Overlay] WARNING: #focus-placeholder not found!')
+        }
+
+        // Log info about cleared content
+        if (results.focusLines.childCount > 0) {
+          console.log(`[Overlay] Cleared ${results.focusLines.childCount} focus line elements`)
+        }
+      })
+      .catch((err) => {
+        console.error('[Overlay] Failed to clear transcript:', err)
+      })
   } catch (_err) {
     console.error('[Overlay] Error in clearTranscriptPreview:', _err)
   }
