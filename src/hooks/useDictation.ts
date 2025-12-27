@@ -90,10 +90,17 @@ export function useDictation(options: UseDictationOptions = {}): UseDictationRet
       .join(' ')
       .trim()
     setPartialText(fullText)
+
+    // Send transcript preview to overlay if recording
+    if (isRecording && isElectron && fullText) {
+      const wordCount = fullText.split(/\s+/).length
+      window.electronAPI.sendTranscriptPreview(fullText, wordCount)
+    }
+
     if (onPartialTranscript) {
       onPartialTranscript(fullText)
     }
-  }, [transcriptSegments, onPartialTranscript])
+  }, [transcriptSegments, onPartialTranscript, isRecording, isElectron])
 
   // Update error from provider
   useEffect(() => {
