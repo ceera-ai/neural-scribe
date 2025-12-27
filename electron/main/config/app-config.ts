@@ -9,6 +9,11 @@ import * as path from 'path'
 // It MUST NOT import any store modules to avoid circular dependencies.
 
 /**
+ * Detects if we're running in unit test environment (Vitest)
+ */
+const isUnitTest = process.env.VITEST === 'true' || process.env.NODE_ENV === 'test'
+
+/**
  * Detects if the app is running in test launch mode
  * Test mode uses a separate data directory to allow testing first-launch
  * experience without affecting real user data.
@@ -22,7 +27,10 @@ console.log('[TestMode] isTestMode:', isTestMode)
 
 // IMPORTANT: Set app name BEFORE accessing userData path
 // In dev mode, Electron uses "Electron" by default, which changes the data directory
-app.setName('Neural Scribe')
+// Skip this in unit test environment where Electron app is not available
+if (!isUnitTest && app) {
+  app.setName('Neural Scribe')
+}
 
 /**
  * Clears all data from a directory (non-recursively, files only)
@@ -53,39 +61,41 @@ function clearDirectory(dirPath: string): void {
   }
 }
 
-if (isTestMode) {
-  // Use separate directory for test data
-  const normalUserData = app.getPath('userData')
-  const testUserData = normalUserData + '-test'
+if (!isUnitTest && app) {
+  if (isTestMode) {
+    // Use separate directory for test data
+    const normalUserData = app.getPath('userData')
+    const testUserData = normalUserData + '-test'
 
-  console.log('[TestMode] BEFORE setting test path:')
-  console.log('[TestMode]   Current userData:', app.getPath('userData'))
+    console.log('[TestMode] BEFORE setting test path:')
+    console.log('[TestMode]   Current userData:', app.getPath('userData'))
 
-  app.setPath('userData', testUserData)
+    app.setPath('userData', testUserData)
 
-  console.log('[TestMode] AFTER setting test path:')
-  console.log('[TestMode]   Test userData:', app.getPath('userData'))
+    console.log('[TestMode] AFTER setting test path:')
+    console.log('[TestMode]   Test userData:', app.getPath('userData'))
 
-  // Clear all test data on startup
-  console.log('[TestMode] Clearing test data directory...')
-  clearDirectory(testUserData)
+    // Clear all test data on startup
+    console.log('[TestMode] Clearing test data directory...')
+    clearDirectory(testUserData)
 
-  console.log('╔════════════════════════════════════════════════════════════════╗')
-  console.log('║                     🧪 TEST LAUNCH MODE                        ║')
-  console.log('╟────────────────────────────────────────────────────────────────╢')
-  console.log('║  Using temporary test data directory:                         ║')
-  console.log(`║  ${testUserData.padEnd(60)} ║`)
-  console.log('║                                                                ║')
-  console.log('║  Your real data is safe at:                                   ║')
-  console.log(`║  ${normalUserData.padEnd(60)} ║`)
-  console.log('║                                                                ║')
-  console.log('║  Test data is cleared on each launch.                         ║')
-  console.log('║  Changes in test mode will NOT affect your real data.         ║')
-  console.log('╚════════════════════════════════════════════════════════════════╝')
-} else {
-  console.log('📦 Normal launch mode - using real data directory')
-  console.log('   App name:', app.getName())
-  console.log('   Data location:', app.getPath('userData'))
+    console.log('╔════════════════════════════════════════════════════════════════╗')
+    console.log('║                     🧪 TEST LAUNCH MODE                        ║')
+    console.log('╟────────────────────────────────────────────────────────────────╢')
+    console.log('║  Using temporary test data directory:                         ║')
+    console.log(`║  ${testUserData.padEnd(60)} ║`)
+    console.log('║                                                                ║')
+    console.log('║  Your real data is safe at:                                   ║')
+    console.log(`║  ${normalUserData.padEnd(60)} ║`)
+    console.log('║                                                                ║')
+    console.log('║  Test data is cleared on each launch.                         ║')
+    console.log('║  Changes in test mode will NOT affect your real data.         ║')
+    console.log('╚════════════════════════════════════════════════════════════════╝')
+  } else {
+    console.log('📦 Normal launch mode - using real data directory')
+    console.log('   App name:', app.getName())
+    console.log('   Data location:', app.getPath('userData'))
+  }
 }
 
 /**
@@ -93,5 +103,9 @@ if (isTestMode) {
  * Returns the current userData path (which has already been set correctly)
  */
 export function getUserDataPath(): string {
+  // In unit test environment, return a mock path
+  if (isUnitTest || !app) {
+    return path.join(process.cwd(), '.test-data')
+  }
   return app.getPath('userData')
 }
