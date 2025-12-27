@@ -95,11 +95,13 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
-    // Only show window on first launch (for onboarding)
-    // Otherwise, app runs as menubar-only (hidden by default)
-    if (!hasCompletedFirstLaunch()) {
+    // In test mode, always show window for testing
+    // Otherwise, only show window on first launch (for onboarding)
+    if (isTestMode || !hasCompletedFirstLaunch()) {
       mainWindow?.show()
-      setFirstLaunchCompleted()
+      if (!isTestMode) {
+        setFirstLaunchCompleted()
+      }
     }
 
     // Open dev tools in development
