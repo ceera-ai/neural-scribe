@@ -28,11 +28,22 @@ const isTestMode = process.env.TEST_LAUNCH === 'true'
 console.log('[TestMode] TEST_LAUNCH env:', process.env.TEST_LAUNCH)
 console.log('[TestMode] isTestMode:', isTestMode)
 
+// IMPORTANT: Set app name BEFORE accessing userData path
+// In dev mode, Electron uses "Electron" by default, which changes the data directory
+app.setName('Neural Scribe')
+
 if (isTestMode) {
   // Use separate directory for test data
   const normalUserData = app.getPath('userData')
   const testUserData = normalUserData + '-test'
+
+  console.log('[TestMode] BEFORE setting test path:')
+  console.log('[TestMode]   Current userData:', app.getPath('userData'))
+
   app.setPath('userData', testUserData)
+
+  console.log('[TestMode] AFTER setting test path:')
+  console.log('[TestMode]   Test userData:', app.getPath('userData'))
 
   console.log('╔════════════════════════════════════════════════════════════════╗')
   console.log('║                     🧪 TEST LAUNCH MODE                        ║')
@@ -47,6 +58,7 @@ if (isTestMode) {
   console.log('╚════════════════════════════════════════════════════════════════╝')
 } else {
   console.log('📦 Normal launch mode - using real data directory')
+  console.log('   App name:', app.getName())
   console.log('   Data location:', app.getPath('userData'))
 }
 
@@ -144,8 +156,7 @@ export function createDebugWindow(): void {
 }
 
 app.whenReady().then(() => {
-  // Set app name and user model id
-  app.setName('Neural Scribe')
+  // App name already set at top of file for userData path
   electronApp.setAppUserModelId('com.neuralscribe.app')
 
   // Set dock icon on macOS
