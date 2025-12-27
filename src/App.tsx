@@ -9,7 +9,7 @@ import { usePasteToTerminal } from './hooks/usePasteToTerminal'
 import { useRecordingHandlers } from './hooks/useRecordingHandlers'
 import { useRecordingEffects } from './hooks/useRecordingEffects'
 import { HistoryPanel } from './components/HistoryPanel'
-import { ApiKeySetup } from './components/ApiKeySetup'
+import { OnboardingWizard } from './components/onboarding/OnboardingWizard'
 import { AIOrb } from './components/orb/AIOrb'
 import type { OrbState } from './components/orb/AIOrb'
 import { ScanLines } from './components/cyberpunk/ScanLines'
@@ -296,9 +296,9 @@ function App() {
     )
   }
 
-  // Show API key setup if not configured
+  // Show onboarding wizard if not configured
   if (!hasApiKey) {
-    return <ApiKeySetup onApiKeySet={() => setHasApiKey(true)} />
+    return <OnboardingWizard onComplete={() => setHasApiKey(true)} />
   }
 
   const hasTranscript = transcriptSegments.length > 0 || editedTranscript !== null
