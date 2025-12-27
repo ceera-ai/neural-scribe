@@ -3,6 +3,7 @@ import { BrowserWindow, screen, Display } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { getSettings } from './store'
+import { registerEscapeKey, unregisterEscapeKey } from './hotkeys'
 
 /**
  * Format a hotkey string for display (e.g., "CommandOrControl+Shift+R" → "⌘⇧R" on Mac)
@@ -211,6 +212,12 @@ export function showOverlay(): void {
 
       overlayWindow.show()
 
+      // Register Escape key to hide overlay
+      registerEscapeKey(() => {
+        console.log('[Overlay] Escape key pressed, hiding overlay')
+        hideOverlay()
+      })
+
       // Trigger animation and sound
       overlayWindow.webContents
         .executeJavaScript(
@@ -231,6 +238,9 @@ export function showOverlay(): void {
 export function hideOverlay(): void {
   try {
     if (overlayWindow && !overlayWindow.isDestroyed()) {
+      // Unregister Escape key
+      unregisterEscapeKey()
+
       // Clear the transcript preview before hiding
       clearTranscriptPreview()
 

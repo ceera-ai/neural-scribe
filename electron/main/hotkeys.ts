@@ -9,6 +9,8 @@ let mainWindow: BrowserWindow | null = null
 let currentPasteHotkey: string | null = null
 let currentRecordHotkey: string | null = null
 let currentRecordWithFormattingHotkey: string | null = null
+let _escapeCallback: (() => void) | null = null // Stored for cleanup, not directly used
+let isEscapeRegistered = false
 
 export function registerHotkeys(window: BrowserWindow): void {
   mainWindow = window
@@ -181,4 +183,44 @@ async function pasteLastTranscription(): Promise<void> {
   // Notify renderer that paste was triggered
   mainWindow?.webContents.send('transcription-pasted', lastRecord.text)
   console.log('[Hotkeys] Notified renderer about paste')
+}
+
+/**
+ * Register Escape key to trigger a callback (for overlay cancel)
+ * This is registered dynamically when overlay shows
+ */
+export function registerEscapeKey(callback: () => void): void {
+  if (isEscapeRegistered) {
+    console.warn('[Hotkeys] Escape key already registered, unregistering first')
+    unregisterEscapeKey()
+  }
+
+  try {
+    if (globalShortcut.register('Escape', callback)) {
+      _escapeCallback = callback
+      isEscapeRegistered = true
+      console.log('[Hotkeys] Escape key registered successfully')
+    } else {
+      console.error('[Hotkeys] Failed to register Escape key - already in use')
+    }
+  } catch (err) {
+    console.error('[Hotkeys] Error registering Escape key:', err)
+  }
+}
+
+/**
+ * Unregister Escape key
+ * This is called when overlay hides
+ */
+export function unregisterEscapeKey(): void {
+  if (isEscapeRegistered) {
+    try {
+      globalShortcut.unregister('Escape')
+      _escapeCallback = null
+      isEscapeRegistered = false
+      console.log('[Hotkeys] Escape key unregistered')
+    } catch (err) {
+      console.error('[Hotkeys] Error unregistering Escape key:', err)
+    }
+  }
 }
