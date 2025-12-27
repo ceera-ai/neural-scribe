@@ -1,22 +1,13 @@
-# Neural Scribe
+# 🎙️ Neural Scribe
 
-<div align="center">
+### AI-Powered Voice Transcription for Developers
 
-![Neural Scribe Logo](resources/icon.png)
+> Transform your voice into executable terminal commands with real-time AI formatting. Built by [Ceera.ai](https://ceera.ai)
 
-**AI-Powered Voice Transcription Desktop App**
-
-Real-time speech-to-text with voice commands, terminal integration, and gamification.
-
-[![CI Status](https://github.com/yourusername/neural-scribe/workflows/CI/badge.svg)](https://github.com/yourusername/neural-scribe/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
-[![Electron](https://img.shields.io/badge/Electron-33-brightgreen)](https://www.electronjs.org/)
-[![React](https://img.shields.io/badge/React-19-61DAFB)](https://reactjs.org/)
-
-[Features](#features) • [Installation](#installation) • [Usage](#usage) • [Development](#development) • [Contributing](#contributing)
-
-</div>
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![Electron](https://img.shields.io/badge/Electron-33+-green.svg)](https://www.electronjs.org/)
+[![Tests](https://img.shields.io/badge/tests-341%20passing-brightgreen.svg)](docs/ARCHITECTURE.md#testing)
 
 ---
 
