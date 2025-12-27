@@ -21,9 +21,12 @@ import { hasCompletedFirstLaunch, setFirstLaunchCompleted } from './store/settin
 // ============================================================================
 // Test Launch Mode - Temporary Data Directory
 // ============================================================================
-// Check for --test or --test-launch flag to use separate test data directory
+// Check for TEST_LAUNCH environment variable to use separate test data directory
 // This allows testing first-launch experience without clearing real user data
-const isTestMode = process.argv.includes('--test') || process.argv.includes('--test-launch')
+
+const isTestMode = process.env.TEST_LAUNCH === 'true'
+console.log('[TestMode] TEST_LAUNCH env:', process.env.TEST_LAUNCH)
+console.log('[TestMode] isTestMode:', isTestMode)
 
 if (isTestMode) {
   // Use separate directory for test data
