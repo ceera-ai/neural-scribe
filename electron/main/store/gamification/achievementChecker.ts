@@ -525,17 +525,26 @@ export function checkExplorationAchievements(
   const enginesUsed = featureUsage.enginesUsed || []
 
   // ElevenLabs engine
-  if (enginesUsed.includes('elevenlabs') && !isAchievementUnlocked(achievements, 'elevenlabs-explorer')) {
+  if (
+    enginesUsed.includes('elevenlabs') &&
+    !isAchievementUnlocked(achievements, 'elevenlabs-explorer')
+  ) {
     newlyUnlocked.push('elevenlabs-explorer')
   }
 
   // Deepgram engine
-  if (enginesUsed.includes('deepgram') && !isAchievementUnlocked(achievements, 'deepgram-discoverer')) {
+  if (
+    enginesUsed.includes('deepgram') &&
+    !isAchievementUnlocked(achievements, 'deepgram-discoverer')
+  ) {
     newlyUnlocked.push('deepgram-discoverer')
   }
 
   // Engine switcher (changed engine at least once)
-  if ((featureUsage.engineChanges || 0) >= 1 && !isAchievementUnlocked(achievements, 'engine-switcher')) {
+  if (
+    (featureUsage.engineChanges || 0) >= 1 &&
+    !isAchievementUnlocked(achievements, 'engine-switcher')
+  ) {
     newlyUnlocked.push('engine-switcher')
   }
 

@@ -39,6 +39,15 @@ export function EngineSelectionStep({ onEngineSelected, onBack }: EngineSelectio
         <div
           className={`engine-card ${selectedEngine === 'elevenlabs' ? 'selected' : ''}`}
           onClick={() => handleSelectEngine('elevenlabs')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              handleSelectEngine('elevenlabs')
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Select ElevenLabs Scribe transcription engine"
         >
           <div className="card-glow" />
           <div className="card-content">
@@ -104,6 +113,15 @@ export function EngineSelectionStep({ onEngineSelected, onBack }: EngineSelectio
         <div
           className={`engine-card ${selectedEngine === 'deepgram' ? 'selected' : ''}`}
           onClick={() => handleSelectEngine('deepgram')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              handleSelectEngine('deepgram')
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Select Deepgram transcription engine"
         >
           <div className="card-glow" />
           <div className="card-content">
