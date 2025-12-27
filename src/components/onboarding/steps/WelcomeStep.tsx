@@ -1,3 +1,5 @@
+import neuralScribeIcon from '../../../assets/neural-scribe-icon.png'
+
 interface WelcomeStepProps {
   onContinue: () => void
 }
@@ -8,25 +10,7 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
       <div className="welcome-content">
         <div className="welcome-logo">
           <div className="logo-glow" />
-          <svg
-            viewBox="0 0 100 100"
-            className="neural-icon"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            {/* Neural network node icon */}
-            <circle cx="50" cy="20" r="8" className="node" />
-            <circle cx="30" cy="50" r="8" className="node" />
-            <circle cx="70" cy="50" r="8" className="node" />
-            <circle cx="50" cy="80" r="8" className="node" />
-            {/* Connections */}
-            <line x1="50" y1="28" x2="30" y2="42" className="connection" />
-            <line x1="50" y1="28" x2="70" y2="42" className="connection" />
-            <line x1="30" y1="58" x2="50" y2="72" className="connection" />
-            <line x1="70" y1="58" x2="50" y2="72" className="connection" />
-            <line x1="38" y1="50" x2="62" y2="50" className="connection" />
-          </svg>
+          <img src={neuralScribeIcon} alt="Neural Scribe" className="app-icon-image" />
         </div>
 
         <h1 className="welcome-title">

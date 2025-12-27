@@ -136,15 +136,16 @@
 /* Content Container */
 .onboarding-content {
   position: absolute;
-  top: 50%;
+  top: 120px;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   width: 90%;
   max-width: 900px;
-  max-height: calc(100vh - 160px);
+  max-height: calc(100vh - 140px);
   overflow-y: auto;
   z-index: 5;
   padding: 20px;
+  padding-bottom: 40px;
 }
 
 /* Step Base Styles */
@@ -152,11 +153,12 @@
   background: rgba(18, 18, 26, 0.95);
   border: 1px solid rgba(0, 255, 255, 0.2);
   border-radius: 16px;
-  padding: 48px;
+  padding: 32px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(0, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  min-height: fit-content;
 }
 
 .onboarding-step::before {
@@ -178,7 +180,7 @@
 
 .step-header {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
 }
 
 .step-title {
@@ -317,9 +319,12 @@
 
 .welcome-logo {
   position: relative;
-  margin: 0 auto 32px;
-  width: 120px;
-  height: 120px;
+  margin: 0 auto 24px;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .logo-glow {
@@ -342,6 +347,25 @@
   50% {
     opacity: 0.6;
     transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+.app-icon-image {
+  width: 140px;
+  height: 140px;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 0 30px rgba(0, 255, 255, 0.6)) drop-shadow(0 0 50px rgba(255, 0, 255, 0.4));
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
   }
 }
 
@@ -388,29 +412,29 @@
 }
 
 .welcome-title {
-  font-size: 48px;
-  margin: 0 0 16px 0;
+  font-size: 42px;
+  margin: 0 0 12px 0;
   font-family: 'Orbitron', sans-serif;
 }
 
 .welcome-subtitle {
-  font-size: 20px;
+  font-size: 18px;
   color: #a0a0a0;
-  margin: 0 0 24px 0;
+  margin: 0 0 20px 0;
 }
 
 .welcome-description {
-  font-size: 16px;
-  line-height: 1.7;
+  font-size: 15px;
+  line-height: 1.6;
   color: #c0c0c0;
-  margin: 0 0 40px 0;
+  margin: 0 0 28px 0;
 }
 
 .welcome-features {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 48px;
+  gap: 12px;
+  margin-bottom: 32px;
   text-align: left;
 }
 
@@ -418,7 +442,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px;
+  padding: 12px 16px;
   background: rgba(0, 255, 255, 0.05);
   border: 1px solid rgba(0, 255, 255, 0.2);
   border-radius: 8px;
